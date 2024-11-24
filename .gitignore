@@ -1,0 +1,7 @@
+warrantify/node_modules/
+
+python_backend/__pycache__/
+
+python_backend/venv/
+
+node_modules/
