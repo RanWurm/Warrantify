@@ -50,6 +50,10 @@ class ProductRecommender:
         user_history = self.df[self.df['user_id'] == user_id].drop_duplicates(subset=['product_id'])
         history_records = []
         for _, row in user_history.iterrows():
+            cat_code = row['category_code']
+            if not cat_code:
+                cat_code = 0
+            
             history_records.append({
                 'product_id': row['product_id'],
                 'category_id': row['category_id'],

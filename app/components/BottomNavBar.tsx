@@ -29,7 +29,7 @@ const BottomNavBar = () => {
     <View style={styles.bottomNav}>
       <TouchableOpacity 
         style={styles.navButton} 
-        onPress={() => navigateTo('/')}
+        onPress={() => navigateTo('/home ')}
       >
         <MaterialCommunityIcons
           name="home"
@@ -38,7 +38,7 @@ const BottomNavBar = () => {
         />
         <Text style={[
           styles.navText,
-          pathname === '/' && styles.activeNavText
+          pathname === '/home' && styles.activeNavText
         ]}>
           Home
         </Text>
@@ -77,23 +77,24 @@ const BottomNavBar = () => {
           My Warranties
         </Text>
       </TouchableOpacity>
-
+      
       <TouchableOpacity 
         style={styles.navButton}
-        onPress={handleLogout}
+        onPress={() => navigateTo('/settings')}
       >
         <MaterialCommunityIcons
-          name="logout"
+          name="cog"
           size={24}
-          color={pathname === '/login' ? '#7E8FA6' : '#555'}
+          color={pathname === '/settings' ? '#7E8FA6' : '#555'}
         />
         <Text style={[
           styles.navText,
-          pathname === '/login' && styles.activeNavText
+          pathname === '/settings' && styles.activeNavText
         ]}>
-          Logout
+          settings
         </Text>
       </TouchableOpacity>
+      
     </View>
   );
 };

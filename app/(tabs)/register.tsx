@@ -11,11 +11,7 @@ import {
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { useFonts } from 'expo-font';
 import { Stack, useRouter } from 'expo-router';
-
-// 1) Import Firebase Auth and Firestore
-import { auth, db } from '../../constants/firebase';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import axios from 'axios';
 
 export default function RegisterScreen() {
   const [fontsLoaded] = useFonts({
@@ -49,39 +45,24 @@ export default function RegisterScreen() {
   const toggleShowPassword = (field) => {
     setShowPassword({ ...showPassword, [field]: !showPassword[field] });
   };
-
+  
   const handleSignUp = async () => {
-    try {
-      // 2) Create User with Email & Password in Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(
-        auth, 
-        form.email, 
-        form.password
-      );
-      
-      // The newly created user
-      const user = userCredential.user;
-      console.log('User created:', user.uid);
-
-      // 3) OPTIONAL: Save extra user data (firstName, lastName) in Firestore
-      // If you need to store the user’s first/last name, do so here:
-      await setDoc(doc(db, 'users', user.uid), {
-        firstName: form.firstName,
-        lastName: form.lastName,
-        email: form.email,
-        createdAt: new Date(),
-      });
-      console.log('User data saved in Firestore');
-
-      // 4) Navigate to the login screen
-      router.replace('/login');
-
-    } catch (error) {
-      console.log('Error signing up: ', error.message);
-      // Handle error (show alert, etc.)
+    console.log("in Signup")
+    const UserData={ 
+      firstname:form.firstName,
+      lastname:form.lastName,
+      email:form.email,
+      password:form.password,    
     }
-  };
-
+    console.log("here iam",UserData)
+    axios.post("http://10.0.0.7:3000/register",UserData)
+    .then(res=>{
+      console.log(res.data)
+      router.replace('/login');
+    })
+    .catch(e=>console.log("hey",e))
+  }
+  
   const handleGoogleSignUp = () => {
     // Handle Google sign-up logic here
     console.log('Sign Up with Google Pressed');

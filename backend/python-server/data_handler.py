@@ -6,6 +6,7 @@ import time
 import os
 import re
 import numpy as np
+import csv
 from tqdm import tqdm
 from collections import Counter,defaultdict
 from itertools import chain,islice
@@ -1352,3 +1353,37 @@ def count_rows_with_missing(csv_path):
     print(f"Percentage of rows with missing data: {(missing_rows/total_rows*100):.2f}%")
     
     return missing_rows
+
+def reassign_user_ids(input_file: str, output_file: str) -> None:
+    """
+    Reads a CSV file, reassigns user IDs sequentially starting from 1, 
+    and writes the updated data to a new CSV file.
+
+    The CSV is assumed to have the following columns:
+    event_type, product_id, category_id, category_code, brand, user_id
+
+    Parameters:
+        input_file (str): The path to the input CSV file.
+        output_file (str): The path to the output CSV file.
+    """
+    user_mapping = {}
+    current_new_id = 1
+
+    with open(input_file, mode='r', newline='', encoding='utf-8') as infile, \
+         open(output_file, mode='w', newline='', encoding='utf-8') as outfile:
+        
+        reader = csv.reader(infile)
+        writer = csv.writer(outfile)
+        
+        # Process header
+        header = next(reader)
+        writer.writerow(header)
+        
+        # Process each row and update the user_id (assumed to be in the 6th column)
+        for row in reader:
+            original_user_id = row[5]
+            if original_user_id not in user_mapping:
+                user_mapping[original_user_id] = current_new_id
+                current_new_id += 1
+            row[5] = str(user_mapping[original_user_id])
+            writer.writerow(row)

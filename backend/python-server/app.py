@@ -1,16 +1,84 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from data_handler import load_products, analyze_recommendation_potential, remove_rows_with_missing, process_csv, count_rows_with_missing
+from data_handler import load_products, reassign_user_ids, remove_rows_with_missing, process_csv, count_rows_with_missing
 from predict_algorithms.trie.generate_trie import load_trie
 from predict_algorithms.products.testReccomender import load_and_test_recommender, load_csv_data_and_test_recommender
 from predict_algorithms.products.productRecommender import ProductRecommender
+from predict_algorithms.products.knnProductRecommender import KNNProductRecommender
 import pandas as pd
 from datetime import datetime, timedelta
 import random
+import base64
+import google.generativeai as genai
+from PIL import Image
+from io import BytesIO
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
+api_key = os.getenv("GENAI_API_KEY")
+
+genai.configure(api_key=api_key)
+model = genai.GenerativeModel("gemini-1.5-flash")
+
+@app.route('/scan_recepit', methods=['POST'])
+def scan_receipt():
+    try:
+        data = request.get_json()
+        image_base64 = data.get('image')
+
+        if not image_base64:
+            return jsonify({'error': 'No image provided'}), 400
+
+        # 1. Decode the base64 string to an image
+        image_bytes = base64.b64decode(image_base64)
+        image = Image.open(BytesIO(image_bytes))  # Use BytesIO to create a file-like object
+
+        # 2. Create the prompt
+        prompt = f"""
+        Extract the following information from the attached receipt image and return it as a string where each field is separated by a pipe symbol (|).  If a piece of information cannot be found, leave that field blank.  The order of the fields *must* be:
+
+        productName|model|purchaseDate|manufacturer|expirationDate|price
+
+        For example, if only the productName and price are found, the output should be:
+
+        ProductNameValue|||ManufacturerValue||PriceValue
+
+        Do not include any other text or explanations. Return *only* the pipe-delimited string. If no information at all can be extracted, return a string with empty values for all fields, like this:
+
+        |||||
+
+        """  # Improved prompt
+
+        response = model.generate_content([prompt, image])
+        extracted_text = response.text.strip() # Remove leading/trailing whitespace
+
+        # 1. Split the string by the pipe delimiter
+        extracted_list = extracted_text.split("|")
+
+        # 2. Create a dictionary (which can easily be converted to JSON)
+        extracted_dict = {
+            "productName": extracted_list[0] if len(extracted_list) > 0 else "",
+            "model": extracted_list[1] if len(extracted_list) > 1 else "",
+            "purchaseDate": extracted_list[2] if len(extracted_list) > 2 else "",
+            "manufacturer": extracted_list[3] if len(extracted_list) > 3 else "",
+            "expirationDate": extracted_list[4] if len(extracted_list) > 4 else "",
+            "price": extracted_list[5] if len(extracted_list) > 5 else ""
+        }
+
+        print(jsonify(extracted_dict))
+        return jsonify(extracted_dict), 200  # Return the dictionary as JSON
+
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+    
 # Load product data and initialize trie
 folder_path = 'data_sets/words_prediction_datasets'
 products = load_products(folder_path)
@@ -19,9 +87,10 @@ trie = load_trie(unique_prods)
 
 
 data_file_path = 'data_sets/recommendation_sys_datasets/buying_users.csv'
-df = pd.read_csv(data_file_path)
-recommender = ProductRecommender()
-recommender.fit(df)
+#df = pd.read_csv(data_file_path)
+#recommender = ProductRecommender()
+#recommender.fit(df)
+recommender = KNNProductRecommender(data_file_path,k=5)
 
 icon_defaults = {
     "cpu": "chip",
@@ -36,7 +105,7 @@ icon_defaults = {
     "power": "power_icon",
     "cartrige":"printer",
     "hdd":"harddisk",
-
+    "tv":"television-classic",
 }
 
 @app.route('/autocomplete', methods=['GET'])
@@ -54,39 +123,67 @@ def autocomplete():
 def health():
     return "Python server is running!"
 
-@app.route('/get_recommendation', methods=['GET']) 
+# @app.route('/get_recommendation', methods=['POST ']) 
+# def get_recommendation():
+#     data = request.get_json()
+#     products = data.get('products')
+#     if not products:
+#         return jsonify({'error': 'No products data provided'}), 400
+
+    
+
+#     # Fetch user history from your recommender
+#     user_history = []
+    
+#     for product in products:
+#         user_history.append({
+#             'event_type': "purchase",             # Use the Mongo _id as the product_id
+#             'category_id': product.get('id', None),         # If you have a separate id field, use it
+#             'category_code': product.get('category_code', ''),# If you store a category code, otherwise default to ''
+#             'brand': product.get('manufacturer', '')        # Use manufacturer as brand (or adjust accordingly)
+#         })
+
+
+#     if not user_history:
+#         return jsonify({'message': 'No user history found'}), 200
+
+#     # Choose a random product from the user_history
+#     random_product = random.choice(user_history)
+#     random_viewed_product = random_product['category_code']
+
+#     # Get recommendations for this randomly chosen product
+#     recommendations = recommender.get_recommendations(random_viewed_product, n_recommendations=5)
+#     if not recommendations:
+#         return jsonify({'message': 'No recommendations found for the randomly chosen product'}), 200
+    
+#     for recommendation in recommendations:
+#         category_code = recommendation.get('category_code', '').lower()
+#         icon_name = icon_defaults.get(category_code, 'device')  # Default to 'device' if not found
+#         recommendation['iconName'] = icon_name  # Assign to 'iconName' key
+    
+#     # Return the recommendations as a JSON response
+#    return jsonify({'recommendations': recommendations}), 200
+
+
+
+@app.route('/get_recommendation', methods=['POST'])
 def get_recommendation():
-    row = request.args.get('user_id', type=int)
-    if row is None or row < 1 or row > len(df):
-        return jsonify({'error': 'Invalid or missing user_id'}), 400
+    # Parse the JSON payload.
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
 
-    user_id = df.loc[row - 1, 'user_id']
-    print(f"User ID: {user_id}")
+    # Expecting a payload with keys "products" and "event_type".
+    user_products = data.get('products')
+    event_type = data.get('event_type')
 
-    if user_id is None:
-        return jsonify({'error': 'user_id is required'}), 400
+    if not user_products or not event_type:
+        return jsonify({'error': 'Missing required fields: products or event_type'}), 400
 
-    # Fetch user history from your recommender
-    user_history = recommender.get_user_history(user_id)
-
-    if not user_history:
-        return jsonify({'message': 'No user history found'}), 200
-
-    # Choose a random product from the user_history
-    random_product = random.choice(user_history)
-    random_viewed_product_id = random_product['product_id']
-
-    # Get recommendations for this randomly chosen product
-    recommendations = recommender.get_recommendations(random_viewed_product_id, n_recommendations=5)
-    if not recommendations:
-        return jsonify({'message': 'No recommendations found for the randomly chosen product'}), 200
+    # Get recommendations using your KNN recommender.
+    recommendations = recommender.recommend(user_products, event_type)
     
-    for recommendation in recommendations:
-        category_code = recommendation.get('category_code', '').lower()
-        icon_name = icon_defaults.get(category_code, 'device')  # Default to 'device' if not found
-        recommendation['iconName'] = icon_name  # Assign to 'iconName' key
-    
-    # Return the recommendations as a JSON response
+    # Return the recommendations as JSON.
     return jsonify({'recommendations': recommendations}), 200
 
     
@@ -94,7 +191,7 @@ def get_recommendation():
 def get_warranties():
     row = request.args.get('user_id', type=int)
     user_id = df.loc[row - 1, 'user_id']
-    print(user_id)
+    print("user id is :" , user_id)
     if user_id is None:
         return jsonify({'error': 'user_id is required'}), 400
     
@@ -151,9 +248,11 @@ def get_warranties():
     
     return jsonify({'warranties': warranties})
 
+
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
-
+    
 
    ########################################## process the data sets to have a managable dataset ######################################################
    
@@ -179,9 +278,9 @@ if __name__ == '__main__':
     ## note this is'nt the full data processing that occoured , i've deleted many many parts in the process
     
    ####################################################################################################################################################
-    #csv_input_path = 'data_sets/recommendation_sys_datasets/events.csv'
+    #csv_input_path = 'data_sets/recommendation_sys_datasets/buying_users.csv'
     #missing_rows_csv_output_path = 'data_sets/recommendation_sys_datasets/data_with_missing_rows.csv'
-    #csv_output_path = 'data_sets/recommendation_sys_datasets/data.csv'
+    #csv_output_path = 'data_sets/recommendation_sys_datasets/bu.csv'
     # process_csv(csv_input_path,missing_rows_csv_output_path)
     # remove_rows_with_missing(missing_rows_csv_output_path,csv_output_path)
    
@@ -191,5 +290,6 @@ if __name__ == '__main__':
     # recommender = load_and_test_recommender(path, sample_size=1000)
     #load_csv_data_and_test_recommender(csv_output_path)
     
-
+    #reassign_user_ids(csv_input_path,csv_output_path)
+    
     

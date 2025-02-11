@@ -148,7 +148,7 @@ export default function AddWarranty() {
 			{/* Add Files Button */}
 			<TouchableOpacity style={styles.iconButton}>
 				<Ionicons name="document-attach-outline" size={24} color="#555" />
-				<Text style={styles.iconButtonText}>Add Files</Text>
+				<Text style={styles.iconButtonText}>Add Fiddddddddddddddd</Text>
 			</TouchableOpacity>
 		 </View>
 

@@ -10,7 +10,7 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import BottomNavBar from '../components/BottomNavBar';
 import axios from 'axios';
-import { UserContext } from '../context/UserContext'; // Adjust the path if needed
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Recommended product structure
 interface RecommendedProduct {
@@ -29,25 +29,27 @@ const RecommendedItem = ({ title, iconName }: RecommendedProduct) => (
 );
 
 const RecommendedPage = () => {
-  const { userId } = useContext(UserContext); // get userId from context
   const [recommendedProducts, setRecommendedProducts] = useState<RecommendedProduct[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Adjust to your actual server or local IP
-  const backendURL = 'http://10.0.0.5:5000';
-
+  
+  const pythonBackendURL = 'http://10.0.0.7:5000';
+  const NodeBackendURL = 'http://10.0.0.7:3000';
+  
   useEffect(() => {
     const fetchRecommendations = async () => {
-      if (!userId) {
-        setRecommendedProducts([]);
-        setLoading(false);
-        return;
-      }
+      
       try {
-        const response = await axios.get(`${backendURL}/get_recommendation`, {
-          params: { user_id: userId },
+        const token = await AsyncStorage.getItem("token");
+        const warrantiesResponse = await axios.post("http://10.0.0.7:3000/user-warranties", { token });
+        const warranties = warrantiesResponse.data.data;
+        
+        const response = await axios.post(`${pythonBackendURL}/get_recommendation`, {
+          products: warranties,      // Send the user's warranties data
+          event_type: "purchase",        // Specify the event type
         });
+        
         const rawRecs = response.data.recommendations || [];
         
         // Map the server data to your local structure
@@ -66,7 +68,7 @@ const RecommendedPage = () => {
     };
 
     fetchRecommendations();
-  }, [userId]);
+  }, []);
 
   // Handle loading and error states
   if (loading) {

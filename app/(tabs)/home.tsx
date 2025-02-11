@@ -6,7 +6,7 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, useWindowDim
 import { Ionicons } from '@expo/vector-icons';
 import { useFonts } from 'expo-font';
 import BottomNavBar from '../components/BottomNavBar';
-import AddWarrantyButton from '../components/AddWarrantyButton';
+import AddWarrantyOptions from '../components/AddWarrantyOptions.';
 
 export default function home() {
   const [fontsLoaded] = useFonts({
@@ -74,7 +74,7 @@ export default function home() {
         />
 
         {/* Add Warranty Button */}
-        <AddWarrantyButton />
+        <AddWarrantyOptions />
 
         {/* Bottom Navigation */}
         <BottomNavBar />

@@ -1,5 +1,5 @@
 // app/screens/LoginScreen.tsx
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import {
   View,
   Text,
@@ -14,9 +14,8 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { auth } from '../../constants/firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { UserContext } from '../context/UserContext'; // Adjust the path as needed
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -24,39 +23,81 @@ export default function LoginScreen() {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   const router = useRouter();
-  const { assignUserId } = useContext(UserContext);
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please enter both email and password.');
-      return;
-    }
 
-    try {
-      // Attempt to sign in
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const firebaseUserId = userCredential.user.uid;
-      console.log('User logged in:', firebaseUserId);
-
-      // Assign or retrieve `user_id`
-      await assignUserId(firebaseUserId);
-
-      // Navigate to home page or wherever you want
-      router.push('/home');
-    } catch (error: any) {
-      // Handle different auth errors
-      if (error.code === 'auth/user-not-found') {
-        Alert.alert('Login Failed', 'No user found with this email. Please register first.');
-      } else if (error.code === 'auth/wrong-password') {
-        Alert.alert('Login Failed', 'Incorrect password. Please try again.');
-      } else if (error.code === 'auth/invalid-email') {
-        Alert.alert('Login Failed', 'Invalid email format. Please check and try again.');
-      } else {
-        Alert.alert('Login Failed', `Error: ${error.message}`);
+  const handleLogin = async () =>{
+    console.log("in handle login")
+    const userData={
+        email:email,
+        password:password
       }
-      console.error('Error signing in:', error);
+      if (!email || !password) {
+        Alert.alert('Error', 'Please enter both email and password.');
+        return;
+      }
+      
+      try{
+        axios.post("http://10.0.0.7:3000/login",userData)
+      .then(res=>{
+        console.log("hey data is",res.data)
+        AsyncStorage.setItem("token",res.data.data)
+        router.replace('/home')
+      }) 
+      .catch(e => {
+        console.log("Error:", e.message);
+        console.error(e);  // Full error log for more details
+      });
     }
-  };
+      catch (error: any) {
+        //     // Handle different auth errors
+            if (error.code === 'auth/user-not-found') {
+              Alert.alert('Login Failed', 'No user found with this email. Please register first.');
+            } else if (error.code === 'auth/wrong-password') {
+              Alert.alert('Login Failed', 'Incorrect password. Please try again.');
+            } else if (error.code === 'auth/invalid-email') {
+              Alert.alert('Login Failed', 'Invalid email format. Please check and try again.');
+            } else {
+              Alert.alert('Login Failed', `Error: ${error.message}`);
+            }
+            console.error('Error signing in:', error);
+          }
+    
+  }
+  
+  
+  
+  
+  // const handleLogin = async () => {
+  //   if (!email || !password) {
+  //     Alert.alert('Error', 'Please enter both email and password.');
+  //     return;
+  //   }
+
+  //   try {
+  //     // Attempt to sign in
+  //     const userCredential = await signInWithEmailAndPassword(auth, email, password);
+  //     const firebaseUserId = userCredential.user.uid;
+  //     console.log('User logged in:', firebaseUserId);
+
+  //     // Assign or retrieve `user_id`
+  //     await assignUserId(firebaseUserId);
+
+  //     // Navigate to home page or wherever you want
+  //     router.replace('/home')
+  //   } catch (error: any) {
+  //     // Handle different auth errors
+  //     if (error.code === 'auth/user-not-found') {
+  //       Alert.alert('Login Failed', 'No user found with this email. Please register first.');
+  //     } else if (error.code === 'auth/wrong-password') {
+  //       Alert.alert('Login Failed', 'Incorrect password. Please try again.');
+  //     } else if (error.code === 'auth/invalid-email') {
+  //       Alert.alert('Login Failed', 'Invalid email format. Please check and try again.');
+  //     } else {
+  //       Alert.alert('Login Failed', `Error: ${error.message}`);
+  //     }
+  //     console.error('Error signing in:', error);
+  //   }
+  // };
 
   const navigateToRegister = () => {
     router.push('/register');

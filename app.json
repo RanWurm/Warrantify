@@ -14,7 +14,8 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-font"
+      "expo-font",
+      "expo-secure-store"
     ],
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
