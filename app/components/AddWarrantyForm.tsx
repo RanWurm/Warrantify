@@ -67,7 +67,7 @@ const AddWarrantyForm: React.FC<AddWarrantyFormProps> = ({ onClose, scannedData 
     try {
       // Assume you have a way to retrieve the token (e.g., from storage or context)
       const token = await AsyncStorage.getItem("token");
-  
+    
       const response = await fetch('http://10.0.0.7:3000/add-warranty', {
         method: 'POST',
         headers: {

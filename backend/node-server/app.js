@@ -19,7 +19,7 @@ mongoose
 })
 
 JWT_SECRET="LJHDsBFGHSDB;FGIBSDHFBH"
-
+require('./schemas/AdBoardSchema.js')
 require('./schemas/WarrantyAd.js')
 require('./schemas/product.js') 
 require('./schemas/User.js')
@@ -27,6 +27,7 @@ require('./schemas/User.js')
 const User = mongoose.model("userInformation")
 const Warranty = mongoose.model('warrantyInformation')
 const WarrantyAd = mongoose.model('Ad')
+const AdBoard = require('./schemas/AdBoardSchema.js');
 app.use(cors());
 app.use(express.json()); // Middleware to parse JSON requests
 
@@ -162,14 +163,12 @@ app.post('/add-warranty', async(req, res) => {
   const { productName, serviceCenter, store, model,price, purchaseDate,expirationDate,notes} = req.body;
   console.log("in the problem req.headers is :",req.headers)
   try {
-    // Get user email from token
     const token = req.headers.authorization?.split(' ')[1];
-    console.log(token)
     const decoded = jwt.verify(token, JWT_SECRET);
     const email = decoded.email;
     const user = await User.findOne({ email })
     if (!user) return res.status(404).json({ error: 'User not found' });
-    console.log(user.products)
+    
     const newWarranty = await Warranty.create({
       user: user._id, // Associate the warranty with the user
       productName,
@@ -192,38 +191,74 @@ app.post('/add-warranty', async(req, res) => {
 });
 
 app.post("/add-for-sale-board",async(req,res)=>{
-  const {userId,productId,salePrice,city,description} = req.body
+  const {productId,salePrice,city,description} = req.body
   try {
-    // Get user email from token
     const token = req.headers.authorization?.split(' ')[1];
     const decoded = jwt.verify(token, JWT_SECRET);
     const email = decoded.email;
     const user = await User.findOne({email})
     if(!user) return res.status(404).json({error:"User Not Found"})
-      
-    if (user._id.toString() !== userId){
-      return res.status(403).json({ error: "Invalid User id" });
-    }
     
     const product = await Warranty.findOne({ _id: productId });
     if (!product) return res.status(404).json({ error: "Product not found" });
-    
-
-      
+  
     const newAd = await WarrantyAd.create({
         user:user._id,
         product:productId,
+        productName:product.productName,
+        brand: product.manufacturer,
+        model:product.model,
         salePrice,
         city,
         description,
     })
-    res.status(200).json({ message: 'Warranty added to Boarding List', warrantyAd: newAd });
-  }catch (error) {
+    const updatedBoard = await AdBoard.findOneAndUpdate(
+      { name: "SaleBoard" }, // You can choose a filter that fits your needs
+      { 
+        $push: { 
+          ads: { 
+            $each: [newAd._id], 
+            $position: 0 
+          } 
+        } 
+      },
+      { new: true, upsert: true } // Return the updated doc and create if not exists
+    );
+    res.status(200).json({ 
+      message: "Warranty ad added to Boarding List", 
+      warrantyAd: newAd,
+      adBoard: updatedBoard // optionally return the updated board
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.get('/ad-board/page/:page', async (req, res) => {
+  console.log('In /ad-board/page/:page');
+  const page = parseInt(req.params.page, 10) || 1; // Ensure page is a number
+  const pageSize = 20;
+  const skip = (page - 1) * pageSize;
+  console.log('Page:', page, 'PageSize:', pageSize, 'Skip:', skip);
+  try {
+    // Find the adBoard document by name and use $slice to get the desired segment of ads.
+    const board = await AdBoard.findOne(
+      { name: 'SaleBoard' },
+      { ads: { $slice: [skip, pageSize] } } // Slice from `skip` and return up to pageSize items
+    ).populate('ads'); // Optionally populate the ad documents if you need their details
+
+    if (!board) {
+      console.log('AdBoard not found');
+      return res.status(404).json({ error: 'AdBoard not found' });
+    }
+    
+    res.status(200).json({ ads: board.ads });
+  } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal server error' });
   }
-})
-
+});
 // Start the server
 const PORT = process.env.PORT || 3000;
 app.listen(3000, '0.0.0.0', () => {

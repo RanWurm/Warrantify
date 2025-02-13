@@ -99,6 +99,13 @@ export default function TabsLayout() {
             headerShown: false, // Disable back button for Help & Support
           }}
         />
+        <Stack.Screen
+          name="adBoard"
+          options={{
+            title: 'Ad Board',
+            headerShown: false, // Hides the header for Login screen
+          }}
+        />
       </Stack>
     </UserProvider>
   );

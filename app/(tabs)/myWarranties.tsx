@@ -10,8 +10,7 @@ import {
   Keyboard,
   TouchableOpacity,
 } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import * as Progress from 'react-native-progress';
+
 import BottomNavBar from '../components/BottomNavBar';
 import AddWarrantyOptions from '../components/AddWarrantyOptions.';
 import axios from 'axios';
@@ -20,6 +19,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import WarrantyCard from '../components/WarrantyCard';
 
 interface WarrantyItemProps {
+  productId: string;
   title: string;
   subtitle: string;
   date: string;
@@ -50,6 +50,7 @@ const MyWarranties = () => {
         const response = await axios.post('http://10.0.0.7:3000/user-warranties', { token });
         
         const transformedWarranties = response.data.data.map((warranty: any) => ({
+          productId: warranty._id, // include the id here
           title: warranty.productName,
           subtitle: warranty.model || 'No model specified',
           date: warranty.purchaseDate
@@ -58,9 +59,9 @@ const MyWarranties = () => {
           timeAgo: getTimeAgo(warranty.purchaseDate),
           iconName: getIconName(warranty.productName),
           progress: calculateProgress(warranty.purchaseDate, warranty.expirationDate),
-          notes: warranty.notes ||'No additional notes'
+          notes: warranty.notes || 'No additional notes'
         }));
-
+        
         setWarranties(transformedWarranties);
         setFilteredWarranties(transformedWarranties);
         setLoading(false);

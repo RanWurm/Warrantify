@@ -6,12 +6,15 @@ import {
   StyleSheet,
   Dimensions,
   TouchableOpacity,
+  Modal,
+  TextInput,
   Button,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Progress from 'react-native-progress';
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
 interface WarrantyCardProps {
+  productId: string;
   title: string;
   subtitle: string;
   date: string;
@@ -20,8 +23,8 @@ interface WarrantyCardProps {
   progress: number;
   notes: string;
 }
-
 const WarrantyCard: React.FC<WarrantyCardProps> = ({
+  productId,
   title,
   subtitle,
   date,
@@ -31,8 +34,12 @@ const WarrantyCard: React.FC<WarrantyCardProps> = ({
   notes,
 }) => {
   const [expanded, setExpanded] = useState(false);
-
-  // Preserve your existing progress color logic.
+  const [modalVisible, setModalVisible] = useState(false);
+  const [salePrice, setSalePrice] = useState('');
+  const [city, setCity] = useState('');
+  const [description, setDescription] = useState('');
+  const [adData, setAdData]= useState([]);
+  // Determine progress color based on the progress value.
   let progressColor = '#7E8FA6';
   if (progress >= 75) {
     progressColor = '#AF6F6F';
@@ -45,8 +52,43 @@ const WarrantyCard: React.FC<WarrantyCardProps> = ({
   const toggleExpanded = () => setExpanded(!expanded);
 
   const handleAddToMarketList = () => {
-    // Add your "add to marketList" logic here.
-    console.log(`Adding "${title}" to marketList`);
+    // Open the modal when the button is pressed.
+    setModalVisible(true);
+  };
+
+  const handleSubmitMarketItem = async () => {
+   
+    
+    // Process the entered data as needed.
+    try{
+      const token = await AsyncStorage.getItem("token")
+      const response = await fetch('http://10.0.0.7:3000/add-for-sale-board',{
+        method:'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body:JSON.stringify({
+          token,
+          productId,
+          salePrice,
+          city,
+          description,
+        })
+        
+      })
+      if (!response.ok) {
+        console.error('Failed to add item to market list');
+        // Optionally show an error message or handle error responses here.
+      }
+      console.log(`Successfully added product ${productId} to the market list!`);
+    } catch (error) {
+      console.error('Error submitting market item:', error);
+    }
+    setModalVisible(false);
+    setSalePrice('');
+    setCity('');
+    setDescription('');
   };
 
   return (
@@ -96,11 +138,64 @@ const WarrantyCard: React.FC<WarrantyCardProps> = ({
         {expanded && (
           <View style={styles.expandedContainer}>
             <Text style={styles.expandedText}>{notes}</Text>
-            <TouchableOpacity style={styles.marketListButton} onPress={handleAddToMarketList}>
+            <TouchableOpacity
+              style={styles.marketListButton}
+              onPress={handleAddToMarketList}
+            >
               <Text style={styles.marketListButtonText}>Add to marketList</Text>
             </TouchableOpacity>
           </View>
         )}
+
+        {/* Modal for entering market item details */}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+              <Text style={styles.modalTitle}>Add to Market List</Text>
+
+              <TextInput
+                placeholder="Sale Price"
+                style={styles.input}
+                keyboardType="numeric"
+                value={salePrice}
+                onChangeText={setSalePrice}
+              />
+              <TextInput
+                placeholder="City"
+                style={styles.input}
+                value={city}
+                onChangeText={setCity}
+              />
+              <TextInput
+                placeholder="Description"
+                style={[styles.input, styles.descriptionInput]}
+                value={description}
+                onChangeText={setDescription}
+                multiline={true}
+              />
+
+              <View style={styles.modalButtonRow}>
+                <TouchableOpacity 
+                  style={styles.cancelButton} 
+                  onPress={() => setModalVisible(false)}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.submitButton} 
+                  onPress={handleSubmitMarketItem}
+                >
+                  <Text style={styles.submitButtonText}>Submit</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </View>
     </TouchableOpacity>
   );
@@ -112,11 +207,10 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
     marginVertical: 5,
     borderRadius: 12,
-    overflow: 'hidden', // ensures child content respects the border radius
+    overflow: 'hidden',
   },
   cardExpanded: {
     // Optionally, add any style changes when expanded.
-    // For example, you might want to add a shadow or border change.
   },
   warrantyItem: {
     flexDirection: 'row',
@@ -179,19 +273,94 @@ const styles = StyleSheet.create({
     color: '#000',
   },
   marketListButton: {
-    backgroundColor: '#7E8FA6', // Use your project's accent or primary color here
+    backgroundColor: '#7E8FA6',
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 10, // space above the button if needed
+    marginTop: 10,
   },
   marketListButtonText: {
-    color: '#fff', // or any color that fits your design
+    color: '#fff',
     fontFamily: 'InriaSerif-Regular',
     fontSize: 16,
   },
+  // Modal Styles (adjusted to match overall styling)
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    width: '85%',
+    backgroundColor: '#F5EFE6',  // Matching header background
+    borderRadius: 15,           // Matching profileContainer borderRadius
+    padding: 15,               // Matching header padding
+    borderColor: '#E8FA6',    // Matching profileContainer borderColor
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontFamily: 'InriaSerif-Bold',
+    color: '#00',
+    textAlign: 'center',
+    marginBottom: 15,
+  },
+  input: {
+    backgroundColor: '#FDFDFD',  // Clean white background for better contrast
+    borderRadius: 4,
+    padding: 10,
+    marginBottom: 15,
+    fontFamily: 'InriaSerif-Regular',
+    color: '#000',
+    borderWidth: 1,
+    borderColor: '#7E8FA6',    // Subtle border using the app's accent color
+  },
+  descriptionInput: {
+    height: 80,
+    textAlignVertical: 'top',
+  },
+  modalButtonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+    gap: 10,
+  },
+  submitButton: {
+    backgroundColor: '#7E8FA6',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 15,
+    flex: 1,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#F5EFE6',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 15,
+    flex: 1,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#7E8FA6',
+  },
+  submitButtonText: {
+    color: '#FDFDFD',
+    fontFamily: 'InriaSerif-Regular',
+    fontSize: 16,
+  },
+  cancelButtonText: {
+    color: '#7E8FA6',
+    fontFamily: 'InriaSerif-Regular',
+    fontSize: 16,
+  }
 });
 
 export default WarrantyCard;

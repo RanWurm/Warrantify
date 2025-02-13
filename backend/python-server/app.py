@@ -26,6 +26,7 @@ model = genai.GenerativeModel("gemini-1.5-flash")
 
 @app.route('/scan_recepit', methods=['POST'])
 def scan_receipt():
+    print("in scan")
     try:
         data = request.get_json()
         image_base64 = data.get('image')
@@ -69,11 +70,12 @@ def scan_receipt():
             "price": extracted_list[5] if len(extracted_list) > 5 else ""
         }
 
-        print(jsonify(extracted_dict))
+        print("scan ok")
         return jsonify(extracted_dict), 200  # Return the dictionary as JSON
 
 
     except Exception as e:
+        print("scan bad  here error")
         print(f"Error: {e}")
         return jsonify({'error': str(e)}), 500
 

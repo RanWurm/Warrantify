@@ -1,57 +1,65 @@
-// components/PhotoPreviewSection.tsx
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  Image,
-  TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-  ActivityIndicator,
-  Alert,
-  Dimensions,
-} from 'react-native';
+// PhotoPreviewSection.tsx
 import { Fontisto } from '@expo/vector-icons';
+import { CameraCapturedPicture } from 'expo-camera';
+import React, { useState } from 'react';
+import { 
+  TouchableOpacity, 
+  SafeAreaView, 
+  Image, 
+  StyleSheet, 
+  View,
+  Dimensions,
+  Text,
+  ActivityIndicator,
+  Alert
+} from 'react-native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-interface PhotoPreviewSectionProps {
-  photo: { base64: string };
-  handleRetakePhoto: () => void;
-  onClose: (scannedData: any) => void;
-}
-
-const PhotoPreviewSection: React.FC<PhotoPreviewSectionProps> = ({
-  photo,
-  handleRetakePhoto,
-  onClose,
-}) => {
+const PhotoPreviewSection = ({photo, handleRetakePhoto,onClose}) => {
   const [loading, setLoading] = useState(false);
+  
+  const handleUsePhoto = async () => {
+    try {
+      setLoading(true);
 
-  const handleUsePhoto = () => {
-    setLoading(true);
-    // Simulate a server call that "scans" the receipt and returns data.
-    setTimeout(() => {
-      const scannedData = {
-        productName: "Lenovo USB Type-C 65W AC Wall Adapter",
-        price: "176.00",
-        purchaseDate: "2023-08-05",
-        manufacturer: "",
-        model: "4X20M26279/GX20R05295",
-        expirationDate: "",
-        serviceCenter: "",
-        notes: "",
+      const SERVER_URL = 'http://10.0.0.7:5000/scan_recepit';
+
+      const payload = {
+        image: photo.base64,
       };
+
+      const response = await fetch(SERVER_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to upload photo');
+      }
+
+      const responseData = await response.json();
+      console.log(responseData);
+
+      onClose(responseData); // Pass data to onClose and close the preview
+      // return responseData; // No need to return here since we're using onClose
+
+    } catch (error) {
+      //console.error('Error uploading photo:', error);
+      //Alert.alert('Error', error.message || 'An error occurred while uploading the photo.');
+    } finally {
       setLoading(false);
-      onClose(scannedData);
-    }, 1500);
+    }
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <View style={styles.imageContainer}>
-          {/* In a real app, use the base64 image data */}
           <Image
             style={styles.previewImage}
             source={{ uri: 'data:image/jpg;base64,' + photo.base64 }}
@@ -62,14 +70,15 @@ const PhotoPreviewSection: React.FC<PhotoPreviewSectionProps> = ({
         </View>
 
         <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={styles.retakeButton}
+          <TouchableOpacity 
+            style={styles.retakeButton} 
             onPress={handleRetakePhoto}
           >
             <Fontisto name="trash" size={24} color="white" />
             <Text style={styles.buttonText}>Retake</Text>
           </TouchableOpacity>
-          <TouchableOpacity
+          
+          <TouchableOpacity 
             style={styles.confirmButton}
             onPress={handleUsePhoto}
             disabled={loading}
@@ -98,7 +107,7 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     width: SCREEN_WIDTH - 40,
-    aspectRatio: 3 / 4,
+    aspectRatio: 3/4,
     borderRadius: 20,
     overflow: 'hidden',
     backgroundColor: '#2C2C2E',
@@ -157,4 +166,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default PhotoPreviewSection;
+export default PhotoPreviewSection; 

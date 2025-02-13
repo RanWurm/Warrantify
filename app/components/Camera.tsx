@@ -8,7 +8,7 @@ import {
   Text, 
   TouchableOpacity, 
   View,
-  Animated, 
+  Animated,
   Dimensions,
   StatusBar
 } from 'react-native';
