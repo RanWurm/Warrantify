@@ -1,6 +1,8 @@
 // screens/settings.tsx
 
 import React, { useContext } from 'react';
+import { useState } from 'react';
+
 import {
   View,
   Text,
@@ -11,11 +13,15 @@ import {
   useWindowDimensions,
   Image,
   Alert,
+  Pressable,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFonts } from 'expo-font';
 import { Stack, useRouter } from 'expo-router';
-import { UserContext } from '../context/UserContext'; // Adjust the path as necessary
+import { UserContext } from '../context/UserContext'; 
+
+
 
 interface SettingOption {
   id: string;
@@ -25,6 +31,28 @@ interface SettingOption {
   route?: string; // Added route for navigation-type options
 }
 
+const isWeb = Platform.OS === 'web';
+
+
+const NavItem = ({ label, destination }: { label: string; destination: string }) => {
+	const [hovered, setHovered] = useState(false);
+	const router = useRouter();
+  
+	return (
+	  <Pressable
+		  onPress={() => router.push(destination as any)}
+		  onHoverIn={() => setHovered(true)}
+		onHoverOut={() => setHovered(false)}
+		style={[
+		  styles.navItem,
+		  hovered && { backgroundColor: 'rgb(255,255,255)' },
+		]}
+	  >
+		<Text style={styles.navItemText}>{label}</Text>
+	  </Pressable>
+	);
+  };
+
 const settingsOptions: SettingOption[] = [
   { id: '1', name: 'Account', icon: 'person-outline', type: 'navigation', route: '/account' },
   { id: '2', name: 'Notifications', icon: 'notifications-outline', type: 'toggle' },
@@ -33,6 +61,7 @@ const settingsOptions: SettingOption[] = [
   { id: '5', name: 'About', icon: 'information-circle-outline', type: 'navigation', route: '/about' },
   { id: '6', name: 'Logout', icon: 'log-out-outline', type: 'navigation' }, // Removed route since it's handled separately
 ];
+
 
 export default function Settings() {
   const [fontsLoaded] = useFonts({
@@ -52,10 +81,12 @@ export default function Settings() {
   }
 
   // Dynamic sizing based on screen width
-  const logoSize = width * 0.25; // 25% of screen width
-  const titleFontSize = width * 0.06; // 6% of screen width
-  const optionFontSize = width * 0.04; // 4% of screen width
-  const iconSize = width * 0.07; // 7% of screen width
+  const logoSize = Math.min(width * 0.3, 120);
+  const titleFontSize = Math.min(width * 0.07, 32);
+  const categorySize = Math.min(width * 0.25, 120);
+  const iconSize = categorySize * 0.36;
+  const navFontSize = Math.min(width * 0.03, 16);
+
 
   const toggleSwitch = (optionName: string) => {
     if (optionName === 'Notifications') {
@@ -90,7 +121,7 @@ export default function Settings() {
       if (option.name === 'Logout') {
         handleLogout();
       } else if (option.route) {
-        router.push(option.route);
+        router.push(option.route as any);
       }
     }
     // Handle other types if necessary
@@ -100,40 +131,142 @@ export default function Settings() {
     <>
       {/* Disable the default header */}
       <Stack.Screen options={{ headerShown: false }} />
+	  
+	  {isWeb && (
+		<View style={styles.heroSection}>
+			<Image
+			source={require('../../assets/images/warrantylogo.png')}
+			style={styles.heroLogo}
+			/>
+			<Text style={styles.heroTitle}>Manage Your Experience</Text>
+			<Text style={styles.heroSubtitle}>Control your account, privacy, and notifications</Text>
+		</View>
+		)}
+
+
+	  {isWeb && (
+			  <View style={styles.topNavbar}>
+				{[
+							{ label: 'Home', destination: '/' },
+							{ label: 'My Warranties', destination: '/myWarranties' },
+							{ label: 'Shop', destination: '/shop' },
+							{ label: 'Settings', destination: '/settings' },
+						].map((item) => (
+							<NavItem key={item.label} label={item.label} destination={item.destination} />
+					))}
+			  </View>
+			)}
 
       <View style={styles.container}>
-        {/* Logo */}
-        <Image
-          source={require('../../assets/images/warrantylogo.png')}
-          style={[styles.logo, { width: logoSize, height: logoSize }]}
-        />
 
-        {/* Title */}
-        <Text style={[styles.title, { fontSize: titleFontSize }]}>Settings</Text>
+	  <View style={styles.settingsHeader}>
+		{isWeb ? (
+			<>
+			<Text style={[styles.title, { fontSize: titleFontSize }]}>Settings</Text>
+			<Image
+				source={require('../../assets/images/settings-icon.png')}
+				style={[
+				styles.settingsIcon,
+				{
+					width: logoSize * 0.4,
+					height: logoSize * 0.4,
+				},
+				]}
+			/>
+			</>
+		) : (
+			<>
+			<Image
+				source={require('../../assets/images/settings-icon.png')}
+				style={[
+				styles.settingsIcon,
+				{
+					width: logoSize,
+					height: logoSize,
+				},
+				]}
+			/>
+			<Text style={[styles.title, { fontSize: titleFontSize }]}>Settings</Text>
+			</>
+		)}
+	</View>
 
         {/* Settings Options */}
-        <ScrollView contentContainerStyle={styles.optionsContainer} showsVerticalScrollIndicator={false}>
-          {settingsOptions.map((option) => (
-            <TouchableOpacity
-              key={option.id}
-              style={styles.optionRow}
-              onPress={() => handleOptionPress(option)}
-            >
-              <View style={styles.optionLeft}>
-                <Ionicons name={option.icon} size={iconSize} color="#000" />
-                <Text style={[styles.optionText, { fontSize: optionFontSize }]}>{option.name}</Text>
-              </View>
-              {option.type === 'toggle' ? (
-                <Switch
-                  value={option.name === 'Notifications' ? isNotificationsEnabled : isDarkModeEnabled}
-                  onValueChange={() => toggleSwitch(option.name)}
-                />
-              ) : (
-                <Ionicons name="chevron-forward" size={iconSize * 0.8} color="#666" />
-              )}
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+		<ScrollView contentContainerStyle={styles.optionsContainer} showsVerticalScrollIndicator={false}>
+			{isWeb ? (
+				<View style={styles.columnsContainer}>
+				{/* Left column */}
+				<View style={styles.column}>
+					{settingsOptions.slice(0, 3).map((option) => (
+					<TouchableOpacity
+						key={option.id}
+						style={styles.optionRow}
+						onPress={() => handleOptionPress(option)}
+					>
+						<View style={styles.optionLeft}>
+						<Ionicons name={option.icon as any} size={iconSize} color="#000" />
+						<Text style={[styles.optionText, { fontSize: navFontSize }]}>{option.name}</Text>
+						</View>
+						{option.type === 'toggle' ? (
+						<Switch
+							value={option.name === 'Notifications' ? isNotificationsEnabled : isDarkModeEnabled}
+							onValueChange={() => toggleSwitch(option.name)}
+						/>
+						) : (
+						<Ionicons name="chevron-forward" size={iconSize * 0.8} color="#666" />
+						)}
+					</TouchableOpacity>
+					))}
+				</View>
+
+				{/* Right column */}
+				<View style={styles.column}>
+					{settingsOptions.slice(3).map((option) => (
+					<TouchableOpacity
+						key={option.id}
+						style={styles.optionRow}
+						onPress={() => handleOptionPress(option)}
+					>
+						<View style={styles.optionLeft}>
+						<Ionicons name={option.icon as any} size={iconSize} color="#000" />
+						<Text style={[styles.optionText, { fontSize: navFontSize }]}>{option.name}</Text>
+						</View>
+						{option.type === 'toggle' ? (
+						<Switch
+							value={option.name === 'Notifications' ? isNotificationsEnabled : isDarkModeEnabled}
+							onValueChange={() => toggleSwitch(option.name)}
+						/>
+						) : (
+						<Ionicons name="chevron-forward" size={iconSize * 0.8} color="#666" />
+						)}
+					</TouchableOpacity>
+					))}
+				</View>
+				</View>
+			) : (
+				// Mobile view: classic stacked
+				settingsOptions.map((option) => (
+				<TouchableOpacity
+					key={option.id}
+					style={styles.optionRow}
+					onPress={() => handleOptionPress(option)}
+				>
+					<View style={styles.optionLeft}>
+					<Ionicons name={option.icon as any} size={iconSize} color="#000" />
+					<Text style={[styles.optionText, { fontSize: navFontSize }]}>{option.name}</Text>
+					</View>
+					{option.type === 'toggle' ? (
+					<Switch
+						value={option.name === 'Notifications' ? isNotificationsEnabled : isDarkModeEnabled}
+						onValueChange={() => toggleSwitch(option.name)}
+					/>
+					) : (
+					<Ionicons name="chevron-forward" size={iconSize * 0.8} color="#666" />
+					)}
+				</TouchableOpacity>
+				))
+			)}
+			</ScrollView>
       </View>
     </>
   );
@@ -143,22 +276,24 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#E9E0D4',
-    alignItems: 'center',
+	alignItems: isWeb ? 'center' : 'center',
     padding: 16,
-    paddingBottom: 100, // To accommodate BottomNavBar and AddWarrantyButton
+    paddingBottom: 100, 
+	width: '100%',
   },
   logo: {
     resizeMode: 'contain',
     marginBottom: 10,
-    marginTop: 40,
+    marginTop: isWeb ? 0: 100,
   },
   title: {
     fontWeight: 'bold',
     fontFamily: 'InriaSerif-Bold',
     marginBottom: 20,
+	marginTop: isWeb ? 0 : 10,
   },
   optionsContainer: {
-    width: '100%',
+    width: isWeb ? '100%' : 300,
     paddingTop: 10,
   },
   optionRow: {
@@ -184,4 +319,85 @@ const styles = StyleSheet.create({
     fontFamily: 'InriaSerif-Regular',
     color: '#000',
   },
+  topNavbar: {
+	width: '100%',
+	backgroundColor: '#E9E0D4',
+	flexDirection: 'row',
+	justifyContent: 'center',
+	paddingVertical: 20,
+	borderBottomWidth: 1,
+	borderBottomColor: '#ccc',
+	position: 'fixed',
+	top: 0,
+	zIndex: 999,
+},
+navItem: {
+	marginHorizontal: 10,
+	paddingVertical: 10,
+	paddingHorizontal: 20, 
+	minWidth: 120,          
+	alignItems: 'center',   
+	justifyContent: 'center', 
+	borderRadius: 8,
+	transitionDuration: '200ms',
+},
+navItemText: {
+	fontSize: 20,
+	fontWeight: 'bold',
+	color: '#333',
+	fontFamily: 'InriaSerif-Bold',
+},	
+columnsContainer: {
+	flexDirection: 'row',
+	justifyContent: 'center',
+	width: 1500,
+  },
+  column: {
+	flex: 1,
+	paddingHorizontal: 10,
+  }, 
+  heroSection: {
+	width: '100%',
+	backgroundColor: '#E9E0D4',
+	alignItems: 'center',
+	paddingHorizontal: 20,
+  },
+  heroLogo: {
+	width: 120,
+	height: 120,
+	resizeMode: 'contain',
+	marginBottom: 20,
+	marginTop:90,
+  },
+  heroTitle: {
+	fontSize: 28,
+	fontWeight: 'bold',
+	color: '#333',
+	fontFamily: 'InriaSerif-Bold',
+	textAlign: 'center',
+  },
+  
+  heroSubtitle: {
+	fontSize: 16,
+	color: '#555',
+	fontFamily: 'InriaSerif-Regular',
+	textAlign: 'center',
+	maxWidth: 400,
+  },
+  settingsHeader: {
+	flexDirection: isWeb ? 'row' : 'column', // row on web, column on mobile
+	alignItems: 'center',
+	justifyContent: isWeb ? 'flex-start' : 'center',
+	width: '100%',
+	marginBottom: 0,
+	marginLeft: isWeb ? 350 : 0,
+	paddingHorizontal: isWeb ? 40 : 0, // extra spacing on web
+  },
+
+  settingsIcon: {
+	resizeMode: 'contain',
+	marginLeft: isWeb ? 10 : 0, // gap between title and icon only on web
+	marginTop: isWeb ? 0 : 60,  // little space on mobile between title and icon
+  },
+  
 });

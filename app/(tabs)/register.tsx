@@ -4,8 +4,6 @@ import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { useFonts } from 'expo-font';
 import { Stack, useRouter } from 'expo-router';
 import axios from 'axios';
-import { LinearGradient } from 'expo-linear-gradient';
-
 
 export default function RegisterScreen() {
   const [fontsLoaded] = useFonts({
