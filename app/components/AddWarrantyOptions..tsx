@@ -62,7 +62,7 @@ const AddWarrantyOptions: React.FC<AddWarrantyOptionsProps> = ({ buttonStyle, bu
     setFormVisible(true);
   };
   
-  const handlePhotoUsed = (responseData ) => {
+  const handlePhotoUsed = (responseData) => {
     console.log("AddWarrantyOptions: handlePhotoUsed called with responseData:", responseData);
     setScannedData(responseData);
     setCameraVisible(false);
@@ -212,7 +212,7 @@ const AddWarrantyOptions: React.FC<AddWarrantyOptionsProps> = ({ buttonStyle, bu
         }}
       >
         <View style={{ flex: 1 }}>
-          <Camera onClose={(data ) => {
+          <Camera onClose={(data) => {
             console.log("AddWarrantyOptions: Camera onClose callback received with data:", data);
             handlePhotoUsed(data);
           }} />
