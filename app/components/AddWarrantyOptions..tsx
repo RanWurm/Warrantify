@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import AddWarrantyForm from './AddWarrantyForm';
 
+import { Platform } from 'react-native';
 import Camera from './Camera'; // Import the Camera component
 
 interface AddWarrantyOptionsProps {
@@ -19,6 +20,8 @@ interface AddWarrantyOptionsProps {
   buttonTextStyle?: any;
   onWarrantyAdded?: () => void;  // Add this new prop
 }
+
+const isWeb = Platform.OS === 'web';
 
 const AddWarrantyOptions: React.FC<AddWarrantyOptionsProps> = ({ buttonStyle, buttonTextStyle,onWarrantyAdded  }) => {
   const [optionsVisible, setOptionsVisible] = useState(false);
@@ -77,16 +80,13 @@ const AddWarrantyOptions: React.FC<AddWarrantyOptionsProps> = ({ buttonStyle, bu
 
   const dynamicStyles = StyleSheet.create({
     addButton: {
-      position: 'absolute',
-      bottom: height * 0.1,
       alignSelf: 'center',
       backgroundColor: '#7E8FA6',
       borderRadius: 24,
       alignItems: 'center',
       justifyContent: 'center',
       paddingVertical: height * 0.02,
-      paddingHorizontal: width * 0.1,
-      width: width * 0.8,
+      width: 300,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.3,
@@ -96,8 +96,8 @@ const AddWarrantyOptions: React.FC<AddWarrantyOptionsProps> = ({ buttonStyle, bu
     },
     addButtonText: {
       color: '#fff',
-      fontSize: width * 0.05,
-      fontWeight: 'bold',
+      fontSize: 20,
+	  fontFamily: 'InriaSerif-Bold',
       ...buttonTextStyle, // Apply custom text styles
     },
     modalOverlay: {
@@ -106,12 +106,12 @@ const AddWarrantyOptions: React.FC<AddWarrantyOptionsProps> = ({ buttonStyle, bu
     },
     modalContainer: {
       position: 'absolute',
-      bottom: 0,
-      width: '100%',
+      bottom: 250,
+      width:  isWeb ? '30%':'100%',
+	  right: isWeb ? '35%' : 0,
       padding: 20,
       backgroundColor: '#fff',
-      borderTopLeftRadius: 20,
-      borderTopRightRadius: 20,
+      borderRadius: 20,
     },
     modalContent: {
       alignItems: 'center',

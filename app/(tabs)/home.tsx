@@ -1,173 +1,147 @@
-import { Stack } from 'expo-router';
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, useWindowDimensions, Platform } from 'react-native';
+import { Stack, useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, useWindowDimensions, Platform, ScrollView, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFonts } from 'expo-font';
 import BottomNavBar from '../components/BottomNavBar';
-import { ScrollView } from 'react-native'; 
-import { useState } from 'react'; 
-import { Pressable } from 'react-native'; 
+import AddWarrantyOptions from '../components/AddWarrantyOptions.';
 
-import { useRouter } from 'expo-router';
+const mobileGridData = [
+  { id: '1', name: 'Computer', icon: 'desktop-outline' },
+  { id: '2', name: 'Laptop', icon: 'laptop-outline' },
+  { id: '3', name: 'Smartphone', icon: 'phone-portrait-outline' },
+  { id: '4', name: 'Television', icon: 'tv-outline' },
+  { id: '5', name: 'Printer', icon: 'print-outline' },
+  { id: '6', name: 'Charger', icon: 'battery-charging-outline' },
+  { id: '7', name: 'Refrigerator', icon: 'snow-outline' },
+  { id: '8', name: 'Microwave', icon: 'restaurant-outline' },
+  { id: '9', name: 'Washer', icon: 'water-outline' },
+];
+
+const NavItem = ({ label }: { label: string }) => {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <Pressable
+      onHoverIn={() => setHovered(true)}
+      onHoverOut={() => setHovered(false)}
+      style={[
+        styles.navItem,
+        hovered && { backgroundColor: 'rgb(255,255,255)' },
+      ]}
+    >
+      <Text style={styles.navItemText}>{label}</Text>
+    </Pressable>
+  );
+};
 
 export default function home() {
   const [fontsLoaded] = useFonts({
     'InriaSerif-Regular': require('../../assets/fonts/InriaSerif-Regular.ttf'),
     'InriaSerif-Bold': require('../../assets/fonts/InriaSerif-Bold.ttf'),
   });
-
-  const { width, height } = useWindowDimensions();
+  const { width } = useWindowDimensions();
   const isWeb = Platform.OS === 'web';
-	const router = useRouter();
+  const router = useRouter();
+  const [showAddWarranty, setShowAddWarranty] = useState(false);
 
   if (!fontsLoaded) {
-    return null; 
+    return null;
   }
 
-  // Dynamic sizing but capped for web
   const logoSize = Math.min(width * 0.3, 120);
   const titleFontSize = Math.min(width * 0.07, 32);
   const subtitleFontSize = Math.min(width * 0.045, 22);
   const categorySize = Math.min(width * 0.25, 120);
   const iconSize = categorySize * 0.36;
-  const navIconSize = Math.min(width * 0.06, 28);
   const navFontSize = Math.min(width * 0.03, 16);
-  const buttonWidth = Math.min(width * 0.8, 200); // Add Warranty button width
-	
-  const buttonHeight = isWeb ? 50 : 60; // Smaller button height for web
-  const fontSize = isWeb ? 18 : 20;      // Smaller font for web
-  const buttonPadding = isWeb ? 10 : 14; // Less padding for web
+  const buttonWidth = Math.min(width * 0.8, 200);
+  const buttonHeight = isWeb ? 50 : 60;
+  const buttonPadding = isWeb ? 10 : 14;
 
-
-	const [hovered, setHovered] = useState(false);
-
-
-	const mobileGridData = [
-		{ id: '1', name: 'Computer', icon: 'desktop-outline' },
-		{ id: '2', name: 'Laptop', icon: 'laptop-outline' },
-		{ id: '3', name: 'Smartphone', icon: 'phone-portrait-outline' },
-		{ id: '4', name: 'Television', icon: 'tv-outline' },
-		{ id: '5', name: 'Printer', icon: 'print-outline' },
-		{ id: '6', name: 'Charger', icon: 'battery-charging-outline' },
-		{ id: '7', name: 'Refrigerator', icon: 'snow-outline' },
-		{ id: '8', name: 'Microwave', icon: 'restaurant-outline' },
-		{ id: '9', name: 'Washer', icon: 'water-outline' },
-	];
-	
-	const webGridData = mobileGridData.filter(item => item.name !== 'Washer'); 
-	
+  const webGridData = mobileGridData.filter(item => item.name !== 'Washer');
 
   return (
-		<>
-			<Stack.Screen options={{ headerShown: false }} />
+    <>
+      <Stack.Screen options={{ headerShown: false }} />
 
-			{isWeb && (
-  		<View style={styles.topNavbar}>
-			{['Home', 'My Warranties', 'Shop', 'Settings'].map((item) => {
-				const [hovered, setHovered] = useState(false);
+      {isWeb && (
+        <View style={styles.topNavbar}>
+          {['Home', 'My Warranties', 'Shop', 'Settings'].map((item) => (
+            <NavItem key={item} label={item} />
+          ))}
+        </View>
+      )}
 
-      return (
-        <Pressable
-					onHoverIn={() => setHovered(true)}
-					onHoverOut={() => setHovered(false)}
-					style={[
-						styles.navItem, 
-						hovered && { backgroundColor: 'rgb(255, 255, 255)' }
-					]}
-				>
-					<Text style={styles.navItemText}>{item}</Text>
-				</Pressable>
-			);
-			
-		})}
-  </View>
-)}
-			
-			{/* Scrollable content */}
-			<ScrollView contentContainerStyle={{ flexGrow: 1, alignItems: 'center', paddingTop: isWeb ? 80 : 20, paddingBottom: isWeb ? 100 : 20, }}
-			style={{ width: '100%' }}>
-				<View style={styles.container}>
-					
-					{/* Logo */}
-					<Image
-						source={require('../../assets/images/warrantylogo.png')}
-						style={[styles.logo, { width: logoSize, height: logoSize }]}
-					/>
-	
-					{/* Title */}
-					<Text style={[styles.title, { fontSize: titleFontSize }]}>
-						Warrantify
-					</Text>
-	
-					{/* Subtitle */}
-					<Text style={[styles.subtitle, { fontSize: subtitleFontSize }]}>
-						Warranty Management App
-					</Text>
-	
-					{/* Grid of categories */}
-					<FlatList
-						data={isWeb ? webGridData : mobileGridData}
-						keyExtractor={(item) => item.id}
-						numColumns={isWeb ? 4 : 3}
-						renderItem={({ item }) => (
-							<View style={[styles.categoryContainer, { width: categorySize, height: categorySize }]}>
-								<View style={styles.iconContainer}>
-									<Ionicons name={item.icon as any} size={iconSize} color="#000" />
-								</View>
-								<View style={styles.labelContainer}>
-									<Text style={[styles.labelText, { fontSize: navFontSize }]}>{item.name}</Text>
-								</View>
-							</View>
-						)}
-						scrollEnabled={false}
-						contentContainerStyle={[styles.grid, { maxWidth: isWeb ? 1200 : '100%' }]} 
-					/>
+      <ScrollView
+        contentContainerStyle={{
+          flexGrow: 1,
+          alignItems: 'center',
+          paddingTop: isWeb ? 80 : 20,
+          paddingBottom: isWeb ? 100 : 20,
+          backgroundColor: '#E9E0D4',
+        }}
+        style={{ width: '100%' }}
+      >
+        <View style={styles.container}>
+          <Image
+            source={require('../../assets/images/warrantylogo.png')}
+            style={[styles.logo, { width: logoSize, height: logoSize }]}
+          />
 
-	
-					{/* Add Warranty Button */}
-					<View style={{ marginTop: 20, marginBottom: isWeb ? 60 : 20 }}>
-						<Pressable
-						  onPress={() => router.push('../components/AddWarrantyOptions.')} // or your correct route
-							onHoverIn={() => setHovered(true)}
-							onHoverOut={() => setHovered(false)}
-							style={[
-								styles.button,
-								{ 
-									height: buttonHeight, 
-									paddingVertical: buttonPadding, 
-									width: buttonWidth, 
-									transform: hovered && isWeb ? [{ scale: 1.05 }] : [{ scale: 1 }],
-									transitionDuration: '200ms',
-								}
-							]}
-						>
-							<Text style={[styles.buttonText, { fontSize }]}>
-								Add Warranty
-							</Text>
-						</Pressable>
-					</View>
-	
-				</View>
-			</ScrollView>
-			
+          <Text style={[styles.title, { fontSize: titleFontSize }]}>
+            Warrantify
+          </Text>
 
-			{isWeb && (
-				<View style={{ width: '100%', backgroundColor: '#E9E0D4', alignItems: 'center', padding: 20, borderTopWidth: 1, borderTopColor: '#ccc' }}>
-					<Text style={{ color: '#777', fontSize: 14 }}>© 2025 Warrantify. All rights reserved.</Text>
-				</View>
-			)}
+          <Text style={[styles.subtitle, { fontSize: subtitleFontSize }]}>
+            Warranty Management App
+          </Text>
 
-	
-			{/* Bottom Navigation Bar */}
-			{!isWeb && <BottomNavBar />}
-		</>
-	);	
+          <FlatList
+            data={isWeb ? webGridData : mobileGridData}
+            keyExtractor={(item) => item.id}
+            numColumns={isWeb ? 4 : 3}
+            renderItem={({ item }) => (
+              <View style={[styles.categoryContainer, { width: categorySize, height: categorySize }]}>
+                <View style={styles.iconContainer}>
+                  <Ionicons name={item.icon as any} size={iconSize} color="#000" />
+                </View>
+                <View style={styles.labelContainer}>
+                  <Text style={[styles.labelText, { fontSize: navFontSize }]}>
+                    {item.name}
+                  </Text>
+                </View>
+              </View>
+            )}
+            scrollEnabled={false}
+            contentContainerStyle={[styles.grid, { maxWidth: isWeb ? 1200 : '100%' }]}
+          />
+
+          {/* Add Warranty Button */}
+						<AddWarrantyOptions />
+
+          {/* Render AddWarrantyOptions only if needed */}
+          {showAddWarranty && <AddWarrantyOptions />}
+        </View>
+      </ScrollView>
+
+      {isWeb && (
+        <View style={{ width: '100%', backgroundColor: '#E9E0D4', alignItems: 'center', padding: 20, borderTopWidth: 1, borderTopColor: '#ccc' }}>
+          <Text style={{ color: '#777', fontSize: 14 }}>
+            © 2025 Warrantify. All rights reserved.
+          </Text>
+        </View>
+      )}
+
+      {!isWeb && <BottomNavBar />}
+    </>
+  );
 }
 
 const styles = StyleSheet.create({
   container: {
     // flex: 1,
-    //backgroundColor: '#E9E0D4',
+    backgroundColor: '#E9E0D4',
     alignItems: 'center',
     padding: 16,
 		width: '100%',
