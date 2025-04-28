@@ -57,9 +57,6 @@ export default function home() {
   const categorySize = Math.min(width * 0.25, 120);
   const iconSize = categorySize * 0.36;
   const navFontSize = Math.min(width * 0.03, 16);
-  const buttonWidth = Math.min(width * 0.8, 200);
-  const buttonHeight = isWeb ? 50 : 60;
-  const buttonPadding = isWeb ? 10 : 14;
 
   const webGridData = mobileGridData.filter(item => item.name !== 'Washer');
 

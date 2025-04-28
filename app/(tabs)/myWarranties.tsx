@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Stack, useRouter } from 'expo-router';
 import {
   View,
   Text,
@@ -9,6 +10,8 @@ import {
   ActivityIndicator,
   Keyboard,
   TouchableOpacity,
+  Pressable,
+  Platform,
 } from 'react-native';
 
 import BottomNavBar from '../components/BottomNavBar';
@@ -28,6 +31,25 @@ interface WarrantyItemProps {
   progress: number;
   notes:string;
 }
+
+const NavItem = ({ label, destination }: { label: string; destination: string }) => {
+  const [hovered, setHovered] = useState(false);
+  const router = useRouter();
+
+  return (
+	<Pressable
+		onPress={() => router.push(destination as any)}
+		onHoverIn={() => setHovered(true)}
+	  onHoverOut={() => setHovered(false)}
+	  style={[
+		styles.navItem,
+		hovered && { backgroundColor: 'rgb(255,255,255)' },
+	  ]}
+	>
+	  <Text style={styles.navItemText}>{label}</Text>
+	</Pressable>
+  );
+};
 
 const MyWarranties = () => {
   const [warranties, setWarranties] = useState<WarrantyItemProps[]>([]);
@@ -159,6 +181,9 @@ const MyWarranties = () => {
     // Logic for adding a warranty can go here
   };
 
+	const isWeb = Platform.OS === 'web';
+  
+
   if (loading) {
     return (
       <View style={styles.loaderContainer}>
@@ -177,6 +202,19 @@ const MyWarranties = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+	{isWeb && (
+	<View style={styles.topNavbar}>
+	{[
+				{ label: 'Home', destination: '/' },
+				{ label: 'My Warranties', destination: '/myWarranties' },
+				{ label: 'Shop', destination: '/shop' },
+				{ label: 'Settings', destination: '/settings' },
+			].map((item) => (
+				<NavItem key={item.label} label={item.label} destination={item.destination} />
+		))}
+	</View>
+	)}
+
       <View style={styles.header}>
         <Text style={styles.title}>My Warranties</Text>
         
@@ -306,6 +344,34 @@ const styles = StyleSheet.create({
     color: 'red',
     fontSize: 16,
   },
+  topNavbar: {
+	width: '100%',
+	backgroundColor: '#E9E0D4',
+	flexDirection: 'row',
+	justifyContent: 'center',
+	paddingVertical: 20,
+	borderBottomWidth: 1,
+	borderBottomColor: '#ccc',
+	position: 'fixed',
+	top: 0,
+	zIndex: 999,
+},
+  navItem: {
+	marginHorizontal: 10,
+	paddingVertical: 10,
+	paddingHorizontal: 20, 
+	minWidth: 120,          
+	alignItems: 'center',   
+	justifyContent: 'center', 
+	borderRadius: 8,
+	transitionDuration: '200ms',
+},
+navItemText: {
+	fontSize: 20,
+	fontWeight: 'bold',
+	color: '#333',
+	fontFamily: 'InriaSerif-Bold',
+},	
 });
 
 export default MyWarranties;
