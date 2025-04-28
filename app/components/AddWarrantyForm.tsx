@@ -13,10 +13,14 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
+
 interface AddWarrantyFormProps {
   onClose: () => void;
   scannedData: any; // scannedData passed in (or null if not provided)
 }
+
+const isWeb = Platform.OS === 'web';
 
 const AddWarrantyForm: React.FC<AddWarrantyFormProps> = ({ onClose, scannedData }) => {
   const [formData, setFormData] = useState({
@@ -131,12 +135,13 @@ const AddWarrantyForm: React.FC<AddWarrantyFormProps> = ({ onClose, scannedData 
   return (
     <View style={styles.formOverlay}>
       <View style={styles.formContainer}>
-        <View style={styles.header}>
+        <View style={styles.header} >
           <Ionicons
             name="close"
             size={24}
             color="#555"
             onPress={() => { console.log("AddWarrantyForm: Close icon pressed"); onClose(); }}
+			style={{ position: 'absolute', left: 10 }}
           />
           <Text style={styles.headerTitle}>Add a Warranty</Text>
         </View>
@@ -153,12 +158,14 @@ const AddWarrantyForm: React.FC<AddWarrantyFormProps> = ({ onClose, scannedData 
             <TextInput
               style={styles.input}
               placeholder="Product Name"
+			   placeholderTextColor="black"
               value={formData.productName}
               onChangeText={(text) => setFormData({ ...formData, productName: text })}
             />
             <TextInput
               style={styles.input}
               placeholder="Service Center"
+			   placeholderTextColor="black"
               value={formData.serviceCenter}
               onChangeText={(text) => setFormData({ ...formData, serviceCenter: text })}
             />
@@ -168,12 +175,14 @@ const AddWarrantyForm: React.FC<AddWarrantyFormProps> = ({ onClose, scannedData 
             <TextInput
               style={styles.input}
               placeholder="Manufacturer"
+			  placeholderTextColor="black"
               value={formData.manufacturer}
               onChangeText={(text) => setFormData({ ...formData, manufacturer: text })}
             />
             <TextInput
               style={styles.input}
               placeholder="Store"
+			  placeholderTextColor="black"
               value={formData.store}
               onChangeText={(text) => setFormData({ ...formData, store: text })}
             />
@@ -183,12 +192,14 @@ const AddWarrantyForm: React.FC<AddWarrantyFormProps> = ({ onClose, scannedData 
             <TextInput
               style={styles.input}
               placeholder="Model"
+			  placeholderTextColor="black"
               value={formData.model}
               onChangeText={(text) => setFormData({ ...formData, model: text })}
             />
             <TextInput
               style={styles.input}
               placeholder="Price"
+			  placeholderTextColor="black"
               value={formData.price}
               onChangeText={(text) => setFormData({ ...formData, price: text })}
               keyboardType="numeric"
@@ -199,6 +210,7 @@ const AddWarrantyForm: React.FC<AddWarrantyFormProps> = ({ onClose, scannedData 
             <TextInput
               style={styles.dateInput}
               placeholder="Purchase Date (YYYY-MM-DD)"
+			  placeholderTextColor="black"
               value={formData.purchaseDate}
               onChangeText={(text) => setFormData({ ...formData, purchaseDate: text })}
               keyboardType="numeric"
@@ -206,6 +218,7 @@ const AddWarrantyForm: React.FC<AddWarrantyFormProps> = ({ onClose, scannedData 
             <TextInput
               style={styles.dateInput}
               placeholder="Expiration Date (YYYY-MM-DD)"
+			  placeholderTextColor="black"
               value={formData.expirationDate}
               onChangeText={(text) => setFormData({ ...formData, expirationDate: text })}
               keyboardType="numeric"
@@ -232,6 +245,7 @@ const AddWarrantyForm: React.FC<AddWarrantyFormProps> = ({ onClose, scannedData 
           <TextInput
             style={styles.notesInput}
             placeholder="Add notes"
+			placeholderTextColor="black"
             value={formData.notes}
             onChangeText={(text) => setFormData({ ...formData, notes: text })}
             multiline
@@ -239,7 +253,7 @@ const AddWarrantyForm: React.FC<AddWarrantyFormProps> = ({ onClose, scannedData 
         </ScrollView>
 
         <TouchableOpacity style={styles.addButton} onPress={handleAddWarranty}>
-          <Text style={styles.addButtonText}>Add dddWarranty</Text>
+          <Text style={styles.addButtonText}>Add a Warranty</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -253,31 +267,37 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   formContainer: {
-    backgroundColor: '#D2BBA1',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    backgroundColor: isWeb ? '#e0c3a9' : '#DCC0AB',
+    borderRadius: 20,
     padding: 20,
     maxHeight: '90%',
+	position: 'absolute',
+	width:  isWeb ? '30%':'100%',
+	right: isWeb ? '35%' : 0,
+	bottom: isWeb ? 150 : 0,
   },
   header: {
-    flexDirection: 'row',
+    // flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 10,
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginLeft: 10,
-    color: '#555',
+    color: 'black',
+	fontFamily: 'InriaSerif-Bold',
+	alignItems: 'center',
   },
   imageContainer: {
     alignSelf: 'center',
     marginVertical: 10,
-    width: 100,
-    height: 100,
+	width:  isWeb ? '100%':'100%',
+    height: 120,
     borderRadius: 15,
     justifyContent: 'center',
     alignItems: 'center',
+	backgroundColor:'white',
+
   },
   image: {
     width: '100%',
@@ -301,8 +321,8 @@ const styles = StyleSheet.create({
     padding: 12,
     marginHorizontal: 5,
     fontSize: 14,
-    color: '#333',
     fontWeight: 'bold',
+	fontFamily: 'InriaSerif-Bold',
   },
   dateInput: {
     flex: 1,
@@ -343,12 +363,13 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     alignItems: 'center',
     padding: 12,
-    marginTop: 20,
+    marginTop: 5,
   },
   addButtonText: {
     color: '#FFF',
     fontSize: 16,
     fontWeight: 'bold',
+	fontFamily: 'InriaSerif-Bold',
   },
 });
 
