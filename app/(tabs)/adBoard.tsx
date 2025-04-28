@@ -5,8 +5,8 @@ import axios from 'axios';
 import BottomNavBar from '../components/BottomNavBar';
 
 // Replace with your backend URLs
-const pythonBackendURL = "http://10.0.0.7:5000";
-const serverBackendURL = "http://10.0.0.7:3000";
+const pythonBackendURL = "http://172.20.10.5:5000";
+const serverBackendURL = "http://172.20.10.5:3000";
 
 // Define types
 interface RealAd {

@@ -47,7 +47,7 @@ const MyWarranties = () => {
     const fetchWarranties = async () => {
       try {
         const token = await AsyncStorage.getItem('token');
-        const response = await axios.post('http://10.0.0.7:3000/user-warranties', { token });
+        const response = await axios.post('http://172.20.10.5:3000/user-warranties', { token });
         
         const transformedWarranties = response.data.data.map((warranty: any) => ({
           productId: warranty._id, // include the id here
@@ -92,7 +92,7 @@ const MyWarranties = () => {
     const fetchUserData = async () => {
       try {
         const token = await AsyncStorage.getItem('token');
-        const response = await axios.post('http://10.0.0.7:3000/userdata', { token });
+        const response = await axios.post('http://172.20.10.5:3000/userdata', { token });
         if (response.data.data.image) {
           setUserImage(response.data.data.image);
         }
@@ -203,7 +203,7 @@ const MyWarranties = () => {
               text: 'All Warranties',
               onPress: () => console.log('Filter button pressed'),
             }}
-            autocompleteEndpoint="http://10.0.0.7:5000/autocomplete"
+            autocompleteEndpoint="http://172.20.10.5:5000/autocomplete"
             additionalStyles={{
               container: styles.searchBarContainer,
               filterButton: styles.filterButton,

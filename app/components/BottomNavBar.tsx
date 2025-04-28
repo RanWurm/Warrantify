@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#DDD',
     position: 'absolute',
-    bottom: 0,
+    bottom: 10,
   },
   navButton: {
     alignItems: 'center',

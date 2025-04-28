@@ -37,7 +37,7 @@ export default function LoginScreen() {
       }
       
       try{
-        axios.post("http://10.0.0.7:3000/login",userData)
+        axios.post("http://172.20.10.5:3000/login",userData)
       .then(res=>{
         console.log("hey data is",res.data)
         AsyncStorage.setItem("token",res.data.data)
