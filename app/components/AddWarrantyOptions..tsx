@@ -18,12 +18,14 @@ import Camera from './Camera'; // Import the Camera component
 interface AddWarrantyOptionsProps {
   buttonStyle?: any;
   buttonTextStyle?: any;
-  onWarrantyAdded?: () => void;  // Add this new prop
+  onWarrantyAdded?: () => void;  
+  style?: any; 
+
 }
 
 const isWeb = Platform.OS === 'web';
 
-const AddWarrantyOptions: React.FC<AddWarrantyOptionsProps> = ({ buttonStyle, buttonTextStyle,onWarrantyAdded  }) => {
+const AddWarrantyOptions: React.FC<AddWarrantyOptionsProps> = ({ buttonStyle, buttonTextStyle, onWarrantyAdded, style }) => {
   const [optionsVisible, setOptionsVisible] = useState(false);
   const [formVisible, setFormVisible] = useState(false);
   const [scannedData, setScannedData] = useState<any>(null);
@@ -60,7 +62,7 @@ const AddWarrantyOptions: React.FC<AddWarrantyOptionsProps> = ({ buttonStyle, bu
     setFormVisible(true);
   };
   
-  const handlePhotoUsed = (responseData) => {
+  const handlePhotoUsed = (responseData ) => {
     console.log("AddWarrantyOptions: handlePhotoUsed called with responseData:", responseData);
     setScannedData(responseData);
     setCameraVisible(false);
@@ -146,7 +148,7 @@ const AddWarrantyOptions: React.FC<AddWarrantyOptionsProps> = ({ buttonStyle, bu
 
   return (
     <>
-      <TouchableOpacity style={dynamicStyles.addButton} onPress={openOptions}>
+      <TouchableOpacity style={[dynamicStyles.addButton, style]} onPress={openOptions}>
         <Text style={dynamicStyles.addButtonText}>Add Warranty</Text>
       </TouchableOpacity>
 
@@ -210,7 +212,7 @@ const AddWarrantyOptions: React.FC<AddWarrantyOptionsProps> = ({ buttonStyle, bu
         }}
       >
         <View style={{ flex: 1 }}>
-          <Camera onClose={(data) => {
+          <Camera onClose={(data ) => {
             console.log("AddWarrantyOptions: Camera onClose callback received with data:", data);
             handlePhotoUsed(data);
           }} />

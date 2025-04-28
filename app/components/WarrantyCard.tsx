@@ -9,10 +9,13 @@ import {
   Modal,
   TextInput,
   Button,
+  Pressable,
+  Platform,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Progress from 'react-native-progress';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
 interface WarrantyCardProps {
   productId: string;
   title: string;
@@ -23,6 +26,9 @@ interface WarrantyCardProps {
   progress: number;
   notes: string;
 }
+
+const isWeb = Platform.OS === 'web';
+
 const WarrantyCard: React.FC<WarrantyCardProps> = ({
   productId,
   title,
@@ -39,6 +45,7 @@ const WarrantyCard: React.FC<WarrantyCardProps> = ({
   const [city, setCity] = useState('');
   const [description, setDescription] = useState('');
   const [adData, setAdData]= useState([]);
+  
   // Determine progress color based on the progress value.
   let progressColor = '#7E8FA6';
   if (progress >= 75) {
@@ -96,7 +103,7 @@ const WarrantyCard: React.FC<WarrantyCardProps> = ({
       <View style={[styles.cardContainer, expanded && styles.cardExpanded]}>
         <View style={styles.warrantyItem}>
           <MaterialCommunityIcons
-            name={iconName}
+            name={iconName as any}
             size={32}
             color="#000"
             style={styles.icon}
@@ -116,14 +123,14 @@ const WarrantyCard: React.FC<WarrantyCardProps> = ({
               <Text style={styles.dateText}>{date}</Text>
             </View>
             <Progress.Bar
-              progress={progress / 100}
-              width={Dimensions.get('window').width * 0.4}
-              color={progressColor}
-              unfilledColor="#E8E8E8"
-              borderWidth={0}
-              height={8}
-              style={styles.progressBar}
-            />
+				progress={progress / 100}
+				width={isWeb ? 600 : Dimensions.get('window').width * 0.4}
+				color={progressColor}
+				unfilledColor="#E8E8E8"
+				borderWidth={0}
+				height={8}
+				style={styles.progressBar}
+				/>
             <View style={styles.timeRow}>
               <MaterialCommunityIcons
                 name="clock-fast"
@@ -257,6 +264,7 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     borderRadius: 5,
+	
   },
   timeAgoText: {
     fontSize: 12,

@@ -32,6 +32,8 @@ interface WarrantyItemProps {
   notes:string;
 }
 
+const isWeb = Platform.OS === 'web';
+
 const NavItem = ({ label, destination }: { label: string; destination: string }) => {
   const [hovered, setHovered] = useState(false);
   const router = useRouter();
@@ -179,10 +181,7 @@ const MyWarranties = () => {
   const handleAddWarranty = () => {
     console.log("Add Warranty button pressed");
     // Logic for adding a warranty can go here
-  };
-
-	const isWeb = Platform.OS === 'web';
-  
+  };  
 
   if (loading) {
     return (
@@ -218,9 +217,6 @@ const MyWarranties = () => {
       <View style={styles.header}>
         <Text style={styles.title}>My Warranties</Text>
         
-        {/* Added Warranty Options inside header */}
-        <AddWarrantyOptions onWarrantyAdded={refreshWarranties} />
-
         <View style={styles.profileContainer}>
           <View style={styles.profileImageWrapper}>
             <Image
@@ -253,14 +249,25 @@ const MyWarranties = () => {
         </View>
       </View>
 
-      <ScrollView style={styles.warrantyList}>
-        {filteredWarranties.map((warranty, index) => (
-          <WarrantyCard key={index} {...warranty} />
-        ))}
-        <View style={styles.bottomPadding} />
-      </ScrollView>
+	  <ScrollView style={styles.warrantyList}>
+		<View style={{ width: isWeb ? '50%' : '100%', alignSelf: 'center' }}>
+			{filteredWarranties.map((warranty, index) => (
+			<WarrantyCard key={index} {...warranty} />
+			))}
+		</View>
+		<View style={styles.bottomPadding} />
+	  </ScrollView>
 
-      <BottomNavBar />
+	  {/* <AddWarrantyOptions
+		onWarrantyAdded={refreshWarranties}
+		style={{
+			position: 'absolute',
+			marginTop: isWeb? 800 : 700,
+		}}
+		/> */}
+
+
+      {!isWeb && <BottomNavBar />}
     </SafeAreaView>
   );
 };
@@ -269,10 +276,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#E9E0D4',
+	position: 'relative'
   },
   header: {
     padding: 15,
-    backgroundColor: '#F5EFE6',
+    //backgroundColor: '#F5EFE6',
     borderBottomWidth: 1,
     borderBottomColor: '#DDD',
   },
@@ -292,14 +300,18 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     borderColor: '#7E8FA6',
     borderWidth: 1,
+	width: isWeb ? '50%' : '100%',   
+  	alignSelf: 'center',          
+	marginTop: isWeb? 30 : 0,  
   },
   profileImageWrapper: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: isWeb ? 150: 120,
+    height: isWeb ? 150: 120,
+    borderRadius: isWeb ? 100: 90,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#DDD',
+	right: isWeb? 350: 100,
   },
   profileImage: {
     width: '100%',
@@ -308,7 +320,8 @@ const styles = StyleSheet.create({
   searchBarContainer: {
     marginHorizontal: 10,
     marginVertical: 10,
-    width: '100%',
+	width: isWeb ? '100%' : '100%',  
+  	alignSelf: 'center',            
   },
   filterButton: {
     backgroundColor: '#D2BBA1',
