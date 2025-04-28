@@ -18,12 +18,14 @@ const mobileGridData = [
   { id: '9', name: 'Washer', icon: 'water-outline' },
 ];
 
-const NavItem = ({ label }: { label: string }) => {
+const NavItem = ({ label, destination }: { label: string; destination: string }) => {
   const [hovered, setHovered] = useState(false);
+  const router = useRouter();
 
   return (
     <Pressable
-      onHoverIn={() => setHovered(true)}
+		onPress={() => router.push(destination as any)}
+		onHoverIn={() => setHovered(true)}
       onHoverOut={() => setHovered(false)}
       style={[
         styles.navItem,
@@ -67,9 +69,14 @@ export default function home() {
 
       {isWeb && (
         <View style={styles.topNavbar}>
-          {['Home', 'My Warranties', 'Shop', 'Settings'].map((item) => (
-            <NavItem key={item} label={item} />
-          ))}
+          {[
+						{ label: 'Home', destination: '/' },
+						{ label: 'My Warranties', destination: '/myWarranties' },
+						{ label: 'Shop', destination: '/shop' },
+						{ label: 'Settings', destination: '/settings' },
+					].map((item) => (
+						<NavItem key={item.label} label={item.label} destination={item.destination} />
+				))}
         </View>
       )}
 
