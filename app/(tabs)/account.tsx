@@ -9,6 +9,9 @@ import { Avatar } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
+
+const isWeb = Platform.OS === 'web';
 
 export default function Account() {
   const [fontsLoaded] = useFonts({
@@ -60,10 +63,10 @@ export default function Account() {
   }, [userData]);
 
   // Dynamic sizing
-  const titleFontSize = width * 0.06;
-  const labelFontSize = width * 0.04;
-  const inputFontSize = width * 0.04;
-  const buttonFontSize = width * 0.04;
+  const titleFontSize = isWeb ? 30 : width * 0.06;
+  const labelFontSize = isWeb ? 24 :width * 0.04;
+  const inputFontSize = isWeb ? 20 :width * 0.04;
+  const buttonFontSize = isWeb ? 24 : width * 0.04;
 
   const selectPhoto = async () => {
     try {
@@ -367,6 +370,8 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+	width: isWeb ? '50%' : '100%',   // ✅ Limit width to 50% screen on web
+	alignSelf: 'center',         
   },
   container: {
     flexGrow: 1,
@@ -377,11 +382,14 @@ const styles = StyleSheet.create({
   },
   profileImageContainer: {
     position: 'relative',
-    marginTop: 40,
     marginBottom: 20,
+	marginTop: isWeb ? 80 : 40,  
   },
   avatar: {
     backgroundColor: '#FFF',
+	width: isWeb ? 140 : 120,
+	height: isWeb ? 140 : 120,
+	borderRadius: isWeb ? 70 : 70,  // half of width and height
   },
   cameraButton: {
     position: 'absolute',
@@ -400,8 +408,9 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   inputContainer: {
-    width: '100%',
-    marginVertical: 8,
+	width: isWeb ? '50%' : '100%',  // ✅ 80% width on web, full on mobile
+	marginVertical: 8,
+	alignSelf: 'center',           
   },
   label: {
     fontFamily: 'InriaSerif-Regular',
@@ -419,18 +428,20 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   button: {
-    backgroundColor: '#000',
+    backgroundColor: '#636B2F',
     padding: 15,
     borderRadius: 12,
     alignItems: 'center',
     marginTop: 20,
-    width: '100%',
+	width: isWeb ? '20%' : '100%',
     flexDirection: 'row',
     justifyContent: 'center',
+	
   },
   buttonText: {
     color: '#FFF',
     fontFamily: 'InriaSerif-Bold',
+
   },
   signOutButton: {
     backgroundColor: '#FF3B30',
@@ -438,7 +449,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     marginTop: 10,
-    width: '100%',
+	width: isWeb ? '20%' : '100%',
     flexDirection: 'row',
     justifyContent: 'center',
   },
