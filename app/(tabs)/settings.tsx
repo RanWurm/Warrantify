@@ -149,7 +149,7 @@ export default function Settings() {
 				{[
 							{ label: 'Home', destination: '/' },
 							{ label: 'My Warranties', destination: '/myWarranties' },
-							{ label: 'Shop', destination: '/shop' },
+							{ label: 'Shop', destination: '/adBoard' },
 							{ label: 'Settings', destination: '/settings' },
 						].map((item) => (
 							<NavItem key={item.label} label={item.label} destination={item.destination} />
