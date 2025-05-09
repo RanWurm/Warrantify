@@ -3,6 +3,10 @@ import { View, Text, SafeAreaView, ScrollView, ActivityIndicator, StyleSheet } f
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import BottomNavBar from '../components/BottomNavBar';
+import { Dimensions } from 'react-native';
+
+const { width } = Dimensions.get('window');
+const CARD_WIDTH = width * 0.9;
 
 // Replace with your backend URLs
 const pythonBackendURL = "http://172.20.10.5:5000";
@@ -197,7 +201,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#E9E0D4',
-    padding: 15,
+    paddingHorizontal: 16,
+    paddingTop: 10,
   },
   loaderContainer: {
     flex: 1,
@@ -205,14 +210,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   header: {
-    fontSize: 32,
+    fontSize: 28,
     fontFamily: 'InriaSerif-Bold',
     textAlign: 'center',
-    marginVertical: 20,
+    marginVertical: 16,
     color: '#000',
   },
   scrollContent: {
-    paddingBottom: 80,
+    paddingBottom: 90,
+    alignItems: 'center',
   },
   errorText: {
     color: 'red',
@@ -220,18 +226,20 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   cardContainer: {
+    width: CARD_WIDTH,
     backgroundColor: '#FDFDFD',
     borderRadius: 12,
     marginVertical: 8,
-    padding: 10,
+    padding: 14,
     borderWidth: 1,
     borderColor: '#7E8FA6',
+    elevation: 2,
   },
-  // Styles for real ads
   productName: {
     fontFamily: 'InriaSerif-Bold',
     fontSize: 18,
     color: '#000',
+    marginBottom: 4,
   },
   productModel: {
     fontFamily: 'InriaSerif-Regular',
@@ -242,21 +250,20 @@ const styles = StyleSheet.create({
     fontFamily: 'InriaSerif-Bold',
     fontSize: 16,
     color: '#7E8FA6',
-    marginTop: 5,
+    marginTop: 6,
   },
   city: {
     fontFamily: 'InriaSerif-Regular',
     fontSize: 14,
     color: '#000',
-    marginTop: 3,
+    marginTop: 4,
   },
   description: {
     fontFamily: 'InriaSerif-Regular',
     fontSize: 14,
     color: '#666',
-    marginTop: 5,
+    marginTop: 4,
   },
-  // Styles for sponsored (monetized) ads
   monetizedCard: {
     borderColor: '#AF6F6F',
     backgroundColor: '#FDEDEC',
@@ -265,7 +272,7 @@ const styles = StyleSheet.create({
     fontFamily: 'InriaSerif-Bold',
     fontSize: 14,
     color: '#AF6F6F',
-    marginBottom: 5,
+    marginBottom: 4,
   },
   iconName: {
     fontFamily: 'InriaSerif-Regular',
@@ -273,20 +280,19 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   rowContainer: {
-	flexDirection: 'row',
-	alignItems: 'center',
-	justifyContent: 'space-between',
-	marginVertical: 5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 4,
   },
   manufacturerText: {
-	fontFamily: 'InriaSerif-Regular',
-	fontSize: 14,
-	color: '#666',
-	marginRight: 10,
+    fontFamily: 'InriaSerif-Regular',
+    fontSize: 14,
+    color: '#666',
   },
   modelText: {
-	fontFamily: 'InriaSerif-Regular',
-	fontSize: 14,
-	color: '#666',
+    fontFamily: 'InriaSerif-Regular',
+    fontSize: 14,
+    color: '#666',
   },
 });
