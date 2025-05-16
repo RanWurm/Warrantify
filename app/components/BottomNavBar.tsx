@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter, usePathname } from 'expo-router';
 import { signOut } from "firebase/auth";
-import { auth } from "../../constants/firebase.js";
+//import { auth } from "../../constants/firebase.js";
 
 const BottomNavBar = () => {
   const router = useRouter();
@@ -16,7 +16,7 @@ const BottomNavBar = () => {
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      //await signOut(auth);
       Alert.alert("Logged Out", "You have been logged out successfully.");
       router.push("/login");
     } catch (error) {

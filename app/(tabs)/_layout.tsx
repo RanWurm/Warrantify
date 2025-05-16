@@ -11,14 +11,14 @@ export default function TabsLayout() {
         screenOptions={{
           headerStyle: { 
             backgroundColor: '#1e1e2f', // Consistent dark theme for the header
-            shadowColor: 'transparent', // Remove shadow for a cleaner look
+            //shadowColor: 'transparent', // Remove shadow for a cleaner look
           },
           headerTintColor: '#ffffff', // White text/icons for contrast
           headerTitleStyle: {
             fontWeight: 'bold',
             fontSize: 18,
           },
-          headerBackTitleVisible: false, // Cleaner navigation without back title
+          //headerBackTitleVisible: false, // Cleaner navigation without back title
         }}
       >
         <Stack.Screen
@@ -26,7 +26,7 @@ export default function TabsLayout() {
           options={{
             title: 'Home',
             headerStyle: { backgroundColor: '#4a90e2' }, // Specific style for Home
-            headerLeft: null, // Remove back button for the root screen
+            //headerLeft: null, // Remove back button for the root screen
           }}
         />
         <Stack.Screen
@@ -41,7 +41,7 @@ export default function TabsLayout() {
           options={{
             title: 'My Warranties',
             headerStyle: { backgroundColor: '#5856d6' }, // Unique color for My Warranties
-            headerLeft: null,
+            //headerLeft: null,
             headerShown: false, // Disable back button for My Warranties
           }}
         />
@@ -50,7 +50,7 @@ export default function TabsLayout() {
           options={{
             title: 'Recommended',
             headerStyle: { backgroundColor: '#5856d6' }, // Unique color for Recommended
-            headerLeft: null,
+            //headerLeft: null,
             headerShown: false, // Disable back button for Recommended
           }}
         />
@@ -59,7 +59,7 @@ export default function TabsLayout() {
           options={{
             title: 'Settings',
             headerStyle: { backgroundColor: '#5856d6' }, // Unique color for Settings
-            headerLeft: null,
+            //headerLeft: null,
             headerShown: false, // Disable back button for Settings
           }}
         />
@@ -68,7 +68,7 @@ export default function TabsLayout() {
           options={{
             title: 'Account',
             headerStyle: { backgroundColor: '#5856d6' }, // Unique color for Account Settings
-            headerLeft: null,
+            //headerLeft: null,
             headerShown: false, // Disable back button for Account Settings
           }}
         />
@@ -77,7 +77,7 @@ export default function TabsLayout() {
           options={{
             title: 'About',
             headerStyle: { backgroundColor: '#5856d6' }, // Unique color for About
-            headerLeft: null,
+            //headerLeft: null,
             headerShown: false, // Disable back button for About
           }}
         />
@@ -86,7 +86,7 @@ export default function TabsLayout() {
           options={{
             title: 'Privacy',
             headerStyle: { backgroundColor: '#5856d6' }, // Unique color for Privacy
-            headerLeft: null,
+            //headerLeft: null,
             headerShown: false, // Disable back button for Privacy
           }}
         />
@@ -95,7 +95,7 @@ export default function TabsLayout() {
           options={{
             title: 'Help & Support',
             headerStyle: { backgroundColor: '#5856d6' }, // Unique color for Help & Support
-            headerLeft: null,
+            //headerLeft: null,
             headerShown: false, // Disable back button for Help & Support
           }}
         />

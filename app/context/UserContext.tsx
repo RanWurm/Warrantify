@@ -4,6 +4,7 @@ import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getAuth, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { useRouter } from 'expo-router'; // Import useRouter
+import { auth123 } from '../../constants/firebase'; 
 
 // Initialize Firebase if not already done
 // import { initializeApp } from 'firebase/app';
@@ -18,7 +19,7 @@ interface UserContextProps {
   logout: () => Promise<void>;
 }
 
-export const UserContext = createContext<UserContextProps>({
+const UserContext = createContext<UserContextProps>({
   userId: null,
   isAuthenticated: false,
   firebaseUser: null,
@@ -37,7 +38,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
   const USER_ID_KEY_PREFIX = 'user_id_';
 
-  const auth = getAuth();
+ //const auth = getAuth();
   const router = useRouter(); // Initialize router
 
   // Function to generate a random user_id between 1 and 200,000
@@ -71,7 +72,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   // Logout function
   const logout = async () => {
     try {
-      await signOut(auth);
+      //await signOut(auth);
       setFirebaseUser(null);
       setIsAuthenticated(false);
       setUserId(null);
@@ -85,22 +86,23 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   };
 
   useEffect(() => {
+	//console.log("AAAAAAAAAAAAAAAAAAAAAA", auth);
     // Listen for authentication state changes
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        setFirebaseUser(user);
-        setIsAuthenticated(true);
-        await assignUserId(user.uid);
-      } else {
-        setFirebaseUser(null);
-        setIsAuthenticated(false);
-        setUserId(null);
-        router.replace('/login'); // Navigate to Login screen if not authenticated
-      }
-    });
+    // const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    //   if (user) {
+    //     setFirebaseUser(user);
+    //     setIsAuthenticated(true);
+    //     await assignUserId(user.uid);
+    //   } else {
+    //     setFirebaseUser(null);
+    //     setIsAuthenticated(false);
+    //     setUserId(null);
+    //     router.replace('/login'); // Navigate to Login screen if not authenticated
+    //   }
+    // });
 
     // Cleanup subscription on unmount
-    return () => unsubscribe();
+    return () => {} //unsubscribe();
   }, []);
 
   return (
@@ -111,3 +113,5 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     </UserContext.Provider>
   );
 };
+
+export default UserContext;

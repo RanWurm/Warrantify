@@ -179,7 +179,7 @@ const MonetizedAdsIntegration: React.FC = () => {
             return (
               <View key={realAd.id} style={styles.cardContainer}>
 				
-                <Text style={styles.productName}>{realAd.productName}</Text>
+                {/* <Text style={styles.productName}>{realAd.productName}</Text> */}
                 <Text style={styles.productModel}>Model: {realAd.product.model}</Text>
                 <Text style={styles.salePrice}>${realAd.salePrice}</Text>
                 <Text style={styles.city}>{realAd.city}</Text>

@@ -1,13 +1,14 @@
 // app/(tabs)/index.tsx
 import React, { useEffect, useState } from 'react';
 import { Redirect } from 'expo-router';
-import { auth } from '../../constants/firebase'; 
+import { auth123 } from '../../constants/firebase'; 
 import { onAuthStateChanged, User } from 'firebase/auth';
 
 export default function Index() {
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-
+  //console.log("Pampusha 2!!!!", auth123);
+/*
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
@@ -15,7 +16,7 @@ export default function Index() {
     });
     return () => unsubscribe();
   }, []);
-
+*/
   if (loading) {
     return null; // or splash screen
   }
