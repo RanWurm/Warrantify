@@ -34,15 +34,15 @@ const RecommendedPage = () => {
   const [error, setError] = useState<string | null>(null);
 
   
-  const pythonBackendURL = 'http://172.20.10.5:5000';
-  const NodeBackendURL = 'http://172.20.10.5:3000';
+  const pythonBackendURL = 'http://10.0.0.12:5000';
+  const NodeBackendURL = 'http://10.0.0.12:3000';
   
   useEffect(() => {
     const fetchRecommendations = async () => {
       
       try {
         const token = await AsyncStorage.getItem("token");
-        const warrantiesResponse = await axios.post("http://172.20.10.5:3000/user-warranties", { token });
+        const warrantiesResponse = await axios.post("http://10.0.0.12:3000/user-warranties", { token });
         const warranties = warrantiesResponse.data.data;
         
         const response = await axios.post(`${pythonBackendURL}/get_recommendation`, {

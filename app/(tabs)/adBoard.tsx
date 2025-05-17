@@ -9,8 +9,8 @@ const { width } = Dimensions.get('window');
 const CARD_WIDTH = width * 0.9;
 
 // Replace with your backend URLs
-const pythonBackendURL = "http://172.20.10.5:5000";
-const serverBackendURL = "http://172.20.10.5:3000";
+const pythonBackendURL = "http://10.0.0.12:5000";
+const serverBackendURL = "http://10.0.0.12:3000";
 
 // Define types
 interface RealAd {

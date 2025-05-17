@@ -75,7 +75,7 @@ const MyWarranties = () => {
     const fetchWarranties = async () => {
       try {
         const token = await AsyncStorage.getItem('token');
-        const response = await axios.post('http://172.20.10.5:3000/user-warranties', { token });
+        const response = await axios.post('http://10.0.0.12:3000/user-warranties', { token });
         
         const now = new Date().getTime();
         const oneMonthMs = 30 * 24 * 60 * 60 * 1000;
@@ -146,7 +146,7 @@ const MyWarranties = () => {
     const fetchUserData = async () => {
       try {
         const token = await AsyncStorage.getItem('token');
-        const response = await axios.post('http://172.20.10.5:3000/userdata', { token });
+        const response = await axios.post('http://10.0.0.12:3000/userdata', { token });
         if (response.data.data.image) {
           setUserImage(response.data.data.image);
         }
@@ -234,7 +234,7 @@ const MyWarranties = () => {
       {isWeb && (
         <View style={styles.topNavbar}>
           {[
-            { label: 'Home', destination: '/' },
+            { label: 'Home', destination: '/home' },
             { label: 'My Warranties', destination: '/myWarranties' },
             { label: 'Shop', destination: '/adBoard' },
             { label: 'Settings', destination: '/settings' },
@@ -285,7 +285,7 @@ const MyWarranties = () => {
 				text: 'All Warranties',
 				onPress: () => console.log('Filter button pressed'),
 			}}
-			autocompleteEndpoint="http://172.20.10.5:5000/autocomplete"
+			autocompleteEndpoint="http://10.0.0.12:5000/autocomplete"
 			additionalStyles={{
 				container: styles.searchBarContainer,
 				filterButton: styles.filterButton,

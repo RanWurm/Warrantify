@@ -147,7 +147,7 @@ export default function Settings() {
 	  {isWeb && (
 			  <View style={styles.topNavbar}>
 				{[
-							{ label: 'Home', destination: '/' },
+							{ label: 'Home', destination: '/home' },
 							{ label: 'My Warranties', destination: '/myWarranties' },
 							{ label: 'Shop', destination: '/adBoard' },
 							{ label: 'Settings', destination: '/settings' },

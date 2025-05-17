@@ -1,30 +1,22 @@
-// app/context/UserContext.tsx
-
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getAuth, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { useRouter } from 'expo-router'; // Import useRouter
-import { auth123 } from '../../constants/firebase'; 
-
-// Initialize Firebase if not already done
-// import { initializeApp } from 'firebase/app';
-// const firebaseConfig = { /* Your Firebase config */ };
-// initializeApp(firebaseConfig);
+import { useRouter } from 'expo-router';
+import { BackHandler, Platform } from 'react-native';
 
 interface UserContextProps {
   userId: number | null;
   isAuthenticated: boolean;
-  firebaseUser: FirebaseUser | null;
   assignUserId: (uid: string) => Promise<void>;
   logout: () => Promise<void>;
+  checkAuthStatus: () => Promise<boolean>;
 }
 
 const UserContext = createContext<UserContextProps>({
   userId: null,
   isAuthenticated: false,
-  firebaseUser: null,
   assignUserId: async () => {},
   logout: async () => {},
+  checkAuthStatus: async () => false,
 });
 
 interface UserProviderProps {
@@ -33,17 +25,28 @@ interface UserProviderProps {
 
 export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [userId, setUserId] = useState<number | null>(null);
-  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   const USER_ID_KEY_PREFIX = 'user_id_';
-
- //const auth = getAuth();
-  const router = useRouter(); // Initialize router
+  const router = useRouter();
 
   // Function to generate a random user_id between 1 and 200,000
   const generateRandomUserId = (): number => {
     return Math.floor(Math.random() * 12659) + 1;
+  };
+
+  // Check if user has valid token
+  const checkAuthStatus = async (): Promise<boolean> => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const isAuth = !!token;
+      setIsAuthenticated(isAuth);
+      return isAuth;
+    } catch (error) {
+      console.error('Error checking auth status:', error);
+      setIsAuthenticated(false);
+      return false;
+    }
   };
 
   // Assign or retrieve user_id based on Firebase UID
@@ -72,42 +75,44 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   // Logout function
   const logout = async () => {
     try {
-      //await signOut(auth);
-      setFirebaseUser(null);
       setIsAuthenticated(false);
       setUserId(null);
-      // Optionally, clear all user-related data from AsyncStorage
-      await AsyncStorage.clear();
+      // Remove the token
+      await AsyncStorage.removeItem('token');
+      // Optionally, clear all user-related data
+      // await AsyncStorage.clear(); // Be careful with this as it clears ALL data
       console.log('User signed out successfully.');
-      router.replace('/login'); // Navigate to Login screen
+      router.replace('/login');
     } catch (error) {
       console.error('Error signing out:', error);
     }
   };
 
+  // Handle back button press on Android
   useEffect(() => {
-	//console.log("AAAAAAAAAAAAAAAAAAAAAA", auth);
-    // Listen for authentication state changes
-    // const unsubscribe = onAuthStateChanged(auth, async (user) => {
-    //   if (user) {
-    //     setFirebaseUser(user);
-    //     setIsAuthenticated(true);
-    //     await assignUserId(user.uid);
-    //   } else {
-    //     setFirebaseUser(null);
-    //     setIsAuthenticated(false);
-    //     setUserId(null);
-    //     router.replace('/login'); // Navigate to Login screen if not authenticated
-    //   }
-    // });
+    if (Platform.OS === 'android') {
+      const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+        const currentRoute = router.pathname;
+        // If on login screen, exit app instead of going back
+        if (currentRoute === '/login') {
+          BackHandler.exitApp();
+          return true; // Prevent default behavior
+        }
+        return false; // Let default behavior happen (navigation back)
+      });
 
-    // Cleanup subscription on unmount
-    return () => {} //unsubscribe();
+      return () => backHandler.remove(); // Cleanup
+    }
+  }, [router.pathname]);
+
+  // Check authentication status on load
+  useEffect(() => {
+    checkAuthStatus();
   }, []);
 
   return (
     <UserContext.Provider
-      value={{ userId, isAuthenticated, firebaseUser, assignUserId, logout }}
+      value={{ userId, isAuthenticated, assignUserId, logout, checkAuthStatus }}
     >
       {children}
     </UserContext.Provider>
