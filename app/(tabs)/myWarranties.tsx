@@ -20,6 +20,7 @@ import axios from 'axios';
 import SearchBar from '../components/SearchBar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import WarrantyCard from '../components/WarrantyCard';
+import Constants from 'expo-constants';
 
 interface WarrantyItemProps {
   productId: string;
@@ -33,6 +34,8 @@ interface WarrantyItemProps {
 }
 
 const isWeb = Platform.OS === 'web';
+const serverBackendURL = Constants.expoConfig!.extra!.SERVER_BACKEND_URL;
+
 
 const NavItem = ({ label, destination }: { label: string; destination: string }) => {
   const [hovered, setHovered] = useState(false);
@@ -75,8 +78,7 @@ const MyWarranties = () => {
     const fetchWarranties = async () => {
       try {
         const token = await AsyncStorage.getItem('token');
-        const response = await axios.post('http://10.0.0.12:3000/user-warranties', { token });
-        
+		const response = await axios.post(`${serverBackendURL}/user-warranties`,{ token });        
         const now = new Date().getTime();
         const oneMonthMs = 30 * 24 * 60 * 60 * 1000;
 
@@ -146,7 +148,7 @@ const MyWarranties = () => {
     const fetchUserData = async () => {
       try {
         const token = await AsyncStorage.getItem('token');
-        const response = await axios.post('http://10.0.0.12:3000/userdata', { token });
+        const response = await axios.post(`${serverBackendURL}/userdata`, { token });
         if (response.data.data.image) {
           setUserImage(response.data.data.image);
         }
@@ -285,7 +287,7 @@ const MyWarranties = () => {
 				text: 'All Warranties',
 				onPress: () => console.log('Filter button pressed'),
 			}}
-			autocompleteEndpoint="http://10.0.0.12:5000/autocomplete"
+			autocompleteEndpoint="http://10.0.0.21:5000/autocomplete"
 			additionalStyles={{
 				container: styles.searchBarContainer,
 				filterButton: styles.filterButton,

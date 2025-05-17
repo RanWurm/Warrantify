@@ -15,6 +15,9 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Progress from 'react-native-progress';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
+
+const serverBackendURL = Constants.expoConfig!.extra!.SERVER_BACKEND_URL;
 
 interface WarrantyCardProps {
   productId: string;
@@ -69,7 +72,7 @@ const WarrantyCard: React.FC<WarrantyCardProps> = ({
     // Process the entered data as needed.
     try{
       const token = await AsyncStorage.getItem("token")
-      const response = await fetch('http://10.0.0.12:3000/add-for-sale-board',{
+      const response = await fetch(`${serverBackendURL}/add-for-sale-board`,{
         method:'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -11,6 +11,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import BottomNavBar from '../components/BottomNavBar';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 
 // Recommended product structure
 interface RecommendedProduct {
@@ -34,15 +35,15 @@ const RecommendedPage = () => {
   const [error, setError] = useState<string | null>(null);
 
   
-  const pythonBackendURL = 'http://10.0.0.12:5000';
-  const NodeBackendURL = 'http://10.0.0.12:3000';
+  const pythonBackendURL = Constants.expoConfig!.extra!.PYTHON_BACKEND_URL;
+  const serverBackendURL = Constants.expoConfig!.extra!.SERVER_BACKEND_URL;
   
   useEffect(() => {
     const fetchRecommendations = async () => {
       
       try {
         const token = await AsyncStorage.getItem("token");
-        const warrantiesResponse = await axios.post("http://10.0.0.12:3000/user-warranties", { token });
+        const warrantiesResponse = await axios.post(`${serverBackendURL}/user-warranties`, { token });
         const warranties = warrantiesResponse.data.data;
         
         const response = await axios.post(`${pythonBackendURL}/get_recommendation`, {

@@ -14,6 +14,9 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
+
+const serverBackendURL = Constants.expoConfig!.extra!.SERVER_BACKEND_URL;
 
 interface AddWarrantyFormProps {
   onClose: () => void;
@@ -72,7 +75,7 @@ const AddWarrantyForm: React.FC<AddWarrantyFormProps> = ({ onClose, scannedData 
       // Assume you have a way to retrieve the token (e.g., from storage or context)
       const token = await AsyncStorage.getItem("token");
     
-      const response = await fetch('http://10.0.0.12:3000/add-warranty', {
+      const response = await fetch(`${serverBackendURL}/add-warranty`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

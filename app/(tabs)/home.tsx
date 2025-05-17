@@ -19,8 +19,8 @@ const mobileGridData = [
 ];
 
 const NavItem = ({ label, destination }: { label: string; destination: string }) => {
-  const [hovered, setHovered] = useState(false);
-  const router = useRouter();
+const [hovered, setHovered] = useState(false);
+const router = useRouter();
 
   return (
     <Pressable
@@ -46,6 +46,11 @@ export default function home() {
   const isWeb = Platform.OS === 'web';
   const router = useRouter();
   const [showAddWarranty, setShowAddWarranty] = useState(false);
+
+  const { height } = useWindowDimensions()
+  const aspectRatio = height / width
+  const isLongDevice = aspectRatio > 2.1   // adjust to taste
+  const dynamicMarginTop = isLongDevice ? height * 0.08 : 0;
 
   if (!fontsLoaded) {
     return null;
@@ -90,7 +95,7 @@ export default function home() {
         <View style={styles.container}>
           <Image
             source={require('../../assets/images/warrantylogo.png')}
-            style={[styles.logo, { width: logoSize, height: logoSize }]}
+            style={[styles.logo, { width: logoSize, height: logoSize, marginTop:dynamicMarginTop, }]}
           />
 
           <Text style={[styles.title, { fontSize: titleFontSize }]}>
@@ -148,12 +153,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#E9E0D4',
     alignItems: 'center',
     padding: 16,
-		width: '100%',
+	width: '100%',
   },
   logo: {
     resizeMode: 'contain',
-    marginBottom: 10,
-    marginTop: 40,
+    marginBottom: '2%',
+    //marginTop: dynamicMarginTop
   },
   title: {
     fontWeight: 'bold',
@@ -171,7 +176,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingBottom: 20,
-    marginTop: 20,
+    //marginTop: '2%',
   },
   categoryContainer: {
     margin: 10,

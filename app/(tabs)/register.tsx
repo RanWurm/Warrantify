@@ -4,6 +4,10 @@ import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { useFonts } from 'expo-font';
 import { Stack, useRouter } from 'expo-router';
 import axios from 'axios';
+import { LinearGradient } from 'expo-linear-gradient';
+import Constants from 'expo-constants';
+
+const serverBackendURL = Constants.expoConfig!.extra!.SERVER_BACKEND_URL;
 
 export default function RegisterScreen() {
   const [fontsLoaded] = useFonts({
@@ -47,7 +51,7 @@ export default function RegisterScreen() {
       password:form.password,    
     }
     console.log("here iam",UserData)
-    axios.post("http://10.0.0.12:3000/register",UserData)
+    axios.post(`${serverBackendURL}/register`,UserData)
     .then(res=>{
       console.log(res.data)
       router.replace('/login');
@@ -83,7 +87,7 @@ export default function RegisterScreen() {
 
         {/* Input Fields */}
         <View style={styles.inputContainer}>
-          <Text style={styles.inputLabel}>First Name</Text>
+          <Text style={styles.inputLabel}></Text>
           <TextInput
             style={styles.input}
             placeholder="Enter your first name"
@@ -92,7 +96,7 @@ export default function RegisterScreen() {
             onChangeText={(text) => handleChange('firstName', text)}
           />
 
-          <Text style={styles.inputLabel}>Last Name</Text>
+          <Text style={styles.inputLabel}></Text>
           <TextInput
             style={styles.input}
             placeholder="Enter your last name"
@@ -101,7 +105,7 @@ export default function RegisterScreen() {
             onChangeText={(text) => handleChange('lastName', text)}
           />
 
-          <Text style={styles.inputLabel}>Email</Text>
+          <Text style={styles.inputLabel}></Text>
           <TextInput
             style={styles.input}
             placeholder="Enter your email"
@@ -112,7 +116,7 @@ export default function RegisterScreen() {
             onChangeText={(text) => handleChange('email', text)}
           />
 
-          <Text style={styles.inputLabel}>Password</Text>
+          <Text style={styles.inputLabel}></Text>
           <View style={styles.passwordContainer}>
             <TextInput
               style={[styles.input, { flex: 1 }]}
@@ -131,7 +135,7 @@ export default function RegisterScreen() {
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.inputLabel}>Confirm Password</Text>
+          <Text style={styles.inputLabel}></Text>
           <View style={styles.passwordContainer}>
             <TextInput
               style={[styles.input, { flex: 1 }]}
@@ -226,7 +230,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     //fontFamily: 'InriaSerif-regular',
     color: '#000',
-    marginTop: 10,
+    marginTop: 0,
     marginBottom: 5,
   },
   input: {

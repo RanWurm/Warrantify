@@ -17,7 +17,7 @@ export default function Index() {
         try {
           // Clear the token to force a fresh login
           await AsyncStorage.removeItem('token');
-          console.log('⚠️ DEBUG: Token cleared for testing');
+          console.log(' DEBUG: Token cleared for testing');
         } catch (error) {
           console.error('Error clearing token:', error);
         }

@@ -9,7 +9,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken')
 
 
-// const mongoUrl="mongodb+srv://<ilanitber>:<ilanit123>@cluster0.m4fkm.mongodb.net/"
+// const mongoUrl="mongodb+srv://<ilanitber1234>:<ilanit123>@cluster0.m4fkm.mongodb.net/"
 
 const mongoUrl="mongodb+srv://ilanitber:12345679@cluster0.m4fkm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 

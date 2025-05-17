@@ -4,13 +4,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import BottomNavBar from '../components/BottomNavBar';
 import { Dimensions } from 'react-native';
+import Constants from 'expo-constants';
+
+const pythonBackendURL = Constants.expoConfig!.extra!.PYTHON_BACKEND_URL;
+const serverBackendURL = Constants.expoConfig!.extra!.SERVER_BACKEND_URL;
+
+console.log("Python Backend is: " + pythonBackendURL);
+console.log("Server Backend is: " + serverBackendURL);
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = width * 0.9;
-
-// Replace with your backend URLs
-const pythonBackendURL = "http://10.0.0.12:5000";
-const serverBackendURL = "http://10.0.0.12:3000";
 
 // Define types
 interface RealAd {
