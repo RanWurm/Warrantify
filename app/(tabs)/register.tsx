@@ -47,7 +47,7 @@ export default function RegisterScreen() {
       password:form.password,    
     }
     console.log("here iam",UserData)
-    axios.post("http://172.20.10.5:3000/register",UserData)
+    axios.post("http://10.0.0.12:3000/register",UserData)
     .then(res=>{
       console.log(res.data)
       router.replace('/login');

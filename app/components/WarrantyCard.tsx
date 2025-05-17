@@ -69,7 +69,7 @@ const WarrantyCard: React.FC<WarrantyCardProps> = ({
     // Process the entered data as needed.
     try{
       const token = await AsyncStorage.getItem("token")
-      const response = await fetch('http://172.20.10.5:3000/add-for-sale-board',{
+      const response = await fetch('http://10.0.0.12:3000/add-for-sale-board',{
         method:'POST',
         headers: {
           'Content-Type': 'application/json',
