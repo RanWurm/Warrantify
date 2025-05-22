@@ -1,17 +1,13 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  Image, 
-  TextInput, 
-  TouchableOpacity, 
-  ScrollView 
-} from 'react-native';
+import { View, Text, StyleSheet, Image, TextInput, TouchableOpacity, ScrollView, SafeAreaView, Dimensions } from 'react-native';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { useFonts } from 'expo-font';
 import { Stack, useRouter } from 'expo-router';
 import axios from 'axios';
+import { LinearGradient } from 'expo-linear-gradient';
+import Constants from 'expo-constants';
+
+const serverBackendURL = "http://10.0.0.12:3000";
 
 export default function RegisterScreen() {
   const [fontsLoaded] = useFonts({
@@ -55,7 +51,7 @@ export default function RegisterScreen() {
       password:form.password,    
     }
     console.log("here iam",UserData)
-    axios.post("http://10.0.0.7:3000/register",UserData)
+    axios.post(`${serverBackendURL}/register`,UserData)
     .then(res=>{
       console.log(res.data)
       router.replace('/login');
@@ -74,8 +70,12 @@ export default function RegisterScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ headerShown: false }} />
+		<Stack.Screen options={{ headerShown: false }} />
+		<Stack.Screen options={{ headerShown: false }} />
 
+		<SafeAreaView style={{ flex: 1, backgroundColor: '#D2BBA1' }}>
+
+		</SafeAreaView>
       <ScrollView contentContainerStyle={styles.container}>
         <Image 
           source={require('../../assets/images/warrantylogo.png')} 
@@ -87,7 +87,7 @@ export default function RegisterScreen() {
 
         {/* Input Fields */}
         <View style={styles.inputContainer}>
-          <Text style={styles.inputLabel}>First Name</Text>
+          <Text style={styles.inputLabel}></Text>
           <TextInput
             style={styles.input}
             placeholder="Enter your first name"
@@ -96,7 +96,7 @@ export default function RegisterScreen() {
             onChangeText={(text) => handleChange('firstName', text)}
           />
 
-          <Text style={styles.inputLabel}>Last Name</Text>
+          <Text style={styles.inputLabel}></Text>
           <TextInput
             style={styles.input}
             placeholder="Enter your last name"
@@ -105,7 +105,7 @@ export default function RegisterScreen() {
             onChangeText={(text) => handleChange('lastName', text)}
           />
 
-          <Text style={styles.inputLabel}>Email</Text>
+          <Text style={styles.inputLabel}></Text>
           <TextInput
             style={styles.input}
             placeholder="Enter your email"
@@ -116,7 +116,7 @@ export default function RegisterScreen() {
             onChangeText={(text) => handleChange('email', text)}
           />
 
-          <Text style={styles.inputLabel}>Password</Text>
+          <Text style={styles.inputLabel}></Text>
           <View style={styles.passwordContainer}>
             <TextInput
               style={[styles.input, { flex: 1 }]}
@@ -135,7 +135,7 @@ export default function RegisterScreen() {
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.inputLabel}>Confirm Password</Text>
+          <Text style={styles.inputLabel}></Text>
           <View style={styles.passwordContainer}>
             <TextInput
               style={[styles.input, { flex: 1 }]}
@@ -157,7 +157,14 @@ export default function RegisterScreen() {
 
         {/* Sign Up Button */}
         <TouchableOpacity style={styles.signUpButton} onPress={handleSignUp}>
-          <Text style={styles.signUpButtonText}>Sign Up</Text>
+				<LinearGradient
+					colors={['#dbc4b2', '#4f3e2f']}
+					start={{ x: 0, y: 0 }}
+					end={{ x: 1, y: 0 }}
+					style={styles.signUpButton}
+				>
+				<Text style={styles.signUpButtonText}>Sign Up</Text>
+				</LinearGradient>
         </TouchableOpacity>
 
         {/* Or Divider */}
@@ -185,43 +192,45 @@ export default function RegisterScreen() {
   );
 }
 
+const { width : SCREEN_WIDTH  } = Dimensions.get('window');
+const INPUT_WIDTH = SCREEN_WIDTH  * 0.85 > 400 ? 400 : SCREEN_WIDTH  * 0.85; // Max 400px
+const isSmallDevice = SCREEN_WIDTH < 400;  // Phones are < 400px width
+
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    backgroundColor: '#D2BBA1',
+    backgroundColor: '#f5ede6',
     alignItems: 'center',
     padding: 16,
     paddingBottom: 40,
   },
-  logo: {
-    width: 150,
-    height: 150,
-    resizeMode: 'contain',
-    marginBottom: 10,
-    marginTop: 40,
-  },
+	logo: {
+		width: isSmallDevice ? 90 : 120,   // smaller logo on small devices
+		height: isSmallDevice ? 90 : 120,
+		resizeMode: 'contain',
+		marginTop: 3,
+		marginBottom: 10,
+	},
   title: {
-    fontSize: 30,
-    fontWeight: 'bold',
-    fontFamily: 'InriaSerif-Bold',
-    marginTop: 0,
-    color: '#000',
+		fontSize: isSmallDevice ? 24 : 28,
+		fontWeight: 'bold',
+		fontFamily: 'InriaSerif-Bold',
+		color: '#000',
   },
   subtitle: {
-    fontSize: 20,
-    color: '#666',
-    marginBottom: 20,
+		fontSize: isSmallDevice ? 16 : 18,
+		color: '#666',
+		marginBottom: isSmallDevice ? 10 : 20,
     fontFamily: 'InriaSerif-Regular',
   },
   inputContainer: {
-    width: '100%',
-    paddingHorizontal: 20,
+    width: INPUT_WIDTH,
   },
   inputLabel: {
-    fontSize: 14,
-    fontFamily: 'InriaSerif-Bold',
+    fontSize: 16,
+    //fontFamily: 'InriaSerif-regular',
     color: '#000',
-    marginTop: 10,
+    marginTop: 0,
     marginBottom: 5,
   },
   input: {
@@ -229,9 +238,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    fontFamily: 'InriaSerif-Regular',
-    borderWidth: 1,
-    borderColor: '#CCC',
+    //fontFamily: 'InriaSerif-Regular',
+    // borderWidth: 1,
+    // borderColor: '#CCC',
   },
   passwordContainer: {
     flexDirection: 'row',
@@ -243,24 +252,25 @@ const styles = StyleSheet.create({
     borderColor: '#CCC',
   },
   signUpButton: {
-    backgroundColor: '#7E8FA6',
+    //backgroundColor: '#7E8FA6',
     padding: 14,
-    borderRadius: 24,
+    borderRadius: 12,
     alignItems: 'center',
-    width: '80%',
-    marginTop: 20,
+    width: INPUT_WIDTH,
+    marginTop: 5,
   },
   signUpButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
-    fontFamily: 'InriaSerif-Bold',
+    //fontFamily: 'InriaSerif-Bold',
   },
   dividerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    width: '80%',
-    marginVertical: 20,
+    width: INPUT_WIDTH,
+		marginVertical: isSmallDevice ? 3 : 20, // <--- shrink vertical space
+		
   },
   dividerLine: {
     flex: 1,
@@ -271,7 +281,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
     fontSize: 14,
     color: '#555',
-    fontFamily: 'InriaSerif-Regular',
+		marginTop: 2,
+    //fontFamily: 'InriaSerif-Regular',
   },
   googleButton: {
     flexDirection: 'row',
@@ -281,7 +292,9 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     borderWidth: 1,
     borderColor: '#CCC',
-    width: '80%',
+    width: INPUT_WIDTH,
+    justifyContent: 'center',
+		marginTop: 10,
   },
   googleIcon: {
     marginRight: 10,
@@ -289,20 +302,20 @@ const styles = StyleSheet.create({
   googleButtonText: {
     fontSize: 16,
     color: '#555',
-    fontFamily: 'InriaSerif-Regular',
+    //fontFamily: 'InriaSerif-Regular',
   },
   loginContainer: {
     flexDirection: 'row',
-    marginTop: 20,
+    marginTop: 15,
   },
   loginText: {
+    color: '#4f3e2f',
     fontSize: 14,
-    color: '#555',
-    fontFamily: 'InriaSerif-Regular',
+    fontWeight: '600',
   },
   loginButtonText: {
     fontSize: 14,
     color: '#7E8FA6',
-    fontFamily: 'InriaSerif-Bold',
+    //fontFamily: 'InriaSerif-Bold',
   },
 });

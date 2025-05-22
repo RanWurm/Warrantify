@@ -16,16 +16,19 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import Constants from 'expo-constants';
+
 
 export default function LoginScreen() {
+  const serverBackendURL = Constants.expoConfig!.extra!.SERVER_BACKEND_URL;
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   const router = useRouter();
-
-
-  const handleLogin = async () =>{
+  
+ const handleLogin = async () =>{
     console.log("in handle login")
     const userData={
         email:email,
@@ -37,7 +40,7 @@ export default function LoginScreen() {
       }
       
       try{
-        axios.post("http://10.0.0.7:3000/login",userData)
+        axios.post("http://10.0.0.12:3000/login",userData)
       .then(res=>{
         console.log("hey data is",res.data)
         AsyncStorage.setItem("token",res.data.data)
@@ -63,7 +66,6 @@ export default function LoginScreen() {
           }
     
   }
-  
   
   
   

@@ -31,7 +31,7 @@ export default function Account() {
   useEffect(() => {
     const fetchData = async () => {
       const token = await AsyncStorage.getItem("token");
-      axios.post("http://10.0.0.7:3000/userdata", { token })
+      axios.post("http://10.0.0.12:3000/userdata", { token })
         .then(res => {
           setUserData(res.data.data);
           // Set the image from userData if it exists
@@ -136,7 +136,7 @@ export default function Account() {
         
         if (image) {
           // First update the image
-          response = await axios.post('http://10.0.0.7:3000/update-user', 
+          response = await axios.post('http://10.0.0.12:3000/update-user', 
             { image },
             {
               headers: {
@@ -151,7 +151,7 @@ export default function Account() {
           delete otherFields.image;
           
           if (Object.keys(otherFields).length > 0) {
-            response = await axios.post('http://10.0.0.7:3000/update-user', 
+            response = await axios.post('http://10.0.0.12:3000/update-user', 
               otherFields,
               {
                 headers: {
@@ -163,7 +163,7 @@ export default function Account() {
           }
         } else {
           // Update without image
-          response = await axios.post('http://10.0.0.7:3000/update-user', 
+          response = await axios.post('http://10.0.0.12:3000/update-user', 
             formData,
             {
               headers: {
@@ -177,7 +177,7 @@ export default function Account() {
         if (response.data.status === "Ok") {
           Alert.alert('Success', 'Profile updated successfully');
           // Refresh user data
-          const userDataResponse = await axios.post("http://10.0.0.7:3000/userdata", { token });
+          const userDataResponse = await axios.post("http://10.0.0.12:3000/userdata", { token });
           setUserData(userDataResponse.data.data);
         }
       } else {
@@ -190,46 +190,6 @@ export default function Account() {
       setLoading(false);
     }
   };
-  
-
-  // const handleUpdate = async () => {
-  //   // Replace 'user' with the actual current user object if available.
-  //   if (!userData) {
-  //     Alert.alert('Error', 'No user data is loaded.');
-  //     return;
-  //   }
-  //   if (password && password !== confirmPassword) {
-  //     Alert.alert('Error', 'Passwords do not match.');
-  //     return;
-  //   }
-  //   setLoading(true);
-  //   try {
-  //     // Example: Updating Firebase auth profile if needed
-
-  //     // Profile data update on backend
-  //     const formData = {
-  //       firstname,lastname,password,image
-  //     };
-  //     const response = await fetch('http://10.0.0.5:3000/update-user', {
-  //       method: 'POST',
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //       },
-  //       body: JSON.stringify(formData),
-  //     });
-  //     const data = await response.json();
-  //     if (data.status === "Ok") {
-  //       Alert.alert('Success', 'Profile updated successfully');
-  //     }
-  //   } catch (error: any) {
-  //     console.error('Error updating profile:', error);
-  //     Alert.alert('Error', error.message || 'An error occurred while updating your profile.');
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-  
-  
   
 
   const handleSignOut = async () => {

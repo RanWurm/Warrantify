@@ -1,8 +1,8 @@
 // app/(tabs)/index.tsx
 import React, { useEffect, useState } from 'react';
 import { Redirect } from 'expo-router';
-import { auth } from '../../constants/firebase'; 
-import { onAuthStateChanged, User } from 'firebase/auth';
+import { auth } from '../../constants/customAuth';
+import { onAuthStateChanged, User } from '../../constants/customAuth';
 
 export default function Index() {
   const [loading, setLoading] = useState(true);
