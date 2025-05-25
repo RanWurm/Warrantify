@@ -2,7 +2,7 @@
 import * as SecureStore from 'expo-secure-store';
 
 // Your server URL - update this to match your server
-const SERVER_URL = 'http://192.168.1.245:3000';
+const SERVER_URL = 'http://10.0.0.12:3000';
 
 // Custom User class to mimic Firebase User
 class CustomUser {
