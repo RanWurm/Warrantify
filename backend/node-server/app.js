@@ -7,7 +7,10 @@ const cors = require('cors');
 const mongoose =require("mongoose")
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken')
-const mongoUrl="mongodb+srv://ranwurembrand:ShevShev12%21%40%23@cluster0.m4fkm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+//const mongoUrl="mongodb+srv://ranwurembrand:ShevShev12%21%40%23@cluster0.m4fkm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+
+const mongoUrl="mongodb+srv://ilanitber:12345679@cluster0.m4fkm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+
 mongoose
 .connect(mongoUrl)
 .then(()=>{

@@ -7,7 +7,7 @@ import axios from 'axios';
 import { LinearGradient } from 'expo-linear-gradient';
 import Constants from 'expo-constants';
 
-const serverBackendURL = "http://10.0.0.12:3000";
+const serverBackendURL = Constants.expoConfig!.extra!.SERVER_BACKEND_URL;
 
 export default function RegisterScreen() {
   const [fontsLoaded] = useFonts({

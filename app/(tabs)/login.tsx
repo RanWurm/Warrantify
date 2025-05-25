@@ -21,6 +21,7 @@ import Constants from 'expo-constants';
 
 export default function LoginScreen() {
   const serverBackendURL = Constants.expoConfig!.extra!.SERVER_BACKEND_URL;
+  console.log(serverBackendURL);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -40,7 +41,7 @@ export default function LoginScreen() {
       }
       
       try{
-        axios.post("http://10.0.0.12:3000/login",userData)
+        axios.post(`${serverBackendURL}/login`, userData)
       .then(res=>{
         console.log("hey data is",res.data)
         AsyncStorage.setItem("token",res.data.data)

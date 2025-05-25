@@ -22,6 +22,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import WarrantyCard from '../components/WarrantyCard';
 import Constants from 'expo-constants';
 
+
 interface WarrantyItemProps {
   productId: string;
   title: string;
@@ -34,7 +35,7 @@ interface WarrantyItemProps {
 }
 
 const isWeb = Platform.OS === 'web';
-const serverBackendURL = "http://10.0.0.12:3000"
+const serverBackendURL = Constants.expoConfig!.extra!.SERVER_BACKEND_URL;
 
 
 const NavItem = ({ label, destination }: { label: string; destination: string }) => {

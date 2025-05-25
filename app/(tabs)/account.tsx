@@ -9,6 +9,9 @@ import { Avatar } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
+
+const serverBackendURL = Constants.expoConfig!.extra!.SERVER_BACKEND_URL;
 
 export default function Account() {
   const [fontsLoaded] = useFonts({
@@ -31,7 +34,7 @@ export default function Account() {
   useEffect(() => {
     const fetchData = async () => {
       const token = await AsyncStorage.getItem("token");
-      axios.post("http://10.0.0.12:3000/userdata", { token })
+      axios.post(`${serverBackendURL}/userdata`, { token })
         .then(res => {
           setUserData(res.data.data);
           // Set the image from userData if it exists
@@ -136,7 +139,7 @@ export default function Account() {
         
         if (image) {
           // First update the image
-          response = await axios.post('http://10.0.0.12:3000/update-user', 
+          response = await axios.post(`${serverBackendURL}/update-user`,
             { image },
             {
               headers: {
@@ -151,7 +154,7 @@ export default function Account() {
           delete otherFields.image;
           
           if (Object.keys(otherFields).length > 0) {
-            response = await axios.post('http://10.0.0.12:3000/update-user', 
+            response = await axios.post(`${serverBackendURL}/update-user`, 
               otherFields,
               {
                 headers: {
@@ -163,7 +166,7 @@ export default function Account() {
           }
         } else {
           // Update without image
-          response = await axios.post('http://10.0.0.12:3000/update-user', 
+          response = await axios.post(`${serverBackendURL}/update-user`, 
             formData,
             {
               headers: {
@@ -177,7 +180,7 @@ export default function Account() {
         if (response.data.status === "Ok") {
           Alert.alert('Success', 'Profile updated successfully');
           // Refresh user data
-          const userDataResponse = await axios.post("http://10.0.0.12:3000/userdata", { token });
+          const userDataResponse = await axios.post(`${serverBackendURL}/userdata`,{ token });
           setUserData(userDataResponse.data.data);
         }
       } else {

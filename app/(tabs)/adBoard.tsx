@@ -6,8 +6,9 @@ import BottomNavBar from '../components/BottomNavBar';
 import { Dimensions } from 'react-native';
 import Constants from 'expo-constants';
 
-const pythonBackendURL = "http://10.0.0.12:5000";
-const serverBackendURL = "http://10.0.0.12:3000";
+const pythonBackendURL = Constants.expoConfig!.extra!.PYTHON_BACKEND_URL;
+const serverBackendURL = Constants.expoConfig!.extra!.SERVER_BACKEND_URL;
+
 console.log("Python Backend is: " + pythonBackendURL);
 console.log("Server Backend is: " + serverBackendURL);
 
@@ -52,6 +53,8 @@ const MonetizedAdsIntegration: React.FC = () => {
     try {
       const response = await axios.get(`${serverBackendURL}/ad-board/page/1`);
       // Adjust this if your server returns the ads under a different key.
+	  console.log("Python Backend is: " + pythonBackendURL);
+	  console.log("Server Backend is: " + serverBackendURL);	
 	  console.log("response.data.ads;",response.data.ads)
       return response.data.ads;
     } catch (err) {
@@ -73,6 +76,7 @@ const MonetizedAdsIntegration: React.FC = () => {
       }
       // Otherwise, fetch fresh recommendations.
       const token = await AsyncStorage.getItem("token");
+	  console.log("📡 Trying to hit Python:", pythonBackendURL+"/get_recommendation");
       const warrantiesResponse = await axios.post(`${serverBackendURL}/user-warranties`, { token });
       const warranties = warrantiesResponse.data.data;
 
@@ -94,7 +98,11 @@ const MonetizedAdsIntegration: React.FC = () => {
 
       return mappedRecs;
     } catch (err: any) {
-      console.error('Error fetching recommendations:', err);
+		console.error("✅ Error code:", err.code);
+		console.error("⏱ Timeout was set to:", err.config?.timeout);
+		console.error("🔍 Full error:", err);
+      	//console.error('Error fetching recommendations:', err);
+	
       throw err;
     }
   }, []);
