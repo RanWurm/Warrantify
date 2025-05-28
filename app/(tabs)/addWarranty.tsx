@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+// components/AddWarrantyForm.tsx
+
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,237 +10,274 @@ import {
   ScrollView,
   Image,
   Alert,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Stack } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
-export default function AddWarranty() {
-  const [productName, setProductName] = useState('');
-  const [serviceCenter, setServiceCenter] = useState('');
-  const [manufacturer, setManufacturer] = useState('');
-  const [store, setStore] = useState('');
-  const [model, setModel] = useState('');
-  const [price, setPrice] = useState('');
-  const [purchaseDate, setPurchaseDate] = useState('');
-  const [expirationDate, setExpirationDate] = useState('');
-  const [notes, setNotes] = useState('');
+const serverBackendURL = Constants.expoConfig!.extra!.SERVER_BACKEND_URL;
 
-  const validateDate = (date: string) => {
-    const regex = /^\d{4}-\d{2}-\d{2}$/;
-    return regex.test(date);
+interface AddWarrantyFormProps {
+  onClose: () => void;
+  scannedData: any;
+}
+
+const isWeb = Platform.OS === 'web';
+
+const AddWarrantyForm: React.FC<AddWarrantyFormProps> = ({ onClose, scannedData }) => {
+  const [formData, setFormData] = useState({
+    productName: '',
+    serviceCenter: '',
+    manufacturer: '',
+    store: '',
+    model: '',
+    price: '',
+    purchaseDate: '',
+    expirationDate: '',
+    notes: '',
+  });
+
+  const [purchaseDate, setPurchaseDate] = useState(new Date());
+  const [expirationDate, setExpirationDate] = useState(new Date());
+  const [showPurchaseDatePicker, setShowPurchaseDatePicker] = useState(false);
+  const [showExpirationDatePicker, setShowExpirationDatePicker] = useState(false);
+
+  useEffect(() => {
+    if (scannedData) {
+      setFormData({
+        productName: scannedData.productName || '',
+        serviceCenter: scannedData.serviceCenter || '',
+        manufacturer: scannedData.manufacturer || '',
+        store: scannedData.store || '',
+        model: scannedData.model || '',
+        price: scannedData.price || '',
+        purchaseDate: scannedData.purchaseDate || '',
+        expirationDate: scannedData.expirationDate || '',
+        notes: scannedData.notes || '',
+      });
+
+      if (scannedData.purchaseDate) {
+        const parsedPurchaseDate = new Date(scannedData.purchaseDate);
+        if (!isNaN(parsedPurchaseDate.getTime())) setPurchaseDate(parsedPurchaseDate);
+      }
+
+      if (scannedData.expirationDate) {
+        const parsedExpirationDate = new Date(scannedData.expirationDate);
+        if (!isNaN(parsedExpirationDate.getTime())) setExpirationDate(parsedExpirationDate);
+      }
+    }
+  }, [scannedData]);
+
+  const formatDate = (date: Date) => date.toISOString().split('T')[0];
+
+  const onPurchaseDateChange = (_: any, selectedDate?: Date) => {
+    if (selectedDate) {
+      setPurchaseDate(selectedDate);
+      setFormData({ ...formData, purchaseDate: formatDate(selectedDate) });
+    }
+    setShowPurchaseDatePicker(false);
   };
 
-  const handleAddWarranty = () => {
-    if (!validateDate(purchaseDate) || !validateDate(expirationDate)) {
-      Alert.alert(
-        'Invalid Date Format',
-        'Please enter dates in YYYY-MM-DD format.'
-      );
-      return;
+  const onExpirationDateChange = (_: any, selectedDate?: Date) => {
+    if (selectedDate) {
+      setExpirationDate(selectedDate);
+      setFormData({ ...formData, expirationDate: formatDate(selectedDate) });
     }
+    setShowExpirationDatePicker(false);
+  };
 
-    Alert.alert('Success', 'Warranty added successfully!');
+  const showPurchaseDatePickerModal = () => {
+    if (isWeb) {
+      setShowPurchaseDatePicker(true);
+    } else {
+      setShowPurchaseDatePicker(true);
+    }
+  };
+
+  const showExpirationDatePickerModal = () => {
+    if (isWeb) {
+      setShowExpirationDatePicker(true);
+    } else {
+      setShowExpirationDatePicker(true);
+    }
+  };
+
+  const handleAddWarranty = async () => {
+    try {
+      const token = await AsyncStorage.getItem("token");
+      const response = await fetch(`${serverBackendURL}/add-warranty`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        Alert.alert('Success', 'Warranty added successfully!', [{ text: 'OK', onPress: onClose }]);
+      } else {
+        const errorData = await response.json();
+        Alert.alert('Error', errorData.error || 'Something went wrong');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Something went wrong');
+    }
   };
 
   return (
-    <>
-      {/* Remove the header */}
-      <Stack.Screen options={{ headerShown: false }} />
-
-      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 70 }}>
-        {/* Header Section */}
+    <View style={styles.formOverlay}>
+      <View style={styles.formContainer}>
         <View style={styles.header}>
-          <View style={styles.headerRow}>
-            <Ionicons name="document-outline" size={90} color="#555" style={styles.headerIcon} />
-            <View style={styles.titleContainer}>
-              <Text style={styles.title}>Add a warranty</Text>
-              <Text style={styles.subtitle}>
-                Keep track of all of your receipts simply and easily!
-              </Text>
-            </View>
-          </View>
+          <Ionicons name="close" size={24} color="#555" onPress={onClose} style={{ position: 'absolute', left: 10 }} />
+          <Text style={styles.headerTitle}>Add a Warranty</Text>
         </View>
 
-        {/* Illustration */}
         <View style={styles.imageContainer}>
-          <Image
-            source={require('../../assets/images/warranty-placeholder.png')} // Replace with your image path
-            style={styles.image}
-          />
+          <Image source={require('../../assets/images/warranty-placeholder.png')} style={styles.image} />
         </View>
 
-        {/* Input Fields */}
-        <View style={styles.inputContainer}>
+        <ScrollView style={styles.inputContainer} contentContainerStyle={{ paddingBottom: 20 }}>
           <View style={styles.row}>
-            <TextInput
-              style={styles.input}
-              placeholder="Product Name"
-              value={productName}
-              onChangeText={setProductName}
+            <TextInput style={styles.input} placeholder="Product Name" placeholderTextColor="black"
+              value={formData.productName}
+              onChangeText={(text) => setFormData({ ...formData, productName: text })}
             />
-            <TextInput
-              style={styles.input}
-              placeholder="Service Center"
-              value={serviceCenter}
-              onChangeText={setServiceCenter}
+            <TextInput style={styles.input} placeholder="Service Center" placeholderTextColor="black"
+              value={formData.serviceCenter}
+              onChangeText={(text) => setFormData({ ...formData, serviceCenter: text })}
             />
           </View>
 
           <View style={styles.row}>
-            <TextInput
-              style={styles.input}
-              placeholder="Manufacturer"
-              value={manufacturer}
-              onChangeText={setManufacturer}
+            <TextInput style={styles.input} placeholder="Manufacturer" placeholderTextColor="black"
+              value={formData.manufacturer}
+              onChangeText={(text) => setFormData({ ...formData, manufacturer: text })}
             />
-            <TextInput
-              style={styles.input}
-              placeholder="Store"
-              value={store}
-              onChangeText={setStore}
+            <TextInput style={styles.input} placeholder="Store" placeholderTextColor="black"
+              value={formData.store}
+              onChangeText={(text) => setFormData({ ...formData, store: text })}
             />
           </View>
 
           <View style={styles.row}>
-            <TextInput
-              style={styles.input}
-              placeholder="Model"
-              value={model}
-              onChangeText={setModel}
+            <TextInput style={styles.input} placeholder="Model" placeholderTextColor="black"
+              value={formData.model}
+              onChangeText={(text) => setFormData({ ...formData, model: text })}
             />
-            <TextInput
-              style={styles.input}
-              placeholder="Price"
-              value={price}
-              onChangeText={setPrice}
+            <TextInput style={styles.input} placeholder="Price" placeholderTextColor="black"
+              value={formData.price}
+              onChangeText={(text) => setFormData({ ...formData, price: text })}
               keyboardType="numeric"
             />
           </View>
 
           <View style={styles.row}>
-            <TextInput
-              style={styles.dateInput}
-              placeholder="Purchase Date (YYYY-MM-DD)"
+            <TouchableOpacity style={styles.dateInput} onPress={showPurchaseDatePickerModal}>
+              <Text style={styles.dateInputText}>
+                {formData.purchaseDate || 'Purchase Date'}
+              </Text>
+              <Ionicons name="calendar-outline" size={16} color="#555" />
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.dateInput} onPress={showExpirationDatePickerModal}>
+              <Text style={styles.dateInputText}>
+                {formData.expirationDate || 'Expiration Date'}
+              </Text>
+              <Ionicons name="calendar-outline" size={16} color="#555" />
+            </TouchableOpacity>
+          </View>
+
+          {showPurchaseDatePicker && (
+            <DateTimePicker
               value={purchaseDate}
-              onChangeText={setPurchaseDate}
-              keyboardType="numeric"
+              mode="date"
+              display="calendar"
+              onChange={onPurchaseDateChange}
             />
-            <TextInput
-              style={styles.dateInput}
-              placeholder="Expiration Date (YYYY-MM-DD)"
+          )}
+
+          {showExpirationDatePicker && (
+            <DateTimePicker
               value={expirationDate}
-              onChangeText={setExpirationDate}
-              keyboardType="numeric"
+              mode="date"
+              display="calendar"
+              onChange={onExpirationDateChange}
             />
+          )}
+
+          <View style={styles.row}>
+            <TouchableOpacity style={styles.iconButton}>
+              <Ionicons name="scan-outline" size={24} color="#555" />
+              <Text style={styles.iconButtonText}>Scan Receipt</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.iconButton}>
+              <Ionicons name="add-outline" size={24} color="#555" />
+              <Text style={styles.iconButtonText}>Add Receipt</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.iconButton}>
+              <Ionicons name="document-attach-outline" size={24} color="#555" />
+              <Text style={styles.iconButtonText}>Add Files</Text>
+            </TouchableOpacity>
           </View>
-
-		  <View style={styles.row}>
-			{/* Scan Receipt Button */}
-			<TouchableOpacity style={styles.iconButton}>
-				<Ionicons name="scan-outline" size={24} color="#555" />
-				<Text style={styles.iconButtonText}>Scan Receipt</Text>
-			</TouchableOpacity>
-
-			{/* Add Receipt Button */}
-			<TouchableOpacity style={styles.iconButton}>
-				<Ionicons name="add-outline" size={24} color="#555" />
-				<Text style={styles.iconButtonText}>Add Receipt</Text>
-			</TouchableOpacity>
-
-			{/* Add Files Button */}
-			<TouchableOpacity style={styles.iconButton}>
-				<Ionicons name="document-attach-outline" size={24} color="#555" />
-				<Text style={styles.iconButtonText}>Add Fiddddddddddddddd</Text>
-			</TouchableOpacity>
-		 </View>
-
 
           <TextInput
             style={styles.notesInput}
             placeholder="Add notes"
-            value={notes}
-            onChangeText={setNotes}
+            placeholderTextColor="black"
+            value={formData.notes}
+            onChangeText={(text) => setFormData({ ...formData, notes: text })}
             multiline
           />
-        </View>
+        </ScrollView>
 
-        {/* Add Warranty Button */}
         <TouchableOpacity style={styles.addButton} onPress={handleAddWarranty}>
-          <Text style={styles.addButtonText}>Add Warranty</Text>
-        </TouchableOpacity>
-      </ScrollView>
-
-      {/* Bottom Navigation */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity style={styles.navButton}>
-          <Ionicons name="construct-outline" size={24} color="#555" />
-          <Text style={styles.navText}>Service centers</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navButton}>
-          <Ionicons name="heart-outline" size={24} color="#555" />
-          <Text style={styles.navText}>Recommended</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navButton}>
-          <Ionicons name="layers-outline" size={24} color="#555" />
-          <Text style={styles.navText}>My Products</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navButton}>
-          <Ionicons name="home-outline" size={24} color="#555" />
-          <Text style={styles.navText}>Home</Text>
+          <Text style={styles.addButtonText}>Add a Warranty</Text>
         </TouchableOpacity>
       </View>
-    </>
+    </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  container: {
+  formOverlay: {
     flex: 1,
-    backgroundColor: '#D2BBA1',
+    backgroundColor: '#000000AA',
+    justifyContent: 'flex-end',
+  },
+  formContainer: {
+    backgroundColor: isWeb ? '#e0c3a9' : '#DCC0AB',
+    borderRadius: 20,
+    padding: 20,
+    maxHeight: '90%',
+    position: 'absolute',
+    width: isWeb ? '30%' : '100%',
+    right: isWeb ? '35%' : 0,
+    bottom: isWeb ? 150 : 0,
   },
   header: {
-    alignItems: 'flex-start',
-    marginTop: 20,
-    paddingHorizontal: 16,
-  },
-  headerRow: {
-    flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 10,
   },
-  headerIcon: {
-    marginRight: 10,
-	marginTop: 20,
-  },
-  titleContainer: {
-    flex: 1,
-	width: 250
-  },
-  title: {
-    fontSize: 30,
-    fontFamily: 'InriaSerif-Regular',
-    marginBottom: 4,
-	marginTop:35,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'left',
-    fontFamily: 'InriaSerif-Regular',
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: 'black',
+    fontFamily: 'InriaSerif-Bold',
   },
   imageContainer: {
     alignSelf: 'center',
-    marginVertical: 20,
-    width: 400,
-    height: 200,
+    marginVertical: 10,
+    width: '100%',
+    height: 120,
     borderRadius: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 10,
     justifyContent: 'center',
     alignItems: 'center',
-	marginTop:20,
+    backgroundColor: 'white',
   },
   image: {
     width: '100%',
@@ -246,31 +285,14 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
     borderRadius: 15,
     backgroundColor: '#FFF',
-	marginTop: 10,
   },
   inputContainer: {
-    paddingHorizontal: 16,
-	borderColor:'#fff'
+    marginTop: 10,
   },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 10,
-  },
-  iconButton: {
-	flex: 1,
-	flexDirection: 'row',
-	alignItems: 'center',
-	justifyContent: 'center',
-	backgroundColor: '#FFF',
-	borderRadius: 10,
-	padding: 12,
-	marginHorizontal: 2, // Reduced spacing between buttons
-  },
-  iconButtonText: {
-	marginLeft: 8,
-	fontSize: 14,
-	color: '#555',
   },
   input: {
     flex: 1,
@@ -279,7 +301,8 @@ const styles = StyleSheet.create({
     padding: 12,
     marginHorizontal: 5,
     fontSize: 14,
-    color: '#333',
+    fontWeight: 'bold',
+    fontFamily: 'InriaSerif-Bold',
   },
   dateInput: {
     flex: 1,
@@ -287,8 +310,30 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 12,
     marginHorizontal: 5,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  dateInputText: {
     fontSize: 14,
     color: '#333',
+    fontWeight: 'bold',
+    fontFamily: 'InriaSerif-Bold',
+  },
+  iconButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFF',
+    borderRadius: 10,
+    padding: 12,
+    marginHorizontal: 2,
+  },
+  iconButtonText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: '#555',
   },
   notesInput: {
     backgroundColor: '#FFF',
@@ -305,31 +350,14 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     alignItems: 'center',
     padding: 12,
-    marginHorizontal: 16,
-    marginTop: 20,
+    marginTop: 5,
   },
   addButtonText: {
     color: '#FFF',
     fontSize: 16,
     fontWeight: 'bold',
-  },
-  bottomNav: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    width: '100%',
-    backgroundColor: '#D2BBA1',
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#DDD',
-    position: 'absolute',
-    bottom: 0,
-  },
-  navButton: {
-    alignItems: 'center',
-  },
-  navText: {
-    fontSize: 12,
-    color: '#555',
+    fontFamily: 'InriaSerif-Bold',
   },
 });
+
+export default AddWarrantyForm;

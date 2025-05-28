@@ -15,7 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
-import DateTimePicker from '@react-native-community/datetimepicker'
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 const serverBackendURL = Constants.expoConfig!.extra!.SERVER_BACKEND_URL;
 
@@ -39,6 +39,12 @@ const AddWarrantyForm: React.FC<AddWarrantyFormProps> = ({ onClose, scannedData 
     notes: '',
   });
 
+  // Date picker states
+  const [showPurchaseDatePicker, setShowPurchaseDatePicker] = useState(false);
+  const [showExpirationDatePicker, setShowExpirationDatePicker] = useState(false);
+  const [purchaseDate, setPurchaseDate] = useState(new Date());
+  const [expirationDate, setExpirationDate] = useState(new Date());
+
   useEffect(() => {
     if (scannedData) {
       console.log("AddWarrantyForm: Populating form with scannedData:", scannedData);
@@ -53,8 +59,48 @@ const AddWarrantyForm: React.FC<AddWarrantyFormProps> = ({ onClose, scannedData 
         expirationDate: scannedData.expirationDate || '',
         notes: scannedData.notes || '',
       });
+
+      // Parse dates if they exist in scannedData
+      if (scannedData.purchaseDate) {
+        const parsedPurchaseDate = new Date(scannedData.purchaseDate);
+        if (!isNaN(parsedPurchaseDate.getTime())) {
+          setPurchaseDate(parsedPurchaseDate);
+        }
+      }
+      if (scannedData.expirationDate) {
+        const parsedExpirationDate = new Date(scannedData.expirationDate);
+        if (!isNaN(parsedExpirationDate.getTime())) {
+          setExpirationDate(parsedExpirationDate);
+        }
+      }
     }
   }, [scannedData]);
+
+  const formatDate = (date: Date) => {
+    return date.toISOString().split('T')[0]; // Returns YYYY-MM-DD format
+  };
+
+  const onPurchaseDateChange = (event: any, selectedDate?: Date) => {
+    const currentDate = selectedDate || purchaseDate;
+    setShowPurchaseDatePicker(false);
+    setPurchaseDate(currentDate);
+    setFormData({ ...formData, purchaseDate: formatDate(currentDate) });
+  };
+
+  const onExpirationDateChange = (event: any, selectedDate?: Date) => {
+    const currentDate = selectedDate || expirationDate;
+    setShowExpirationDatePicker(false);
+    setExpirationDate(currentDate);
+    setFormData({ ...formData, expirationDate: formatDate(currentDate) });
+  };
+
+  const showPurchaseDatePickerModal = () => {
+    setShowPurchaseDatePicker(true);
+  };
+
+  const showExpirationDatePickerModal = () => {
+    setShowExpirationDatePicker(true);
+  };
 
   const validateDate = (date: string) => {
     // Example: always return true for now.
@@ -180,24 +226,51 @@ const AddWarrantyForm: React.FC<AddWarrantyFormProps> = ({ onClose, scannedData 
             />
           </View>
 
+          {/* Date Fields with Pop-up Calendars */}
           <View style={styles.row}>
-            <TextInput
-              style={styles.dateInput}
-              placeholder="Purchase Date (YYYY-MM-DD)"
-			  placeholderTextColor="black"
-              value={formData.purchaseDate}
-              onChangeText={(text) => setFormData({ ...formData, purchaseDate: text })}
-              keyboardType="numeric"
-            />
-            <TextInput
-              style={styles.dateInput}
-              placeholder="Expiration Date (YYYY-MM-DD)"
-			  placeholderTextColor="black"
-              value={formData.expirationDate}
-              onChangeText={(text) => setFormData({ ...formData, expirationDate: text })}
-              keyboardType="numeric"
-            />
+            <TouchableOpacity 
+              style={styles.dateInput} 
+              onPress={showPurchaseDatePickerModal}
+            >
+              <Text style={styles.dateInputText}>
+                {formData.purchaseDate || 'Purchase Date'}
+              </Text>
+              <Ionicons name="calendar-outline" size={16} color="#555" />
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.dateInput} 
+              onPress={showExpirationDatePickerModal}
+            >
+              <Text style={styles.dateInputText}>
+                {formData.expirationDate || 'Expiration Date'}
+              </Text>
+              <Ionicons name="calendar-outline" size={16} color="#555" />
+            </TouchableOpacity>
           </View>
+
+          {/* Pop-up Date Pickers */}
+          {showPurchaseDatePicker && (
+            <DateTimePicker
+              testID="purchaseDateTimePicker"
+              value={purchaseDate}
+              mode="date"
+              is24Hour={true}
+              display="default"
+              onChange={onPurchaseDateChange}
+            />
+          )}
+
+          {showExpirationDatePicker && (
+            <DateTimePicker
+              testID="expirationDateTimePicker"
+              value={expirationDate}
+              mode="date"
+              is24Hour={true}
+              display="default"
+              onChange={onExpirationDateChange}
+            />
+          )}
 
           <View style={styles.row}>
             <TouchableOpacity style={styles.iconButton}>
@@ -298,6 +371,22 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
 	fontFamily: 'InriaSerif-Bold',
   },
+  dateButton: {
+    flex: 1,
+    backgroundColor: '#FFF',
+    borderRadius: 10,
+    padding: 12,
+    marginHorizontal: 5,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  dateButtonText: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: 'bold',
+    fontFamily: 'InriaSerif-Bold',
+  },
   dateInput: {
     flex: 1,
     backgroundColor: '#FFF',
@@ -338,6 +427,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 12,
     marginTop: 5,
+  },
+  datePickerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+    marginLeft:50,
   },
   addButtonText: {
     color: '#FFF',
