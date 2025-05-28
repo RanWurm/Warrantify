@@ -6,15 +6,11 @@ import Constants from 'expo-constants';
 import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
 import ServiceCenterCard from '../components/serviceCenterCard';
-import { Alert } from 'react-native';
+import { useNavigation } from 'expo-router';
+import { useLayoutEffect } from 'react';
 
-
-const serverBackendURL = Constants.expoConfig!.extra!.SERVER_BACKEND_URL;
+const serverBackendURL = Constants.expoConfig?.extra?.SERVER_BACKEND_URL || (Constants as any).manifest?.extra?.SERVER_BACKEND_URL;
 const googleApiKey = "AIzaSyCn-qqKYulPv-Ken38MtqimNa1AiJFluic";
-
-// const googleApiKey =
-//   (Constants.manifest as any)?.extra?.GOOGLE_MAPS_API_KEY ||
-//   Constants.expoConfig?.extra?.GOOGLE_MAPS_API_KEY;
 
 interface Warranty {
   serviceCenter?: string;
@@ -26,9 +22,19 @@ interface LocatedCenter {
   address: string;
   latitude: number;
   longitude: number;
+  phone?: string;
+  isOpen?: boolean;
+  closeTime?: string;
+  distanceKm?: number;
 }
 
 const MyServiceCenters: React.FC = () => {
+    const navigation = useNavigation();
+
+  useLayoutEffect(() => {
+    navigation.setOptions({ headerShown: false });
+  }, []);
+
   const [centers, setCenters] = useState<LocatedCenter[]>([]);
   const [loading, setLoading] = useState(true);
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
@@ -57,15 +63,11 @@ const MyServiceCenters: React.FC = () => {
         for (const centerName of uniqueCenters) {
           const textSearchUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(
             centerName
-          )}&location=${userLat},${userLng}&key=${googleApiKey}`;
-
-          console.log("🔍 Google Places search URL:", textSearchUrl);
+          )}&location=${userLat},${userLng}&radius=15000&key=${googleApiKey}`;
 
           try {
             const res = await fetch(textSearchUrl);
             const places = await res.json();
-            
-            console.log(JSON.stringify(places.results, null, 2));
 
             if (places.results && places.results.length > 0) {
               const sorted = places.results.sort((a, b) => {
@@ -74,35 +76,32 @@ const MyServiceCenters: React.FC = () => {
                 return distA - distB;
               });
               const closest = sorted[0];
+              const placeId = closest.place_id;
+              const placeDetailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${googleApiKey}`;
+              const detailsRes = await fetch(placeDetailsUrl);
+              const details = await detailsRes.json();
 
               const address = closest.formatted_address?.trim() || closest.vicinity?.trim() || 'Unknown';
-
-              console.log("✅ Closest place for", centerName);
-              console.log("Formatted Address:", closest.formatted_address);
-              console.log("Vicinity:", closest.vicinity);
+              const phone = details.result.formatted_phone_number || 'Not available';
+              const isOpen = details.result.opening_hours?.open_now;
+              const closingTime = details.result.opening_hours?.periods?.[0]?.close?.time;
+              const distanceKm = Math.round(
+                10 * Math.hypot(closest.geometry.location.lat - userLat, closest.geometry.location.lng - userLng) * 111
+              ) / 10;
 
               resolvedCenters.push({
                 name: centerName,
                 address,
                 latitude: closest.geometry.location.lat,
                 longitude: closest.geometry.location.lng,
-              });
-            } else {
-              resolvedCenters.push({
-                name: centerName,
-                address: 'None in your area',
-                latitude: userLat + Math.random() * 0.02,
-                longitude: userLng + Math.random() * 0.02,
+                phone,
+                isOpen,
+                closeTime: closingTime ? `${closingTime.slice(0, 2)}:${closingTime.slice(2)}` : undefined,
+                distanceKm,
               });
             }
           } catch (err) {
             console.error(`Error searching for ${centerName}:`, err);
-            resolvedCenters.push({
-              name: centerName,
-              address: 'Error resolving location',
-              latitude: userLat + Math.random() * 0.02,
-              longitude: userLng + Math.random() * 0.02,
-            });
           }
         }
 
@@ -145,7 +144,7 @@ const MyServiceCenters: React.FC = () => {
               key={index}
               coordinate={{ latitude: center.latitude, longitude: center.longitude }}
               title={center.name}
-              description={center.address }
+              description={center.address}
             />
           ))}
         </MapView>
@@ -159,10 +158,14 @@ const MyServiceCenters: React.FC = () => {
             city={center.address}
             address={center.address}
             notes={
-              center.address.includes('None') || center.address === 'Unknown'
-                ? 'Try searching manually or check spelling.'
+              center.isOpen !== undefined
+                ? center.isOpen
+                  ? `Open now, closes at ${center.closeTime || 'unknown'}`
+                  : 'Closed now'
                 : ''
             }
+            phone={center.phone}
+            distance={center.distanceKm}
           />
         ))}
       </ScrollView>
@@ -191,7 +194,7 @@ const styles = StyleSheet.create({
     color: '#000',
   },
   mapWrapper: {
-    height: 300,
+    height: "28%",
     borderRadius: 15,
     overflow: 'hidden',
     marginHorizontal: 20,

@@ -1,106 +1,102 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Dimensions,
-  TouchableOpacity,
-  Platform,
-} from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-const isWeb = Platform.OS === 'web';
-
-interface ServiceCenterCardProps {
+interface Props {
   name: string;
+  address: string;
   city: string;
-  address?: string;
-  iconName?: string;
+  phone?: string;
+  distance?: number;
   notes?: string;
 }
 
-const ServiceCenterCard: React.FC<ServiceCenterCardProps> = ({
-  name,
-  city,
-  address = 'No address provided',
-  iconName = 'store',
-  notes = 'No additional notes',
-}) => {
-  const [expanded, setExpanded] = useState(false);
-
-  const toggleExpanded = () => setExpanded(!expanded);
-
+const ServiceCenterCard: React.FC<Props> = ({ name, address, phone, distance, notes }) => {
   return (
-    <TouchableOpacity onPress={toggleExpanded} activeOpacity={0.85}>
-      <View style={[styles.cardContainer, expanded && styles.cardExpanded]}>
-        <View style={styles.centerItem}>
-          <MaterialCommunityIcons
-            name={iconName}
-            size={32}
-            color="#000"
-            style={styles.icon}
-          />
-          <View style={styles.centerInfo}>
-            <Text style={styles.itemTitle}>{name}</Text>
-            <Text style={styles.itemSubtitle}>{city}</Text>
-          </View>
-        </View>
-
-        {expanded && (
-          <View style={styles.expandedContainer}>
-            <Text style={styles.expandedText}>📍 {address}</Text>
-            <Text style={styles.expandedText}>📝 {notes}</Text>
+    <View style={styles.card}>
+      <View style={styles.headerRow}>
+        <Text style={styles.name}>{name}</Text>
+        {distance !== undefined && (
+          <View style={styles.row}>
+            <MaterialCommunityIcons name="map-marker-distance" size={16} color="#555" />
+            <Text style={styles.infoText}>{distance} Km</Text>
           </View>
         )}
       </View>
-    </TouchableOpacity>
+
+      <Text style={styles.address}>{address}</Text>
+
+      <View style={styles.infoRow}>
+        <View style={styles.row}>
+          <MaterialCommunityIcons name="clock-outline" size={16} color="#4caf50" />
+          <Text style={[styles.statusText, notes?.includes('Open') ? styles.open : styles.closed]}>
+            {notes || 'Opening info unavailable'}
+          </Text>
+        </View>
+
+        {phone && (
+          <TouchableOpacity style={styles.row}>
+            <MaterialCommunityIcons name="phone" size={16} color="#555" />
+            <Text style={styles.infoText}>{phone}</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  cardContainer: {
+  card: {
     backgroundColor: '#FDFDFD',
-  marginHorizontal: 10,
-  marginVertical: 5,
-  borderRadius: 12,
-  overflow: 'hidden',
-  elevation: 2,               
-  shadowColor: '#000',        
-  shadowOpacity: 0.1,
-  shadowRadius: 5,
-  shadowOffset: { width: 0, height: 2 },
+    borderRadius: 12,
+    marginHorizontal: 16,
+    marginVertical: 8,
+    padding: 16,
+    borderColor: '#DDD',
+    borderWidth: 1,
+    elevation: 2,
   },
-  cardExpanded: {
-    // Add visual cue if needed
-  },
-  centerItem: {
-    flexDirection: 'row',
-    padding: 15,
-    alignItems: 'center',
-  },
-  icon: {},
-  centerInfo: {
-    flex: 1,
-    marginLeft: 10,
-  },
-  itemTitle: {
+  name: {
     fontSize: 16,
+    fontFamily: 'InriaSerif-Bold',
     color: '#000',
-    fontFamily: 'InriaSerif-Regular',
   },
-  itemSubtitle: {
+  address: {
+    fontSize: 14,
     color: '#666',
-    marginTop: 5,
+    marginTop: 4,
     fontFamily: 'InriaSerif-Regular',
   },
-  expandedContainer: {
-    paddingHorizontal: 15,
-    paddingBottom: 15,
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+    flexWrap: 'wrap',
+    gap: 10,
   },
-  expandedText: {
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  infoText: {
+    fontSize: 13,
+    color: '#555',
     fontFamily: 'InriaSerif-Regular',
-    color: '#000',
-    marginTop: 8,
+  },
+  statusText: {
+    fontSize: 13,
+    fontFamily: 'InriaSerif-Regular',
+  },
+  open: {
+    color: '#4caf50',
+  },
+  closed: {
+    color: '#f44336',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
 });
 
