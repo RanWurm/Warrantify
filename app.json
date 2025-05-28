@@ -3,8 +3,16 @@
     "name": "Warrantify",
     "slug": "Warrantify",
     "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "myapp",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+
     "plugins": [
       "expo-router",
+      "expo-font",
+      "expo-secure-store",
       [
         "expo-splash-screen",
         {
@@ -14,20 +22,26 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-font",
-      "expo-secure-store"
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "We use your location to find the nearest service centers.",
+          "locationWhenInUsePermission": "We use your location to find the nearest service centers."
+        }
+      ]
     ],
-    "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "myapp",
-    "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
-        "ios": {
+
+    "ios": {
       "supportsTablet": true,
       "config": {
         "googleMapsApiKey": "AIzaSyCn-qqKYulPv-Ken38MtqimNa1AiJFluic"
+      },
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "We use your location to find the nearest service centers.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "We use your location to find the nearest service centers."
       }
     },
+
     "android": {
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
@@ -39,23 +53,28 @@
         "googleMaps": {
           "apiKey": "AIzaSyCn-qqKYulPv-Ken38MtqimNa1AiJFluic"
         }
-      }
+      },
+      "permissions": ["ACCESS_FINE_LOCATION"]
     },
+
     "web": {
       "bundler": "metro",
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
+
     "experiments": {
       "typedRoutes": true
     },
+
     "extra": {
       "router": {
         "origin": false
       },
       "eas": {
         "projectId": "bca12ca4-2486-4f34-9b60-305e7646965a"
-      }
+      },
+      "GOOGLE_MAPS_API_KEY": "AIzaSyCn-qqKYulPv-Ken38MtqimNa1AiJFluic"
     }
   }
 }

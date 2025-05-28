@@ -48,16 +48,16 @@ const BottomNavBar = () => {
 
       <TouchableOpacity 
         style={styles.navButton}
-        onPress={() => navigateTo('/myWarranties')}
+        onPress={() => navigateTo('/serviceCenters')}
       >
         <MaterialCommunityIcons
           name="account"
           size={24}
-          color={pathname === '/myWarranties' ? '#7E8FA6' : '#555'}
+          color={pathname === '/serviceCenters' ? '#7E8FA6' : '#555'}
         />
         <Text style={[
           styles.navText,
-          pathname === '/myWarranties' && styles.activeNavText
+          pathname === '/serviceCenters' && styles.activeNavText
         ]}>
           My Warranties
         </Text>

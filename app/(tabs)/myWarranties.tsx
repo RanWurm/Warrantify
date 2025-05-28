@@ -15,7 +15,6 @@ import {
 } from 'react-native';
 
 import BottomNavBar from '../components/BottomNavBar';
-import AddWarrantyOptions from '../components/AddWarrantyOptions.';
 import axios from 'axios';
 import SearchBar from '../components/SearchBar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -49,7 +48,7 @@ const NavItem = ({ label, destination }: { label: string; destination: string })
       onHoverOut={() => setHovered(false)}
       style={[
         styles.navItem,
-        hovered && { backgroundColor: 'rgb(255,255,255)' },
+        hovered ? { backgroundColor: 'rgb(255,255,255)' } : null,
       ]}
     >
       <Text style={styles.navItemText}>{label}</Text>
@@ -237,7 +236,7 @@ const MyWarranties = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {isWeb && (
+      {isWeb ? (
         <View style={styles.topNavbar}>
           {[
             { label: 'Home', destination: '/home' },
@@ -248,7 +247,7 @@ const MyWarranties = () => {
             <NavItem key={item.label} label={item.label} destination={item.destination} />
           ))}
         </View>
-      )}
+      ): null}
 
       <View style={styles.header}>
         <Text style={styles.title}>My Warranties</Text>
@@ -266,7 +265,7 @@ const MyWarranties = () => {
             />
           </View>
 
-		  <View style={styles.statisticsContainer}>
+		<View style={styles.statisticsContainer}>
 			<View style={styles.statBlock}>
 				<Text style={styles.statNumber}>{expiredPercentage}%</Text>
 				<Text style={styles.statLabel}>Expired</Text>
@@ -279,8 +278,8 @@ const MyWarranties = () => {
 				<Text style={styles.statNumber}>{recentPercentage}%</Text>
 				<Text style={styles.statLabel}>Recent</Text>
 			</View>
-			</View>
-        </View>
+		</View>
+    </View>
 
           <SearchBar
 			variant="myWarranties"
@@ -313,7 +312,7 @@ const MyWarranties = () => {
         <View style={styles.bottomPadding} />
       </ScrollView>
 
-      {!isWeb && <BottomNavBar />}
+      {!isWeb ? <BottomNavBar /> : null}
     </SafeAreaView>
   );
 };
@@ -361,7 +360,7 @@ const styles = StyleSheet.create({
   topRow: {
 	flexDirection: 'row',
 	alignItems: 'center',  
-	justifyContent: 'space-between', // ✅ or 'space-between' if you prefer
+	justifyContent: 'space-between',
   },
   
   profileContainer: {

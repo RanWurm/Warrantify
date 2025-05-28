@@ -1,25 +1,26 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, SafeAreaView, ScrollView, ActivityIndicator, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, SafeAreaView, ScrollView, ActivityIndicator, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import Constants from 'expo-constants';
-import MapView, { Marker } from 'react-native-maps';
-import * as Location from 'expo-location';
 import BottomNavBar from '../components/BottomNavBar';
+import { Dimensions } from 'react-native';
+import Constants from 'expo-constants';
 
 const pythonBackendURL = Constants.expoConfig!.extra!.PYTHON_BACKEND_URL;
 const serverBackendURL = Constants.expoConfig!.extra!.SERVER_BACKEND_URL;
 
+console.log("Python Backend is: " + pythonBackendURL);
+console.log("Server Backend is: " + serverBackendURL);
+
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = width * 0.9;
 
+// Define types
 interface RealAd {
-  id: string;
+  id: string;  // This key should match what your ad board API returns (for example, "id" or "_id")
   salePrice: number;
   city: string;
   description: string;
-  latitude: number;   // Make sure this exists in your backend data
-  longitude: number;  // Make sure this exists in your backend data
   product: {
     id: string;
     productName: string;
@@ -31,49 +32,14 @@ interface RealAd {
 interface RecommendedAd {
   title: string;
   iconName: string;
+  // Additional fields as needed
 }
 
+// A combined ad can be either a real ad or a recommended (monetized) ad.
 type CombinedAd = RealAd | (RecommendedAd & { monetized: true });
 
 const CACHE_KEY = 'cachedRecommendations';
 const CACHE_EXPIRY = 1000 * 60 * 60; // one hour
-
-const MapSection = ({ ads }: { ads: RealAd[] }) => {
-  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-
-  useEffect(() => {
-    (async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') return;
-      let loc = await Location.getCurrentPositionAsync({});
-      setLocation(loc.coords);
-    })();
-  }, []);
-
-  return (
-    <View style={{ height: 200, borderRadius: 0, overflow: 'hidden', marginBottom: 16 }}>
-      <MapView
-        style={{ flex: 1 }}
-        showsUserLocation
-        initialRegion={{
-          latitude: location?.latitude || 32.0853,
-          longitude: location?.longitude || 34.7818,
-          latitudeDelta: 0.05,
-          longitudeDelta: 0.05,
-        }}
-      >
-        {ads.map(ad => (
-          <Marker
-            key={ad.id}
-            coordinate={{ latitude: ad.latitude, longitude: ad.longitude }}
-            title={ad.product.productName}
-            description={ad.city}
-          />
-        ))}
-      </MapView>
-    </View>
-  );
-};
 
 const MonetizedAdsIntegration: React.FC = () => {
   const [realAds, setRealAds] = useState<RealAd[]>([]);
@@ -82,9 +48,14 @@ const MonetizedAdsIntegration: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Fetch real ads from your ad board API endpoint.
   const fetchRealAds = async (): Promise<RealAd[]> => {
     try {
       const response = await axios.get(`${serverBackendURL}/ad-board/page/1`);
+      // Adjust this if your server returns the ads under a different key.
+	  console.log("Python Backend is: " + pythonBackendURL);
+	  console.log("Server Backend is: " + serverBackendURL);	
+	  console.log("response.data.ads;",response.data.ads)
       return response.data.ads;
     } catch (err) {
       console.error('Error fetching real ads:', err);
@@ -92,8 +63,10 @@ const MonetizedAdsIntegration: React.FC = () => {
     }
   };
 
+  // Fetch recommended ads from the AI system and cache them.
   const fetchRecommendedAds = useCallback(async (): Promise<RecommendedAd[]> => {
     try {
+      // Check for cached recommendations.
       const cachedData = await AsyncStorage.getItem(CACHE_KEY);
       if (cachedData) {
         const { timestamp, recommendations } = JSON.parse(cachedData);
@@ -101,13 +74,22 @@ const MonetizedAdsIntegration: React.FC = () => {
           return recommendations as RecommendedAd[];
         }
       }
-
+      // Otherwise, fetch fresh recommendations.
       const token = await AsyncStorage.getItem("token");
+	  console.log("📡 Trying to hit Python:", pythonBackendURL+"/get_recommendation");
       const warrantiesResponse = await axios.post(`${serverBackendURL}/user-warranties`, { token });
       const warranties = warrantiesResponse.data.data;
 
-      const userResp = await axios.post(`${serverBackendURL}/userdata`, { token });
-      const userId = userResp.data.data.id;
+      const userResp = await axios.post(`${serverBackendURL}/userdata`,{ token });
+      const userObj = userResp.data.data;      // your endpoint returns { data: { id, firstname, … } }
+      const userId  = userObj.id;
+        
+    console.log("🔑 Logged in userId =", userId);
+
+    //   const userId = await AsyncStorage.getItem('user_id');
+      // const userId = warranties.length > 0 ? warranties[0].user : null;
+      
+      console.log('Using userId =', userId);
 
       const response = await axios.post(`${pythonBackendURL}/get_recommendation`, {
         products: warranties,
@@ -123,14 +105,22 @@ const MonetizedAdsIntegration: React.FC = () => {
         iconName: rec.iconName || 'cellphone',
       }));
 
+      // Cache the recommendations.
       await AsyncStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: Date.now(), recommendations: mappedRecs }));
+
       return mappedRecs;
-    } catch (err) {
-      console.error("Error fetching recommendations:", err);
+    } catch (err: any) {
+		console.error("✅ Error code:", err.code);
+		console.error("⏱ Timeout was set to:", err.config?.timeout);
+		console.error("🔍 Full error:", err);
+      	//console.error('Error fetching recommendations:', err);
+	
       throw err;
     }
   }, []);
 
+  // Combine real ads with recommended ads:
+  // Insert one recommended ad after every 3 real ads and append any remaining recommended ads.
   const combineAds = (real: RealAd[], recs: RecommendedAd[]): CombinedAd[] => {
     const combined: CombinedAd[] = [];
     let recIndex = 0;
@@ -144,6 +134,7 @@ const MonetizedAdsIntegration: React.FC = () => {
         recIndex++;
       }
     }
+    // Append any remaining recommended ads.
     while (recIndex < recs.length) {
       combined.push({
         ...recs[recIndex],
@@ -160,7 +151,8 @@ const MonetizedAdsIntegration: React.FC = () => {
         const [real, recs] = await Promise.all([fetchRealAds(), fetchRecommendedAds()]);
         setRealAds(real);
         setRecommendedAds(recs);
-        setCombinedAds(combineAds(real, recs));
+        const merged = combineAds(real, recs);
+        setCombinedAds(merged);
         setLoading(false);
       } catch (err) {
         setError('Failed to fetch ads. Please try again later.');
@@ -188,37 +180,40 @@ const MonetizedAdsIntegration: React.FC = () => {
   }
 
   return (
-    <>
-      <SafeAreaView style={styles.container}>
-        <Text style={styles.header}>Ads Board</Text>
-        <MapSection ads={realAds} />
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          {combinedAds.map((ad, index) => {
-            if ((ad as any).monetized) {
-              const recAd = ad as RecommendedAd & { monetized: true };
-              return (
-                <View key={`monetized-${index}`} style={[styles.cardContainer, styles.monetizedCard]}>
-                  <Text style={styles.monetizedHeader}>Sponsored</Text>
-                  <Text style={styles.productName}>{recAd.title}</Text>
-                  <Text style={styles.iconName}>Icon: {recAd.iconName}</Text>
-                </View>
-              );
-            } else {
-              const realAd = ad as RealAd;
-              return (
-                <View key={realAd.id} style={styles.cardContainer}>
-                  <Text style={styles.productModel}>Model: {realAd.product.model}</Text>
-                  <Text style={styles.salePrice}>${realAd.salePrice}</Text>
-                  <Text style={styles.city}>{realAd.city}</Text>
-                  <Text style={styles.description}>{realAd.description}</Text>
-                </View>
-              );
-            }
-          })}
-        </ScrollView>
-      </SafeAreaView>
-      <BottomNavBar />
-    </>
+	<>
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.header}>Ads Board</Text>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {combinedAds.map((ad, index) => {
+          // Check if the ad is monetized (sponsored).
+          if ((ad as any).monetized) {
+            const recAd = ad as RecommendedAd & { monetized: true };
+            return (
+              <View key={`monetized-${index}`} style={[styles.cardContainer, styles.monetizedCard]}>
+                <Text style={styles.monetizedHeader}>Sponsored</Text>
+                <Text style={styles.productName}>{recAd.title}</Text>
+                <Text style={styles.iconName}>Icon: {recAd.iconName}</Text>
+              </View>
+            );
+          } else {
+            // Render a real ad card.
+            const realAd = ad as RealAd;
+            return (
+              <View key={realAd.id} style={styles.cardContainer}>
+				
+                {/* <Text style={styles.productName}>{realAd.productName}</Text> */}
+                <Text style={styles.productModel}>Model: {realAd.product.model}</Text>
+                <Text style={styles.salePrice}>${realAd.salePrice}</Text>
+                <Text style={styles.city}>{realAd.city}</Text>
+                <Text style={styles.description}>{realAd.description}</Text>
+              </View>
+            );
+          }
+        })}
+      </ScrollView>
+    </SafeAreaView>
+	<BottomNavBar/>
+  </>
   );
 };
 
@@ -302,6 +297,22 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   iconName: {
+    fontFamily: 'InriaSerif-Regular',
+    fontSize: 14,
+    color: '#666',
+  },
+  rowContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 4,
+  },
+  manufacturerText: {
+    fontFamily: 'InriaSerif-Regular',
+    fontSize: 14,
+    color: '#666',
+  },
+  modelText: {
     fontFamily: 'InriaSerif-Regular',
     fontSize: 14,
     color: '#666',

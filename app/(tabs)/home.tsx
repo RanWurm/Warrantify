@@ -127,7 +127,7 @@ export default function home() {
           />
 
           {/* Add Warranty Button */}
-						<AddWarrantyOptions />
+			<AddWarrantyOptions />
 
           {/* Render AddWarrantyOptions only if needed */}
           {showAddWarranty && <AddWarrantyOptions />}
