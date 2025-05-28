@@ -21,11 +21,31 @@ const serverBackendURL = Constants.expoConfig!.extra!.SERVER_BACKEND_URL;
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = width * 0.9;
 
+// Map product names (or keywords) to MaterialCommunityIcons names:
+const productIconMap: Record<string, string> = {
+  Headphones: 'headphones',
+  iPad: 'tablet-ipad',
+  Monitor: 'monitor',
+  Laptop: 'laptop',
+  iPhone: 'cellphone',
+  Charger: 'power-plug',
+  Vacuum: 'robot-vacuum',
+  Television: 'television-classic',
+  Earphones: 'headphones',
+  // add more mappings as needed…
+};
+
+function getIconName(productName: string) {
+  if (productIconMap[productName]) return productIconMap[productName];
+  const key = Object.keys(productIconMap).find(k =>
+    productName.toLowerCase().includes(k.toLowerCase())
+  );
+  return key ? productIconMap[key] : 'package-variant-closed';
+}
+
 interface RealAd {
-  _id: string;             // Mongo document ID
-  product: string;         // the product id string
-  productName: string;     // top-level!
-  model?: string;
+  _id: string;
+  productName: string;   // top‐level product name
   city: string;
   description: string;
   salePrice: number;
@@ -48,12 +68,10 @@ export default function MonetizedAdsIntegration() {
 
   const fetchRealAds = async (): Promise<RealAd[]> => {
     const resp = await axios.get(`${serverBackendURL}/ad-board/page/1`);
-    // resp.data.ads should be an array matching RealAd
     return resp.data.ads as RealAd[];
   };
 
   const fetchRecommendedAds = useCallback(async (): Promise<RecommendedAd[]> => {
-    // Try cache
     const cached = await AsyncStorage.getItem(CACHE_KEY);
     if (cached) {
       const { timestamp, recommendations } = JSON.parse(cached);
@@ -63,27 +81,19 @@ export default function MonetizedAdsIntegration() {
     }
 
     const token = await AsyncStorage.getItem('token');
-    const warrantiesResp = await axios.post(
+    const warranties = (await axios.post(
       `${serverBackendURL}/user-warranties`,
       { token }
-    );
-    const warranties = warrantiesResp.data.data;
-
-    const userResp = await axios.post(
+    )).data.data;
+    const userId = (await axios.post(
       `${serverBackendURL}/userdata`,
       { token }
-    );
-    const userId = userResp.data.data.id;
+    )).data.data.id;
 
-    const recResp = await axios.post(
+    const rawRecs = (await axios.post(
       `${pythonBackendURL}/get_recommendation`,
-      {
-        products: warranties,
-        event_type: 'purchase',
-        user_id: Number(userId),
-      }
-    );
-    const rawRecs = recResp.data.recommendations || [];
+      { products: warranties, event_type: 'purchase', user_id: Number(userId) }
+    )).data.recommendations || [];
 
     const mapped = rawRecs.map((rec: any) => ({
       title: rec.brand
@@ -96,6 +106,7 @@ export default function MonetizedAdsIntegration() {
       CACHE_KEY,
       JSON.stringify({ timestamp: Date.now(), recommendations: mapped })
     );
+
     return mapped;
   }, []);
 
@@ -105,13 +116,11 @@ export default function MonetizedAdsIntegration() {
     for (let i = 0; i < real.length; i++) {
       out.push(real[i]);
       if ((i + 1) % 3 === 0 && ri < recs.length) {
-        out.push({ ...recs[ri], monetized: true });
-        ri++;
+        out.push({ ...recs[ri++], monetized: true });
       }
     }
     while (ri < recs.length) {
-      out.push({ ...recs[ri], monetized: true });
-      ri++;
+      out.push({ ...recs[ri++], monetized: true });
     }
     return out;
   };
@@ -169,11 +178,19 @@ export default function MonetizedAdsIntegration() {
             const real = ad as RealAd;
             return (
               <View key={real._id} style={styles.cardContainer}>
-                {/* Header row */}
+                {/* Header row with dynamic icon */}
                 <View style={styles.adHeader}>
-                  <Text style={styles.productName}>
-                    {real.productName}
-                  </Text>
+                  <View style={styles.titleWithIcon}>
+                    <MaterialCommunityIcons
+                      name={getIconName(real.productName)}
+                      size={20}
+                      color="#4f3e2f"
+                      style={{ marginRight: 8 }}
+                    />
+                    <Text style={styles.productName}>
+                      {real.productName}
+                    </Text>
+                  </View>
                   <View style={styles.headerRight}>
                     <Text style={styles.salePrice}>
                       ${real.salePrice}
@@ -187,9 +204,7 @@ export default function MonetizedAdsIntegration() {
                   </View>
                 </View>
                 {/* Product Name again */}
-                <Text style={styles.productModel}>
-                  {real.productName}
-                </Text>
+                <Text style={styles.productModel}>{real.productName}</Text>
                 {/* Location */}
                 <Text style={styles.city}>Location: {real.city}</Text>
                 {/* Description */}
@@ -243,22 +258,25 @@ const styles = StyleSheet.create({
     borderColor: '#7E8FA6',
     elevation: 2,
   },
-
-  /* Real-ad layout */
   adHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  titleWithIcon: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
   },
+
   productName: {
     fontFamily: 'InriaSerif-Bold',
     fontSize: 18,
     color: '#000',
-    flex: 1,
   },
   salePrice: {
     fontFamily: 'InriaSerif-Bold',
@@ -284,7 +302,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 
-  /* Monetized card */
   monetizedCard: {
     borderColor: '#AF6F6F',
     backgroundColor: '#FDEDEC',
