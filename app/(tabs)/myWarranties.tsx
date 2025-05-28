@@ -80,7 +80,9 @@ const MyWarranties = () => {
       try {
         const token = await AsyncStorage.getItem('token');
         console.log("token is ", token)
-		    const response = await axios.post(`${serverBackendURL}/user-warranties`,{ token });        
+		const response = await axios.post(`${serverBackendURL}/user-warranties`,{ token });   
+        //console.log("🎟 get_warranties response:", response.data);
+
         const now = new Date().getTime();
         const oneMonthMs = 30 * 24 * 60 * 60 * 1000;
 

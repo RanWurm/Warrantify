@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
+import DateTimePicker from '@react-native-community/datetimepicker'
 
 const serverBackendURL = Constants.expoConfig!.extra!.SERVER_BACKEND_URL;
 
@@ -104,36 +105,6 @@ const AddWarrantyForm: React.FC<AddWarrantyFormProps> = ({ onClose, scannedData 
       Alert.alert('Error', 'Something went wrong');
     }
   };
-  
-  
-  
-  // const handleAddWarranty = () => {
-  //   console.log("AddWarrantyForm: handleAddWarranty called with formData:", formData);
-  //   if (!validateDate(formData.purchaseDate) || !validateDate(formData.expirationDate)) {
-  //     Alert.alert(
-  //       'Invalid Date Format',
-  //       'Please enter dates in YYYY-MM-DD format.'
-  //     );
-  //     return;
-  //   }
-    
-  //   // Add your warranty saving logic here
-    
-  //   Alert.alert(
-  //     'Success',
-  //     'Warranty added successfully!',
-  //     [
-  //       {
-  //         text: 'OK',
-  //         onPress: () => {
-  //           console.log("AddWarrantyForm: onClose called from handleAddWarranty after success");
-  //           onClose();
-  //         }
-  //       }
-  //     ]
-  //   );
-  //   console.log("AddWarrantyForm: form data is:", formData);
-  // };
 
   return (
     <View style={styles.formOverlay}>

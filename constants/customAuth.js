@@ -1,8 +1,9 @@
 // customAuth.js - Drop-in replacement for Firebase Auth
 import * as SecureStore from 'expo-secure-store';
+import Constants from 'expo-constants';
 
 // Your server URL - update this to match your server
-const SERVER_URL = 'http://10.0.0.12:3000';
+const SERVER_URL = 'http://172.20.10.5:3000';
 
 // Custom User class to mimic Firebase User
 class CustomUser {

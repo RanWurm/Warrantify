@@ -80,9 +80,21 @@ const MonetizedAdsIntegration: React.FC = () => {
       const warrantiesResponse = await axios.post(`${serverBackendURL}/user-warranties`, { token });
       const warranties = warrantiesResponse.data.data;
 
+      const userResp = await axios.post(`${serverBackendURL}/userdata`,{ token });
+      const userObj = userResp.data.data;      // your endpoint returns { data: { id, firstname, … } }
+      const userId  = userObj.id;
+        
+    console.log("🔑 Logged in userId =", userId);
+
+    //   const userId = await AsyncStorage.getItem('user_id');
+      // const userId = warranties.length > 0 ? warranties[0].user : null;
+      
+      console.log('Using userId =', userId);
+
       const response = await axios.post(`${pythonBackendURL}/get_recommendation`, {
         products: warranties,
         event_type: "purchase",
+        user_id: Number(userId),
       });
 
       const rawRecs = response.data.recommendations || [];

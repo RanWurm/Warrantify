@@ -2,10 +2,10 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from data_handler import load_products, reassign_user_ids, remove_rows_with_missing, process_csv, count_rows_with_missing
 from predict_algorithms.trie.generate_trie import load_trie
-from predict_algorithms.products.testReccomender import load_and_test_recommender, load_csv_data_and_test_recommender
 from predict_algorithms.products.productRecommender import ProductRecommender
 from predict_algorithms.products.knnProductRecommender import KNNProductRecommender
 import pandas as pd
+from pandas.errors import EmptyDataError
 from datetime import datetime, timedelta
 import random
 import base64
@@ -14,6 +14,8 @@ from PIL import Image
 from io import BytesIO
 import os
 from dotenv import load_dotenv
+# from scripts.export_warranties import export_warranties
+
 load_dotenv()
 
 app = Flask(__name__)
@@ -79,7 +81,6 @@ def scan_receipt():
         print(f"Error: {e}")
         return jsonify({'error': str(e)}), 500
 
-
     
 # Load product data and initialize trie
 folder_path = 'data_sets/words_prediction_datasets'
@@ -87,11 +88,8 @@ products = load_products(folder_path)
 unique_prods = sorted(list(set(products)))
 trie = load_trie(unique_prods)
 
-
 data_file_path = 'data_sets/recommendation_sys_datasets/buying_users.csv'
-#df = pd.read_csv(data_file_path)
-#recommender = ProductRecommender()
-#recommender.fit(df)
+
 recommender = KNNProductRecommender(data_file_path,k=5)
 
 icon_defaults = {
@@ -125,48 +123,6 @@ def autocomplete():
 def health():
     return "Python server is running!"
 
-# @app.route('/get_recommendation', methods=['POST ']) 
-# def get_recommendation():
-#     data = request.get_json()
-#     products = data.get('products')
-#     if not products:
-#         return jsonify({'error': 'No products data provided'}), 400
-
-    
-
-#     # Fetch user history from your recommender
-#     user_history = []
-    
-#     for product in products:
-#         user_history.append({
-#             'event_type': "purchase",             # Use the Mongo _id as the product_id
-#             'category_id': product.get('id', None),         # If you have a separate id field, use it
-#             'category_code': product.get('category_code', ''),# If you store a category code, otherwise default to ''
-#             'brand': product.get('manufacturer', '')        # Use manufacturer as brand (or adjust accordingly)
-#         })
-
-
-#     if not user_history:
-#         return jsonify({'message': 'No user history found'}), 200
-
-#     # Choose a random product from the user_history
-#     random_product = random.choice(user_history)
-#     random_viewed_product = random_product['category_code']
-
-#     # Get recommendations for this randomly chosen product
-#     recommendations = recommender.get_recommendations(random_viewed_product, n_recommendations=5)
-#     if not recommendations:
-#         return jsonify({'message': 'No recommendations found for the randomly chosen product'}), 200
-    
-#     for recommendation in recommendations:
-#         category_code = recommendation.get('category_code', '').lower()
-#         icon_name = icon_defaults.get(category_code, 'device')  # Default to 'device' if not found
-#         recommendation['iconName'] = icon_name  # Assign to 'iconName' key
-    
-#     # Return the recommendations as a JSON response
-#    return jsonify({'recommendations': recommendations}), 200
-
-
 
 @app.route('/get_recommendation', methods=['POST'])
 def get_recommendation():
@@ -178,9 +134,15 @@ def get_recommendation():
     # Expecting a payload with keys "products" and "event_type".
     user_products = data.get('products')
     event_type = data.get('event_type')
-
-    if not user_products or not event_type:
-        return jsonify({'error': 'Missing required fields: products or event_type'}), 400
+    user_id = data.get('user_id') 
+    
+    print(f"[🐚] User_products={user_products}")
+    print(f"[🐚] Event_type={event_type}")
+    print(f"[🐚] User_id={user_id} \n")
+        
+    if not event_type or (not user_products and user_id is None):
+        print("im here")
+        return jsonify({'error': 'Missing required field: userId'}), 400
 
     # Get recommendations using your KNN recommender.
     recommendations = recommender.recommend(user_products, event_type)
@@ -249,8 +211,6 @@ def get_warranties():
         warranties.append(warranty_item)
     
     return jsonify({'warranties': warranties})
-
-
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
