@@ -22,8 +22,11 @@
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "ios": {
-      "supportsTablet": true
+        "ios": {
+      "supportsTablet": true,
+      "config": {
+        "googleMapsApiKey": "AIzaSyCn-qqKYulPv-Ken38MtqimNa1AiJFluic"
+      }
     },
     "android": {
       "googleServicesFile": "./google-services.json",
@@ -31,7 +34,12 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.ranwurm.Warrantify"
+      "package": "com.ranwurm.Warrantify",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyCn-qqKYulPv-Ken38MtqimNa1AiJFluic"
+        }
+      }
     },
     "web": {
       "bundler": "metro",
