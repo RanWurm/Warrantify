@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, SafeAreaView, ActivityIndicator, Platform} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import Constants from 'expo-constants';
@@ -8,9 +8,12 @@ import * as Location from 'expo-location';
 import ServiceCenterCard from '../components/serviceCenterCard';
 import { useNavigation } from 'expo-router';
 import { useLayoutEffect } from 'react';
+import BottomNavBar from '../components/BottomNavBar';
 
 const serverBackendURL = Constants.expoConfig?.extra?.SERVER_BACKEND_URL || (Constants as any).manifest?.extra?.SERVER_BACKEND_URL;
 const googleApiKey = "AIzaSyCn-qqKYulPv-Ken38MtqimNa1AiJFluic";
+const isWeb = Platform.OS === 'web';
+
 
 interface Warranty {
   serviceCenter?: string;
@@ -169,6 +172,7 @@ const MyServiceCenters: React.FC = () => {
           />
         ))}
       </ScrollView>
+         {!isWeb ? <BottomNavBar /> : null}
     </SafeAreaView>
   );
 };

@@ -48,16 +48,16 @@ const BottomNavBar = () => {
 
       <TouchableOpacity 
         style={styles.navButton}
-        onPress={() => navigateTo('/serviceCenters')}
+        onPress={() => navigateTo('/myWarranties')}
       >
         <MaterialCommunityIcons
           name="account"
           size={24}
-          color={pathname === '/serviceCenters' ? '#7E8FA6' : '#555'}
+          color={pathname === '/myWarranties' ? '#7E8FA6' : '#555'}
         />
         <Text style={[
           styles.navText,
-          pathname === '/serviceCenters' && styles.activeNavText
+          pathname === '/myWarranties' && styles.activeNavText
         ]}>
           My Warranties
         </Text>
@@ -78,6 +78,23 @@ const BottomNavBar = () => {
           Warranty Shop
         </Text>
       </TouchableOpacity>
+
+     <TouchableOpacity 
+            style={styles.navButton}
+            onPress={() => navigateTo('/serviceCenters')}
+            >
+            <MaterialCommunityIcons
+                name="tools"
+                size={24}
+                color={pathname === '/serviceCenters' ? '#7E8FA6' : '#555'}
+            />
+            <Text style={[
+                styles.navText,
+                pathname === '/serviceCenters' && styles.activeNavText
+            ]}>
+                Service Centers
+            </Text>
+     </TouchableOpacity>
       
       <TouchableOpacity 
         style={styles.navButton}

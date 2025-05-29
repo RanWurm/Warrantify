@@ -20,7 +20,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFonts } from 'expo-font';
 import { Stack, useRouter } from 'expo-router';
 import { UserContext } from '../context/UserContext'; 
-
+import BottomNavBar from '../components/BottomNavBar';
 
 
 interface SettingOption {
@@ -268,6 +268,7 @@ export default function Settings() {
 			)}
 			</ScrollView>
       </View>
+         {!isWeb ? <BottomNavBar /> : null}
     </>
   );
 }
