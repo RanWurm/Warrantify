@@ -15,6 +15,8 @@ import axios from 'axios';
 import BottomNavBar from '../components/BottomNavBar';
 import Constants from 'expo-constants';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { BarChart } from 'react-native-chart-kit';
+
 
 const pythonBackendURL = Constants.expoConfig!.extra!.PYTHON_BACKEND_URL;
 const serverBackendURL = Constants.expoConfig!.extra!.SERVER_BACKEND_URL;
@@ -24,7 +26,7 @@ const CARD_WIDTH = width * 0.9;
 // Map product names (or keywords) to MaterialCommunityIcons names:
 const productIconMap: Record<string, string> = {
   Headphones: 'headphones',
-  iPad: 'tablet-ipad',
+  iPad: 'tablet',
   Monitor: 'monitor',
   Laptop: 'laptop',
   iPhone: 'cellphone',
@@ -32,11 +34,17 @@ const productIconMap: Record<string, string> = {
   Vacuum: 'robot-vacuum',
   Television: 'television-classic',
   Earphones: 'headphones',
-  // add more mappings as needed…
+  HairDryer: 'hair-dryer', 
 };
 
 function getIconName(productName: string) {
-  if (productIconMap[productName]) return productIconMap[productName];
+  const normalizedMap: Record<string, string> = {
+    'Hair Dryer': 'HairDryer',
+  };
+
+  const normalized = normalizedMap[productName] || productName;
+  if (productIconMap[normalized]) return productIconMap[normalized];
+  
   const key = Object.keys(productIconMap).find(k =>
     productName.toLowerCase().includes(k.toLowerCase())
   );
@@ -65,6 +73,10 @@ export default function MonetizedAdsIntegration() {
   const [combinedAds, setCombinedAds] = useState<CombinedAd[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+    // for the top-5 chart:
+  const [topLabels, setTopLabels] = useState<string[]>([]);
+  const [topValues, setTopValues] = useState<number[]>([])
 
   const fetchRealAds = async (): Promise<RealAd[]> => {
     const resp = await axios.get(`${serverBackendURL}/ad-board/page/1`);
@@ -126,6 +138,18 @@ export default function MonetizedAdsIntegration() {
   };
 
   useEffect(() => {
+    console.log("IN USE EFFECTTTTTTTTTTT");
+    // 1) fetch top-5 data
+    axios
+      .get(`${pythonBackendURL}/top_products`)
+      .then(res => {
+        console.log("🔝 /top_products:", res.data);
+        setTopLabels(res.data.labels);
+        setTopValues(res.data.values);
+      })
+      .catch(console.warn);
+    // 2) fetch ads + recommendations
+
     (async () => {
       try {
         const [real, recs] = await Promise.all([
@@ -159,7 +183,76 @@ export default function MonetizedAdsIntegration() {
   return (
     <>
       <SafeAreaView style={styles.container}>
-        <Text style={styles.header}>Ads Board</Text>
+        <Text style={styles.header}>Recommended</Text>
+
+        {/* ─── Top-5 Products Chart ───────────────────────────── */}
+        <Text style={{ fontSize: 16, fontFamily: 'InriaSerif-Bold', marginBottom: 5, marginHorizontal: '6%',}}>
+                5 most used products
+        </Text>
+
+        {topLabels.length > 0 && (
+            <View style={{ backgroundColor: '#f5ede6', width:CARD_WIDTH,  marginHorizontal: '5%', borderRadius: 12, marginBottom: '5%',}}>
+            {/* Actual bar chart */}
+            <BarChart
+                data={{
+                labels: topLabels.map(label =>
+                    label.length >= 8
+                    ?  label 
+                    : label
+                ),
+                datasets: [
+                    {
+                    data: (() => {
+                        const total = topValues.reduce((sum, val) => sum + val, 0);
+                        return topValues.map((value) => {
+                        const percentage = ((value / total) * 100).toFixed(1);
+                        return parseFloat(percentage); // Return percentage as the data value
+                        });
+                    })(),
+                    colors: [
+                        () => '#d6bda7',
+                        () => '#d8d7d8',
+                        () => '#c5d1d1',
+                        () => '#a6ada6',
+                        () => '#c5d1b2',
+                    ],
+                    },
+                ],
+                }}
+                width={CARD_WIDTH + 55 }
+                height={180}
+                withInnerLines={false}
+                withHorizontalLabels={false}
+                withCustomBarColorFromData={true}
+                flatColor={true}
+                fromZero
+                showValuesOnTopOfBars={true} 
+                chartConfig={{
+                barPercentage: 1.6,
+                backgroundGradientFrom: ' ',
+                backgroundGradientTo: ' ',
+                decimalPlaces: 1, // Show 1 decimal place for percentages
+                color: () => '#000',
+                labelColor: () => '#333',
+                style: { borderRadius: 12 },
+                // Format the values displayed on top of bars to show % symbol
+                formatTopBarValue: (value) => `${value}%`,
+                propsForVerticalLabels: {
+                    fontFamily: 'InriaSerif-Bold',
+                    fontSize: 10,
+                },
+                propsForLabels: {
+                    fontFamily: 'InriaSerif-Bold',
+                    fontSize: 10,
+                },
+                }}
+                style={{ marginTop: 20, borderRadius: 12, marginHorizontal: '-20%',}}
+            />
+            </View>
+        )}
+
+        {/* ──────────────────────────────────────────────────── */}
+        
         <ScrollView contentContainerStyle={styles.scrollContent}>
           {combinedAds.map((ad, idx) => {
             if ((ad as any).monetized) {
@@ -203,8 +296,7 @@ export default function MonetizedAdsIntegration() {
                     />
                   </View>
                 </View>
-                {/* Product Name again */}
-                <Text style={styles.productModel}>{real.productName}</Text>
+                
                 {/* Location */}
                 <Text style={styles.city}>Location: {real.city}</Text>
                 {/* Description */}
@@ -254,8 +346,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginVertical: 8,
     padding: 14,
-    borderWidth: 1,
-    borderColor: '#7E8FA6',
+    // borderWidth: 1,
+    // borderColor: '#7E8FA6',
     elevation: 2,
   },
   adHeader: {
@@ -303,7 +395,7 @@ const styles = StyleSheet.create({
   },
 
   monetizedCard: {
-    borderColor: '#AF6F6F',
+    // borderColor: '#AF6F6F',
     backgroundColor: '#FDEDEC',
   },
   monetizedHeader: {

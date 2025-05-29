@@ -14,7 +14,7 @@ from PIL import Image
 from io import BytesIO
 import os
 from dotenv import load_dotenv
-# from scripts.export_warranties import export_warranties
+from collections import Counter
 
 load_dotenv()
 
@@ -123,6 +123,11 @@ def autocomplete():
 def health():
     return "Python server is running!"
 
+DATA_CSV = 'data_sets/user_warranties.csv'
+try:
+    warranties_df = pd.read_csv(DATA_CSV)
+except (EmptyDataError, FileNotFoundError):
+    warranties_df = pd.DataFrame(columns=['user_id','product_id','category_code','brand'])
 
 @app.route('/get_recommendation', methods=['POST'])
 def get_recommendation():
@@ -149,7 +154,6 @@ def get_recommendation():
     
     # Return the recommendations as JSON.
     return jsonify({'recommendations': recommendations}), 200
-
     
 @app.route('/get_warranties', methods=['GET'])
 def get_warranties():
@@ -212,46 +216,25 @@ def get_warranties():
     
     return jsonify({'warranties': warranties})
 
+@app.route('/top_products', methods=['GET'])
+def top_products():
+    # Count categories from the entire dataset, not just recommendations
+    all_categories = [
+        row.split('.')[-1].capitalize() 
+        for row in recommender.data['category_code'].dropna()
+    ]
+    
+    # Count top 5
+    counter = Counter(all_categories)
+    top = counter.most_common(5)
+    
+    # Split into labels and values
+    labels = [item[0] for item in top]
+    values = [item[1] for item in top]
+    
+    return jsonify({'labels': labels, 'values': values})
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
     
-
-   ########################################## process the data sets to have a managable dataset ######################################################
-   
-   # 1) removed all 5+ years old data
-   # 2) replace all of the products id with their real product name by crossing the data from reviews datasets and meta data
-   # 3) remove uncessary fileds such as imgs videos texts and etc
-   # 4) aggragate all the users so instead of each use will have x lines now for each user we have 1 row that contains all of products and their reviews
-   # 5) removed all of the users with 1 review
-   # 6) removed all of the products the purchesd only once
-   # 7) we are ready for creating the matrix factorization / collaborati filltering model we are left with 96k dirrent useres and 72k diffrent items
-
-    # fileds_to_remove = ["timestamp","parent_asin","asin"]
-    # print('start to merge titles')
-    # filter_large_jsonl_by_timestamp('data_sets/recommendation_sys_datasets/c.jsonl', 'data_sets/recommendation_sys_datasets/filterd_electronics_by_timestmp.jsonl')
-    # process_large_jsonl_fields('data_sets/recommendation_sys_datasets/merged_files.jsonl','data_sets/recommendation_sys_datasets/a.jsonl',fileds_to_remove)
-    # merge_titles('data_sets/recommendation_sys_datasets/filterd_electronics_reviews_text.jsonl','data_sets/recommendation_sys_datasets/filtered_meta_electronics.jsonl','data_sets/recommendation_sys_datasets/merged_files.jsonl')
-    # count_distinct_fields('data_sets/recommendation_sys_datasets/c.jsonl','title')
-    # count_distinct_titles('data_sets/recommendation_sys_datasets/e.jsonl')
-    # filter_large_jsonl('data_sets/recommendation_sys_datasets/d.jsonl','data_sets/recommendation_sys_datasets/e.jsonl')
-    # aggregate_user_product_ratings('data_sets/recommendation_sys_datasets/a.jsonl','data_sets/recommendation_sys_datasets/c.jsonl')
-    # print('filter the meta_electronics is done')
-    
-    ## note this is'nt the full data processing that occoured , i've deleted many many parts in the process
-    
-   ####################################################################################################################################################
-    #csv_input_path = 'data_sets/recommendation_sys_datasets/buying_users.csv'
-    #missing_rows_csv_output_path = 'data_sets/recommendation_sys_datasets/data_with_missing_rows.csv'
-    #csv_output_path = 'data_sets/recommendation_sys_datasets/bu.csv'
-    # process_csv(csv_input_path,missing_rows_csv_output_path)
-    # remove_rows_with_missing(missing_rows_csv_output_path,csv_output_path)
-   
-    
-    
-    #analyze_recommendation_potential(csv_output_path)
-    # recommender = load_and_test_recommender(path, sample_size=1000)
-    #load_csv_data_and_test_recommender(csv_output_path)
-    
-    #reassign_user_ids(csv_input_path,csv_output_path)
-    
-    
+ 

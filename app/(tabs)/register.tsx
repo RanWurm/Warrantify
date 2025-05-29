@@ -71,9 +71,8 @@ export default function RegisterScreen() {
   return (
     <>
 		<Stack.Screen options={{ headerShown: false }} />
-		<Stack.Screen options={{ headerShown: false }} />
 
-		<SafeAreaView style={{ flex: 1, backgroundColor: '#D2BBA1' }}>
+		<SafeAreaView style={{ flex: 1, backgroundColor: '#f5ede6' }}>
 
 		</SafeAreaView>
       <ScrollView contentContainerStyle={styles.container}>
@@ -269,8 +268,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     width: INPUT_WIDTH,
-		marginVertical: isSmallDevice ? 3 : 20, // <--- shrink vertical space
-		
+	marginVertical: isSmallDevice ? 3 : 20, // <--- shrink vertical space
   },
   dividerLine: {
     flex: 1,
