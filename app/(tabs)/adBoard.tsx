@@ -35,11 +35,15 @@ const productIconMap: Record<string, string> = {
   Television: 'television-classic',
   Earphones: 'headphones',
   HairDryer: 'hair-dryer', 
+  Tablet: 'tablet',
+  Coffe_machine: 'coffee',
 };
 
 function getIconName(productName: string) {
   const normalizedMap: Record<string, string> = {
     'Hair Dryer': 'HairDryer',
+    'Coffe machine': 'Coffe_machine',
+    'Coffe Machine': 'Coffe_machine',
   };
 
   const normalized = normalizedMap[productName] || productName;

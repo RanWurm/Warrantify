@@ -176,11 +176,33 @@ const MyWarranties = () => {
 
   const getIconName = (productName: string): string => {
     const productMap: { [key: string]: string } = {
-      Monitor: 'monitor',
-      Tablet: 'tablet',
-      Coffe_machine: 'coffee',
+    Monitor: 'monitor',
+    Tablet: 'tablet',
+    Coffe_machine: 'coffee',
+    Headphones: 'headphones',
+    iPad: 'tablet',
+    Laptop: 'laptop',
+    iPhone: 'cellphone',
+    Charger: 'power-plug',
+    Vacuum: 'robot-vacuum',
+    Television: 'television-classic',
+    Earphones: 'headphones',
+    HairDryer: 'hair-dryer', 
     };
-    return productMap[productName] || 'package-variant-closed';
+
+    const normalizedMap: Record<string, string> = {
+    'Hair Dryer': 'HairDryer',
+    'Coffe machine': 'Coffe_machine',
+    'Coffe Machine': 'Coffe_machine',
+    };
+    const normalized = normalizedMap[productName] || productName;
+    if (productMap[normalized]) return productMap[normalized];
+  
+    const key = Object.keys(productMap).find(k =>
+        productName.toLowerCase().includes(k.toLowerCase())
+    );
+    return key ? productMap[key] : 'package-variant-closed';
+
   };
 
   const getTimeAgo = (date: Date | null) => {
