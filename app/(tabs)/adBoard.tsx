@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   StyleSheet,
   Dimensions,
+  Platform
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
@@ -22,6 +23,8 @@ const pythonBackendURL = Constants.expoConfig!.extra!.PYTHON_BACKEND_URL;
 const serverBackendURL = Constants.expoConfig!.extra!.SERVER_BACKEND_URL;
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = width * 0.9;
+const isWeb = Platform.OS === 'web';
+
 
 // Map product names (or keywords) to MaterialCommunityIcons names:
 const productIconMap: Record<string, string> = {
@@ -187,60 +190,56 @@ export default function MonetizedAdsIntegration() {
   return (
     <>
       <SafeAreaView style={styles.container}>
+        
         <Text style={styles.header}>Recommended</Text>
 
         {/* ─── Top-5 Products Chart ───────────────────────────── */}
         <Text style={{ fontSize: 16, fontFamily: 'InriaSerif-Bold', marginBottom: 5, marginHorizontal: '6%',}}>
                 5 most used products
         </Text>
-
+        
         {topLabels.length > 0 && (
-            <View style={{ backgroundColor: '#f5ede6', width:CARD_WIDTH,  marginHorizontal: '5%', borderRadius: 12, marginBottom: '5%',}}>
-            {/* Actual bar chart */}
+        Platform.OS === 'android' ? (
+            <View style={{backgroundColor: '#f5ede6',width: CARD_WIDTH, marginHorizontal: '0%', borderRadius: 12, marginBottom: '2%',}}>
             <BarChart
                 data={{
-                labels: topLabels.map(label =>
-                    label.length >= 8
-                    ?  label 
-                    : label
-                ),
+                labels: topLabels,
                 datasets: [
-                    {
-                    data: (() => {
-                        const total = topValues.reduce((sum, val) => sum + val, 0);
-                        return topValues.map((value) => {
-                        const percentage = ((value / total) * 100).toFixed(1);
-                        return parseFloat(percentage); // Return percentage as the data value
-                        });
-                    })(),
-                    colors: [
-                        () => '#d6bda7',
-                        () => '#d8d7d8',
-                        () => '#c5d1d1',
-                        () => '#a6ada6',
-                        () => '#c5d1b2',
-                    ],
-                    },
-                ],
-                }}
-                width={CARD_WIDTH + 55 }
+                            {
+                            data: (() => {
+                                const total = topValues.reduce((sum, val) => sum + val, 0);
+                                return topValues.map((value) => {
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return parseFloat(percentage); // Return percentage as the data value
+                                });
+                            })(),
+                            colors: [
+                                () => '#d6bda7',
+                                () => '#d8d7d8',
+                                () => '#c5d1d1',
+                                () => '#a6ada6',
+                                () => '#c5d1b2',
+                            ],
+                            },
+                        ],
+                        }}
+                width={CARD_WIDTH}
                 height={180}
                 withInnerLines={false}
-                withHorizontalLabels={false}
+                withHorizontalLabels={true}
                 withCustomBarColorFromData={true}
                 flatColor={true}
                 fromZero
-                showValuesOnTopOfBars={true} 
+                showValuesOnTopOfBars={true}
                 chartConfig={{
-                barPercentage: 1.6,
-                backgroundGradientFrom: ' ',
-                backgroundGradientTo: ' ',
-                decimalPlaces: 1, // Show 1 decimal place for percentages
+                barPercentage: 1,
+                backgroundGradientFrom: '#f5ede6',
+                backgroundGradientTo: '#f5ede6',
+                fillShadowGradientOpacity: 1,
+                decimalPlaces: 1,
                 color: () => '#000',
                 labelColor: () => '#333',
-                style: { borderRadius: 12 },
-                // Format the values displayed on top of bars to show % symbol
-                formatTopBarValue: (value) => `${value}%`,
+                formatTopBarValue: value => `${value}%`,
                 propsForVerticalLabels: {
                     fontFamily: 'InriaSerif-Bold',
                     fontSize: 10,
@@ -250,11 +249,76 @@ export default function MonetizedAdsIntegration() {
                     fontSize: 10,
                 },
                 }}
-                style={{ marginTop: 20, borderRadius: 12, marginHorizontal: '-20%',}}
+                style={{
+                marginTop: 20,
+                borderRadius: 12,
+                marginHorizontal: '0%',
+                }}
             />
             </View>
-        )}
+        ) : (
 
+        // IPHONE BAR STARTS HERE ----------------------------------------------------------------------------------------
+        <View style={{ backgroundColor: '#f5ede6', width:CARD_WIDTH,  marginHorizontal: '5%', borderRadius: 12, marginBottom: '5%',}}>
+                {/* Actual bar chart */}
+                <BarChart
+                    data={{
+                    labels: topLabels.map(label =>
+                        label.length >= 8
+                        ?  label 
+                        : label
+                    ),
+                    datasets: [
+                        {
+                        data: (() => {
+                            const total = topValues.reduce((sum, val) => sum + val, 0);
+                            return topValues.map((value) => {
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return parseFloat(percentage); // Return percentage as the data value
+                            });
+                        })(),
+                        colors: [
+                            () => '#d6bda7',
+                            () => '#d8d7d8',
+                            () => '#c5d1d1',
+                            () => '#a6ada6',
+                            () => '#c5d1b2',
+                        ],
+                        },
+                    ],
+                    }}
+                    width={CARD_WIDTH + 55 }
+                    height={180}
+                    withInnerLines={false}
+                    withHorizontalLabels={false}
+                    withCustomBarColorFromData={true}
+                    flatColor={true}
+                    fromZero
+                    showValuesOnTopOfBars={true} 
+                    chartConfig={{
+                    barPercentage: 1.6,
+                    backgroundGradientFrom: ' ',
+                    backgroundGradientTo: ' ',
+                    decimalPlaces: 1, // Show 1 decimal place for percentages
+                    color: () => '#000',
+                    labelColor: () => '#333',
+                    style: { borderRadius: 12 },
+                    // Format the values displayed on top of bars to show % symbol
+                    formatTopBarValue: (value) => `${value}%`,
+                    propsForVerticalLabels: {
+                        fontFamily: 'InriaSerif-Bold',
+                        fontSize: 10,
+                    },
+                    propsForLabels: {
+                        fontFamily: 'InriaSerif-Bold',
+                        fontSize: 10,
+                    },
+                    }}
+                    style={{ marginTop: 20, borderRadius: 12, marginHorizontal: '-20%',}}
+                />
+        </View>
+  )
+)}
         {/* ──────────────────────────────────────────────────── */}
         
         <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -309,6 +373,7 @@ export default function MonetizedAdsIntegration() {
             );
           })}
         </ScrollView>
+
       </SafeAreaView>
       <BottomNavBar />
     </>
@@ -333,6 +398,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginVertical: 16,
     color: '#000',
+    marginTop: Platform.OS === 'android' ? '10%' : 0,
+
   },
   scrollContent: {
     paddingBottom: 90,

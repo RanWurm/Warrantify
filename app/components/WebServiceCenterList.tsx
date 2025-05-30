@@ -1,7 +1,19 @@
-// components/WebServiceCenterList.tsx
 import React from 'react';
 
-export default function WebServiceCenterList({ centers }) {
+interface Center {
+  name: string;
+  address: string;
+  isOpen?: boolean;
+  closeTime?: string;
+  phone?: string;
+  distanceKm?: number;
+}
+
+interface Props {
+  centers: Center[];
+}
+
+export default function WebServiceCenterList({ centers }: Props) {
   return (
     <div style={styles.container}>
       {centers.map((center, index) => (
@@ -16,7 +28,7 @@ export default function WebServiceCenterList({ centers }) {
               : ''}
           </p>
           {center.phone && <p style={styles.phone}>📞 {center.phone}</p>}
-          {center.distanceKm && (
+          {center.distanceKm !== undefined && (
             <p style={styles.distance}>
               📍 {center.distanceKm.toFixed(1)} km away
             </p>
@@ -27,7 +39,7 @@ export default function WebServiceCenterList({ centers }) {
   );
 }
 
-const styles = {
+const styles: { [key: string]: React.CSSProperties } = {
   container: {
     padding: '16px',
     display: 'flex',
