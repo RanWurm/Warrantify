@@ -75,6 +75,7 @@ export default function home() {
 						{ label: 'Home', destination: '/home' },
 						{ label: 'My Warranties', destination: '/myWarranties' },
 						{ label: 'Shop', destination: '/adBoard' },
+                        { label: 'Service Centers', destination: '/serviceCenters' },
 						{ label: 'Settings', destination: '/settings' },
 					].map((item) => (
 						<NavItem key={item.label} label={item.label} destination={item.destination} />

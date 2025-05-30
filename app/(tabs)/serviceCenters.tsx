@@ -3,12 +3,15 @@ import { View, Text, StyleSheet, ScrollView, SafeAreaView, ActivityIndicator, Pl
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import Constants from 'expo-constants';
-import MapView, { Marker } from 'react-native-maps';
+// import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
 import ServiceCenterCard from '../components/serviceCenterCard';
 import { useNavigation } from 'expo-router';
 import { useLayoutEffect } from 'react';
 import BottomNavBar from '../components/BottomNavBar';
+import GoogleMapView from '../components/WebMap';
+import { LatLngExpression } from 'leaflet';
+import WebServiceCenterList from '../components/WebServiceCenterList';
 
 const serverBackendURL = Constants.expoConfig?.extra?.SERVER_BACKEND_URL || (Constants as any).manifest?.extra?.SERVER_BACKEND_URL;
 const googleApiKey = "AIzaSyCn-qqKYulPv-Ken38MtqimNa1AiJFluic";
@@ -30,6 +33,8 @@ interface LocatedCenter {
   closeTime?: string;
   distanceKm?: number;
 }
+
+const position: LatLngExpression = [51.505, -0.09]
 
 const MyServiceCenters: React.FC = () => {
     const navigation = useNavigation();
@@ -132,7 +137,9 @@ const MyServiceCenters: React.FC = () => {
       <Text style={styles.title}>My Service Centers</Text>
 
       <View style={styles.mapWrapper}>
-        <MapView
+            <GoogleMapView />
+
+        {/* <MapView
           style={{ flex: 1 }}
           showsUserLocation
           initialRegion={{
@@ -150,7 +157,7 @@ const MyServiceCenters: React.FC = () => {
               description={center.address}
             />
           ))}
-        </MapView>
+        </MapView> */}
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
@@ -171,8 +178,11 @@ const MyServiceCenters: React.FC = () => {
             distance={center.distanceKm}
           />
         ))}
+
       </ScrollView>
-         {!isWeb ? <BottomNavBar /> : null}
+        {!isWeb ? <BottomNavBar /> : null}
+        {/* {Platform.OS === 'web' && <WebServiceCenterList centers={centers} />} */}
+
     </SafeAreaView>
   );
 };
