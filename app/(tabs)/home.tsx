@@ -143,7 +143,11 @@ export default function home() {
         </View>
       )}
 
-      {!isWeb && <BottomNavBar />}
+      {!isWeb && (
+  <View style={styles.bottomNavContainer}>
+    <BottomNavBar />
+  </View>
+)}
     </>
   );
 }
@@ -252,4 +256,12 @@ const styles = StyleSheet.create({
 		color: '#333',
 		fontFamily: 'InriaSerif-Bold',
 	},	
+  bottomNavContainer: {
+  position: 'absolute',
+  bottom: Platform.OS === 'android' ? 20 : 0, // Move up 20px on Android
+  left: 0,
+  right: 0,
+  backgroundColor: '#E9E0D4', // Hide content underneath
+  paddingTop: 10, // Add padding above nav bar
+},
 });

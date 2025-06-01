@@ -321,7 +321,13 @@ export default function MonetizedAdsIntegration() {
 )}
         {/* ──────────────────────────────────────────────────── */}
         
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+        <ScrollView 
+  contentContainerStyle={styles.scrollContent}
+  style={{ 
+    flex: 1, 
+    marginBottom: Platform.OS === 'android' ? 80 : 0 
+  }}
+>
           {combinedAds.map((ad, idx) => {
             if ((ad as any).monetized) {
               const rec = ad as RecommendedAd & { monetized: true };
@@ -375,7 +381,11 @@ export default function MonetizedAdsIntegration() {
         </ScrollView>
 
       </SafeAreaView>
-      <BottomNavBar />
+      {!isWeb ? (
+  <View style={styles.bottomNavContainer}>
+    <BottomNavBar />
+  </View>
+) : null}
     </>
   );
 }
@@ -480,4 +490,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
   },
+  bottomNavContainer: {
+  position: 'absolute',
+  bottom: Platform.OS === 'android' ? 20 : 0, // Move up 20px on Android
+  left: 0,
+  right: 0,
+},
 });

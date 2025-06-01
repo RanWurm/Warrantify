@@ -334,28 +334,34 @@ const MyWarranties = () => {
         <View style={styles.bottomPadding} />
       </ScrollView>
 
-      {!isWeb ? <BottomNavBar /> : null}
+      {!isWeb ? (
+  <View style={styles.bottomNavContainer}>
+    <BottomNavBar />
+  </View>
+) : null}
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#E9E0D4',
-  },
+  flex: 1,
+  backgroundColor: '#E9E0D4',
+  paddingTop: Platform.OS === 'android' ? 20 : 0, // Reduce top padding on Android
+},
   header: {
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#DDD',
-  },
+  padding: 15,
+  borderBottomWidth: 1,
+  borderBottomColor: '#DDD',
+  paddingTop: Platform.OS === 'android' ? 10 : 15, // Less padding on Android
+},
   title: {
-    fontSize: 32,
-    fontFamily: 'InriaSerif-Bold',
-    color: '#000',
-    textAlign: 'center',
-    marginBottom: 5,
-  },
+  fontSize: 32,
+  fontFamily: 'InriaSerif-Bold',
+  color: '#000',
+  textAlign: 'center',
+  marginBottom: Platform.OS === 'android' ? 3 : 5, // Less margin on Android
+},
   statisticsContainer: {
 	flexDirection: 'row',
 	justifyContent: 'space-between',
@@ -413,16 +419,18 @@ const styles = StyleSheet.create({
   },
   warrantyList: {
     flex: 1,
+    marginBottom: Platform.OS === 'android' ? 60 : 0, // Add margin on Android
   },
+  
   bottomPadding: {
     height: 80,
   },
   searchBarContainer: {
-	marginHorizontal: 10,
-	marginVertical: 10,
-	width: isWeb ? '100%' : '100%',
-	alignSelf: 'center',
-  },
+  marginHorizontal: 10,
+  marginVertical: Platform.OS === 'android' ? 5 : 10, // Less margin on Android
+  width: isWeb ? '100%' : '100%',
+  alignSelf: 'center',
+},
   filterButton: {
 	backgroundColor: '#D2BBA1',
 	paddingVertical: 10,
@@ -480,6 +488,14 @@ const styles = StyleSheet.create({
     color: '#333',
     fontFamily: 'InriaSerif-Bold',
   },
+bottomNavContainer: {
+  position: 'absolute',
+  bottom: Platform.OS === 'android' ? 20 : 0, // Move up 20px on Android
+  left: 0,
+  right: 0,
+  backgroundColor: '#E9E0D4', // Add background to hide content underneath
+  paddingTop: 10, // Add padding above nav bar
+},
 });
 
 export default MyWarranties;
