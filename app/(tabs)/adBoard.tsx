@@ -99,29 +99,33 @@ export default function MonetizedAdsIntegration() {
     return resp.data.ads as RealAd[];
   };
 
-  const fetchRecommendedAds = useCallback(async (): Promise<RecommendedAd[]> => {
-    const cached = await AsyncStorage.getItem(CACHE_KEY);
-    if (cached) {
-      const { timestamp, recommendations } = JSON.parse(cached);
-      if (Date.now() - timestamp < CACHE_EXPIRY) {
-        return recommendations;
-      }
+const fetchRecommendedAds = useCallback(async (): Promise<RecommendedAd[]> => {
+    console.log('fetchRecommendedAds function started');
+  // Move this BEFORE the cache check
+  const token = await AsyncStorage.getItem('token');
+  const userId = (await axios.post(
+    `${serverBackendURL}/userdata`,
+    { token }
+  )).data.data.id;
+  console.log('User ID:', userId);
+
+  const cached = await AsyncStorage.getItem(CACHE_KEY);
+  if (cached) {
+    const { timestamp, recommendations } = JSON.parse(cached);
+    if (Date.now() - timestamp < CACHE_EXPIRY) {
+      return recommendations; // This was preventing your console.log from running
     }
+  }
 
-    const token = await AsyncStorage.getItem('token');
-    const warranties = (await axios.post(
-      `${serverBackendURL}/user-warranties`,
-      { token }
-    )).data.data;
-    const userId = (await axios.post(
-      `${serverBackendURL}/userdata`,
-      { token }
-    )).data.data.id;
-
-    const rawRecs = (await axios.post(
-      `${pythonBackendURL}/get_recommendation`,
-      { products: warranties, event_type: 'purchase', user_id: Number(userId) }
-    )).data.recommendations || [];
+  const warranties = (await axios.post(
+    `${serverBackendURL}/user-warranties`,
+    { token }
+  )).data.data;
+  
+  const rawRecs = (await axios.post(
+    `${pythonBackendURL}/get_recommendation`,
+    { products: warranties, event_type: 'purchase', user_id: Number(userId) }
+  )).data.recommendations || [];
 
     const mapped = rawRecs.map((rec: any) => ({
       title: rec.brand
