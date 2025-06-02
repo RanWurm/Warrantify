@@ -14,7 +14,7 @@ const mongoUrl="mongodb+srv://ilanitber:12345679@cluster0.m4fkm.mongodb.net/?ret
 mongoose
 .connect(mongoUrl)
 .then(()=>{
-  console.log("connected to DataBase")
+  console.log("connected to DataBase:",mongoose.connection.db.databaseName);
 })
 .catch((e)=>{
   console.log("connect to DataBase failed!")

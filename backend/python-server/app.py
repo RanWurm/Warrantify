@@ -15,6 +15,14 @@ from io import BytesIO
 import os
 from dotenv import load_dotenv
 from collections import Counter
+from pymongo import MongoClient
+import threading
+import time
+
+MONGO_URL ="mongodb+srv://ilanitber:12345679@cluster0.m4fkm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+client = MongoClient(MONGO_URL)
+db = client.get_database('test') 
+warranty_ads_collection = db['WarrantyAd']
 
 load_dotenv()
 
@@ -26,8 +34,98 @@ api_key = os.getenv("GENAI_API_KEY")
 genai.configure(api_key=api_key)
 model = genai.GenerativeModel("gemini-1.5-flash")
 
+
+trie = None
+products_from_db = []
+last_trie_update = None
+# update trie every 50 hours
+TRIE_UPDATE_INTERVAL = 180000000
+
+
+def fetch_products_from_adboard():
+    """Fetch all unique product names from the AdBoard collection"""
+    try:
+        print("🔄 Fetching products from AdBoard...")
+        
+        # Get all ads from the WarrantyAd collection
+        ads = list(warranty_ads_collection.find({}, {"productName": 1, "_id": 0}))
+        
+        # Extract unique product names
+        product_names = list(set([ad.get("productName", "").lower().strip() 
+                                for ad in ads 
+                                if ad.get("productName")]))
+        
+        # Filter out empty strings
+        product_names = [name for name in product_names if name]
+        
+        print(f"📦 Found {len(product_names)} unique products in AdBoard")
+        return product_names
+        
+    except Exception as e:
+        print(f"❌ Error fetching products from MongoDB: {e}")
+        return []
+
+def build_trie_from_db():
+    """Build trie from products in the database"""
+    global trie, products_from_db, last_trie_update
+    
+    try:
+        print("🏗️ Building trie from database products...")
+        
+        # Fetch fresh products from database
+        products_from_db = fetch_products_from_adboard()
+        
+        if not products_from_db:
+            print("⚠️ No products found in database, falling back to file-based trie")
+            # Fallback to original file-based approach
+            folder_path = 'data_sets/words_prediction_datasets'
+            file_products = load_products(folder_path)
+            unique_prods = sorted(list(set(file_products)))
+            trie = load_trie(unique_prods)
+        else:
+            # Build trie from database products
+            unique_prods = sorted(list(set(products_from_db)))
+            trie = load_trie(unique_prods)
+            print(f"✅ Trie built successfully with {len(unique_prods)} products")
+        
+        last_trie_update = time.time()
+        
+    except Exception as e:
+        print(f"❌ Error building trie: {e}")
+        # Fallback to file-based approach
+        try:
+            folder_path = 'data_sets/words_prediction_datasets'
+            file_products = load_products(folder_path)
+            unique_prods = sorted(list(set(file_products)))
+            trie = load_trie(unique_prods)
+            print("✅ Fallback trie built from files")
+        except Exception as fallback_error:
+            print(f"❌ Fallback trie building also failed: {fallback_error}")
+
+def should_update_trie():
+    """Check if trie should be updated based on time interval"""
+    global last_trie_update
+    
+    if last_trie_update is None:
+        return True
+    
+    return (time.time() - last_trie_update) > TRIE_UPDATE_INTERVAL
+
+def update_trie_if_needed():
+    """Update trie if needed"""
+    if should_update_trie():
+        print("⏰ Trie update interval reached, rebuilding...")
+        build_trie_from_db()
+
+def trie_updater():
+    """Background thread function to update trie periodically"""
+    while True:
+        time.sleep(60)  # Check every minute
+        update_trie_if_needed()
+
+
 @app.route('/scan_recepit', methods=['POST'])
-def scan_receipt():
+def scan_receipt(): 
     print("in scan")
     try:
         data = request.get_json()
@@ -82,12 +180,18 @@ def scan_receipt():
         return jsonify({'error': str(e)}), 500
 
     
-# Load product data and initialize trie
-folder_path = 'data_sets/words_prediction_datasets'
-products = load_products(folder_path)
-unique_prods = sorted(list(set(products)))
-trie = load_trie(unique_prods)
+# # Load product data and initialize trie
+# folder_path = 'data_sets/words_prediction_datasets'
+# products = load_products(folder_path)
+# unique_prods = sorted(list(set(products)))
+# trie = load_trie(unique_prods)
 
+print("🚀 Initializing trie on startup...")
+build_trie_from_db()
+
+# Start background thread
+trie_thread = threading.Thread(target=trie_updater, daemon=True)
+trie_thread.start()
 data_file_path = 'data_sets/recommendation_sys_datasets/buying_users.csv'
 
 recommender = KNNProductRecommender(data_file_path,k=5)
@@ -108,16 +212,39 @@ icon_defaults = {
     "tv":"television-classic",
 }
 
+
+
 @app.route('/autocomplete', methods=['GET'])
 def autocomplete():
     query = request.args.get('query', '').lower()
     if not query:
         return jsonify([])
     
-    # Get suggestions from trie
-    suggestions = trie.autocomplete(query, max_suggestions=5)
+    # Update trie if needed before serving autocomplete
+    update_trie_if_needed()
     
-    return jsonify(suggestions)
+    # Get suggestions from trie
+    if trie is None:
+        print("⚠️ Trie is None, rebuilding...")
+        build_trie_from_db()
+    
+    if trie is not None:
+        suggestions = trie.autocomplete(query, max_suggestions=5)
+        return jsonify(suggestions)
+    else:
+        print("❌ Trie is still None after rebuild attempt")
+        return jsonify([])
+
+# @app.route('/autocomplete', methods=['GET'])
+# def autocomplete():
+#     query = request.args.get('query', '').lower()
+#     if not query:
+#         return jsonify([])
+    
+#     # Get suggestions from trie
+#     suggestions = trie.autocomplete(query, max_suggestions=5)
+    
+#     return jsonify(suggestions)
 
 @app.route('/health', methods=['GET'])
 def health():
