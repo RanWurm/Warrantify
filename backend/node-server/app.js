@@ -85,12 +85,13 @@ app.post("/login",async(req,res)=>{
 
 
 app.post("/userdata",async(req,res)=>{
-  console.log("in /userdata")
   const {token} = req.body
   try{
     const user = jwt.verify(token,JWT_SECRET)
     const useremail = user.email
-    User.findOne({email:useremail}).then((data)=>{
+    
+    // Exclude password field
+    User.findOne({email:useremail}).select('-password').then((data)=>{
       console.log("user data is:",data)
       return res.send({Status:"Ok",data:data})
     })
@@ -262,6 +263,90 @@ app.get('/ad-board/page/:page', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+// Add this endpoint to your server.js
+
+app.delete('/remove-from-sale-board/:productId', async(req, res) => {
+  const { productId } = req.params;
+  
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const email = decoded.email;
+    
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    
+    // Find the ad for this product by this user
+    const warrantyAd = await WarrantyAd.findOne({ 
+      product: productId, 
+      user: user._id 
+    });
+    
+    if (!warrantyAd) {
+      return res.status(404).json({ error: 'Ad not found' });
+    }
+    
+    console.log('Found ad to delete:', warrantyAd._id); // Debug log
+    
+    // Remove the ad from the AdBoard
+    const boardUpdateResult = await AdBoard.updateOne(
+      { name: "SaleBoard" },
+      { $pull: { ads: warrantyAd._id } }
+    );
+    
+    console.log('AdBoard update result:', boardUpdateResult); // Debug log
+    
+    // Delete the ad document
+    const deleteResult = await WarrantyAd.findByIdAndDelete(warrantyAd._id);
+    console.log('Ad delete result:', deleteResult); // Debug log
+    
+    res.status(200).json({ 
+      message: 'Product removed from market list successfully',
+      removedAdId: warrantyAd._id,
+      boardUpdateResult,
+      deleteResult
+    });
+  } catch (error) {
+    console.error('Remove from market error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// 2. Check market status endpoint
+app.get('/check-market-status/:productId', async(req, res) => {
+  const { productId } = req.params;
+  
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const email = decoded.email;
+    
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    
+    // Check if this product is already on the market by this user
+    const existingAd = await WarrantyAd.findOne({ 
+      product: productId, 
+      user: user._id 
+    });
+    
+    console.log(`Market status check for product ${productId}:`, {
+      isOnMarket: !!existingAd,
+      adId: existingAd?._id
+    }); // Debug log
+    
+    res.status(200).json({ 
+      isOnMarket: !!existingAd,
+      adData: existingAd || null
+    });
+  } catch (error) {
+    console.error('Check market status error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+
 // Start the server
 const PORT = process.env.PORT || 3000;
 app.listen(3000, '0.0.0.0', () => {

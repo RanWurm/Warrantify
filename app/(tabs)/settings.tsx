@@ -268,7 +268,11 @@ export default function Settings() {
 			)}
 			</ScrollView>
       </View>
-         {!isWeb ? <BottomNavBar /> : null}
+               {!isWeb && (
+  <View style={styles.bottomNavContainer}>
+    <BottomNavBar />
+  </View>
+)}
     </>
   );
 }
@@ -400,5 +404,12 @@ columnsContainer: {
 	marginLeft: isWeb ? 10 : 0, // gap between title and icon only on web
 	marginTop: isWeb ? 0 : 60,  // little space on mobile between title and icon
   },
-  
+bottomNavContainer: {
+  position: 'absolute',
+  bottom: Platform.OS === 'android' ? 20 : 0, // Move up 20px on Android
+  left: 0,
+  right: 0,
+  backgroundColor: '#E9E0D4', // Hide content underneath
+  paddingTop: 10, // Add padding above nav bar
+},
 });

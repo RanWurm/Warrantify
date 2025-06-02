@@ -9,11 +9,14 @@ import {
   ActivityIndicator,
   StyleSheet,
   Dimensions,
-  Platform
+  Platform,
+  RefreshControl, // Add this import
+  TouchableOpacity, // Add this import
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import BottomNavBar from '../components/BottomNavBar';
+import SearchBar from '../components/SearchBar'; // Add SearchBar import
 import Constants from 'expo-constants';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { BarChart } from 'react-native-chart-kit';
@@ -41,6 +44,10 @@ const productIconMap: Record<string, string> = {
   Tablet: 'tablet',
   Coffe_machine: 'coffee',
 };
+
+
+
+
 
 function getIconName(productName: string) {
   const normalizedMap: Record<string, string> = {
@@ -78,10 +85,12 @@ const CACHE_EXPIRY = 1000 * 60 * 60; // 1 hour
 
 export default function MonetizedAdsIntegration() {
   const [combinedAds, setCombinedAds] = useState<CombinedAd[]>([]);
+  const [filteredAds, setFilteredAds] = useState<CombinedAd[]>([]); // Add filtered ads state
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-    // for the top-5 chart:
+  const [searchQuery, setSearchQuery] = useState<string>(''); // Add search query state
+  const [refreshing, setRefreshing] = useState(false);
+  // for the top-5 chart:
   const [topLabels, setTopLabels] = useState<string[]>([]);
   const [topValues, setTopValues] = useState<number[]>([])
 
@@ -144,6 +153,71 @@ export default function MonetizedAdsIntegration() {
     return out;
   };
 
+  // Add search functionality
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    if (query.trim() === '') {
+      setFilteredAds(combinedAds);
+    } else {
+      const filtered = combinedAds.filter((ad) => {
+        if ((ad as any).monetized) {
+          const rec = ad as RecommendedAd & { monetized: true };
+          return rec.title.toLowerCase().includes(query.toLowerCase());
+        } else {
+          const real = ad as RealAd;
+          return (
+            real.productName.toLowerCase().includes(query.toLowerCase()) ||
+            real.city.toLowerCase().includes(query.toLowerCase()) ||
+            real.description.toLowerCase().includes(query.toLowerCase())
+          );
+        }
+      });
+      setFilteredAds(filtered);
+    }
+  };
+  
+  
+  const refreshData = useCallback(async () => {
+  console.log("Refreshing ad board data...");
+  try {
+    setLoading(true); // Show loading indicator
+    
+    // Fetch fresh data
+    const [real, recs] = await Promise.all([
+      fetchRealAds(),
+      fetchRecommendedAds(),
+    ]);
+    
+    const combined = combineAds(real, recs);
+    setCombinedAds(combined);
+    setFilteredAds(combined);
+    
+    // Clear search if active
+    if (searchQuery) {
+      handleSearch(searchQuery);
+    }
+    
+    console.log("Ad board data refreshed successfully");
+  } catch (error) {
+    console.error("Error refreshing data:", error);
+    setError('Failed to refresh ads. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+}, [fetchRecommendedAds, searchQuery]);
+
+// Add this function for pull-to-refresh
+const onRefresh = useCallback(async () => {
+  setRefreshing(true);
+  await refreshData();
+  setRefreshing(false);
+}, [refreshData]);
+
+
+  const handleSelectSuggestion = (suggestion: string) => {
+    handleSearch(suggestion);
+  };
+
   useEffect(() => {
     console.log("IN USE EFFECTTTTTTTTTTT");
     // 1) fetch top-5 data
@@ -163,7 +237,9 @@ export default function MonetizedAdsIntegration() {
           fetchRealAds(),
           fetchRecommendedAds(),
         ]);
-        setCombinedAds(combineAds(real, recs));
+        const combined = combineAds(real, recs);
+        setCombinedAds(combined);
+        setFilteredAds(combined); // Initialize filtered ads
       } catch {
         setError('Failed to fetch ads. Please try again later.');
       } finally {
@@ -192,6 +268,8 @@ export default function MonetizedAdsIntegration() {
       <SafeAreaView style={styles.container}>
         
         <Text style={styles.header}>Recommended</Text>
+
+        
 
         {/* ─── Top-5 Products Chart ───────────────────────────── */}
         <Text style={{ fontSize: 16, fontFamily: 'InriaSerif-Bold', marginBottom: 5, marginHorizontal: '6%',}}>
@@ -319,67 +397,95 @@ export default function MonetizedAdsIntegration() {
         </View>
   )
 )}
+
+{/* Add SearchBar right below the header */}
+        <SearchBar
+          variant="adBoard"
+          onSearch={handleSearch}
+          onSelectSuggestion={handleSelectSuggestion}
+          placeholder="Search products, cities, or descriptions..."
+          filterOptions={{
+            text: 'All Products',
+            onPress: () => console.log('Filter button pressed'),
+          }}
+          autocompleteEndpoint={`${pythonBackendURL}/autocomplete`}
+          additionalStyles={{
+            container: styles.searchBarContainer,
+            filterButton: styles.filterButton,
+            filterButtonText: styles.filterButtonText,
+            searchInput: styles.searchInput,
+            searchText: styles.searchText,
+          }}
+        />
         {/* ──────────────────────────────────────────────────── */}
         
-        <ScrollView 
+<ScrollView 
   contentContainerStyle={styles.scrollContent}
   style={{ 
     flex: 1, 
     marginBottom: Platform.OS === 'android' ? 80 : 0 
   }}
+  refreshControl={
+    <RefreshControl
+      refreshing={refreshing}
+      onRefresh={onRefresh}
+      colors={['#7E8FA6']} // Android
+      tintColor='#7E8FA6' // iOS
+      title="Pull to refresh..."
+      titleColor='#7E8FA6'
+    />
+  }
 >
-          {combinedAds.map((ad, idx) => {
-            if ((ad as any).monetized) {
-              const rec = ad as RecommendedAd & { monetized: true };
-              return (
-                <View
-                  key={`monetized-${idx}`}
-                  style={[styles.cardContainer, styles.monetizedCard]}
-                >
-                  <Text style={styles.monetizedHeader}>Sponsored</Text>
-                  <Text style={styles.productName}>{rec.title}</Text>
-                  <Text style={styles.iconName}>Icon: {rec.iconName}</Text>
-                </View>
-              );
-            }
-            const real = ad as RealAd;
-            return (
-              <View key={real._id} style={styles.cardContainer}>
-                {/* Header row with dynamic icon */}
-                <View style={styles.adHeader}>
-                  <View style={styles.titleWithIcon}>
-                    <MaterialCommunityIcons
-                      name={getIconName(real.productName)}
-                      size={20}
-                      color="#4f3e2f"
-                      style={{ marginRight: 8 }}
-                    />
-                    <Text style={styles.productName}>
-                      {real.productName}
-                    </Text>
-                  </View>
-                  <View style={styles.headerRight}>
-                    <Text style={styles.salePrice}>
-                      ${real.salePrice}
-                    </Text>
-                    <MaterialCommunityIcons
-                      name="cash"
-                      size={20}
-                      color="#7E8FA6"
-                      style={{ marginLeft: 5 }}
-                    />
-                  </View>
-                </View>
-                
-                {/* Location */}
-                <Text style={styles.city}>Location: {real.city}</Text>
-                {/* Description */}
-                <Text style={styles.description}>{real.description}</Text>
-              </View>
-            );
-          })}
-        </ScrollView>
-
+  {/* Your existing ads mapping code stays the same */}
+  {filteredAds.map((ad, idx) => {
+    if ((ad as any).monetized) {
+      const rec = ad as RecommendedAd & { monetized: true };
+      return (
+        <View
+          key={`monetized-${idx}`}
+          style={[styles.cardContainer, styles.monetizedCard]}
+        >
+          <Text style={styles.monetizedHeader}>Sponsored</Text>
+          <Text style={styles.productName}>{rec.title}</Text>
+          <Text style={styles.iconName}>Icon: {rec.iconName}</Text>
+        </View>
+      );
+    }
+    const real = ad as RealAd;
+    return (
+      <View key={real._id} style={styles.cardContainer}>
+        {/* Your existing card content */}
+        <View style={styles.adHeader}>
+          <View style={styles.titleWithIcon}>
+            <MaterialCommunityIcons
+              name={getIconName(real.productName)}
+              size={20}
+              color="#4f3e2f"
+              style={{ marginRight: 8 }}
+            />
+            <Text style={styles.productName}>
+              {real.productName}
+            </Text>
+          </View>
+          <View style={styles.headerRight}>
+            <Text style={styles.salePrice}>
+              ${real.salePrice}
+            </Text>
+            <MaterialCommunityIcons
+              name="cash"
+              size={20}
+              color="#7E8FA6"
+              style={{ marginLeft: 5 }}
+            />
+          </View>
+        </View>
+        
+        <Text style={styles.city}>Location: {real.city}</Text>
+        <Text style={styles.description}>{real.description}</Text>
+      </View>
+    );
+  })}
+</ScrollView>
       </SafeAreaView>
       {!isWeb ? (
   <View style={styles.bottomNavContainer}>
@@ -409,8 +515,35 @@ const styles = StyleSheet.create({
     marginVertical: 16,
     color: '#000',
     marginTop: Platform.OS === 'android' ? '10%' : 0,
-
   },
+  
+  // Add SearchBar styles
+  searchBarContainer: {
+    marginHorizontal: 10,
+    marginVertical: Platform.OS === 'android' ? 5 : 10,
+    width: isWeb ? '100%' : '100%',
+    alignSelf: 'center',
+  },
+  filterButton: {
+    backgroundColor: '#D2BBA1',
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    borderRadius: 4,
+  },
+  filterButtonText: {
+    fontSize: 14,
+    color: '#000',
+    marginLeft: 5,
+  },
+  searchInput: {
+    backgroundColor: '#D2BBA1',
+  },
+  searchText: {
+    fontSize: 12,
+    color: '#000',
+    marginRight: 5,
+  },
+
   scrollContent: {
     paddingBottom: 90,
     alignItems: 'center',
@@ -491,9 +624,9 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   bottomNavContainer: {
-  position: 'absolute',
-  bottom: Platform.OS === 'android' ? 20 : 0, // Move up 20px on Android
-  left: 0,
-  right: 0,
-},
+    position: 'absolute',
+    bottom: Platform.OS === 'android' ? 20 : 0, // Move up 20px on Android
+    left: 0,
+    right: 0,
+  },
 });

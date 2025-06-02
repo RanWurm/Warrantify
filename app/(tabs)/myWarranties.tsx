@@ -256,91 +256,70 @@ const MyWarranties = () => {
     );
   }
 
-  return (
-    <SafeAreaView style={styles.container}>
-      {isWeb ? (
-        <View style={styles.topNavbar}>
-          {[
-            { label: 'Home', destination: '/home' },
-            { label: 'My Warranties', destination: '/myWarranties' },
-            { label: 'Shop', destination: '/adBoard' },
-            { label: 'Settings', destination: '/settings' },
-          ].map((item) => (
-            <NavItem key={item.label} label={item.label} destination={item.destination} />
-          ))}
-        </View>
-      ): null}
+return (
+  <SafeAreaView style={styles.container}>
+    {isWeb ? (
+      <View style={styles.topNavbar}>
+        {[
+          { label: 'Home', destination: '/home' },
+          { label: 'My Warranties', destination: '/myWarranties' },
+          { label: 'Shop', destination: '/adBoard' },
+          { label: 'Settings', destination: '/settings' },
+        ].map((item) => (
+          <NavItem key={item.label} label={item.label} destination={item.destination} />
+        ))}
+      </View>
+    ): null}
 
-      <View style={styles.header}>
-        <Text style={styles.title}>My Warranties</Text>
+    <View style={styles.header}>
+      <Text style={styles.title}>My Warranties</Text>
 
-        <View style={styles.profileContainer}>
-		<View style={styles.topRow}>  {/* ✅ NEW ROW wrapper */}
+      <View style={styles.profileContainer}>
+        <View style={styles.topRow}>
           <View style={styles.profileImageWrapper}>
             <Image
               source={
                 userImage
                   ? { uri: userImage }
-                  : { uri: 'data:image/png;base64,...' }
+                  : require('../../assets/images/default-profile-pic.png')
               }
               style={styles.profileImage}
             />
           </View>
 
-		<View style={styles.statisticsContainer}>
-			<View style={styles.statBlock}>
-				<Text style={styles.statNumber}>{expiredPercentage}%</Text>
-				<Text style={styles.statLabel}>Expired</Text>
-			</View>
-			<View style={styles.statBlock}>
-				<Text style={styles.statNumber}>{inProgressPercentage}%</Text>
-				<Text style={styles.statLabel}>In Progress</Text>
-			</View>
-				<View style={styles.statBlock}>
-				<Text style={styles.statNumber}>{recentPercentage}%</Text>
-				<Text style={styles.statLabel}>Recent</Text>
-			</View>
-		</View>
-    </View>
-
-          <SearchBar
-			variant="myWarranties"
-			onSearch={handleSearch}
-			onSelectSuggestion={handleSelectSuggestion}
-			placeholder="Search your warranties..."
-			filterOptions={{
-				text: 'All Warranties',
-				onPress: () => console.log('Filter button pressed'),
-			}}
-			autocompleteEndpoint="http://10.0.0.12:5000/autocomplete"
-			additionalStyles={{
-				container: styles.searchBarContainer,
-				filterButton: styles.filterButton,
-				filterButtonText: styles.filterButtonText,
-				searchInput: styles.searchInput,
-				searchText: styles.searchText,
-			}}
-			/>
-
+          <View style={styles.statisticsContainer}>
+            <View style={styles.statBlock}>
+              <Text style={styles.statNumber}>{expiredPercentage}%</Text>
+              <Text style={styles.statLabel}>Expired</Text>
+            </View>
+            <View style={styles.statBlock}>
+              <Text style={styles.statNumber}>{inProgressPercentage}%</Text>
+              <Text style={styles.statLabel}>In Progress</Text>
+            </View>
+            <View style={styles.statBlock}>
+              <Text style={styles.statNumber}>{recentPercentage}%</Text>
+              <Text style={styles.statLabel}>Recent</Text>
+            </View>
+          </View>
         </View>
       </View>
+    </View>
 
-      <ScrollView style={styles.warrantyList}>
-        <View style={{ width: isWeb ? '50%' : '100%', alignSelf: 'center' }}>
-          {filteredWarranties.map((warranty, index) => (
-            <WarrantyCard key={index} {...warranty} />
-          ))}
-        </View>
-        <View style={styles.bottomPadding} />
-      </ScrollView>
-
-      {!isWeb ? (
-  <View style={styles.bottomNavContainer}>
-    <BottomNavBar />
-  </View>
-) : null}
-    </SafeAreaView>
-  );
+    <ScrollView style={styles.warrantyList}>
+      <View style={{ width: isWeb ? '50%' : '100%', alignSelf: 'center' }}>
+        {filteredWarranties.map((warranty, index) => (
+          <WarrantyCard key={index} {...warranty} />
+        ))}
+      </View>
+      <View style={styles.bottomPadding} />
+    </ScrollView>
+    {!isWeb ? (
+      <View style={styles.bottomNavContainer}>
+        <BottomNavBar />
+      </View>
+    ) : null}
+  </SafeAreaView>
+);
 };
 
 const styles = StyleSheet.create({
