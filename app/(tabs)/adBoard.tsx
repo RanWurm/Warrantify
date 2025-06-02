@@ -153,28 +153,70 @@ export default function MonetizedAdsIntegration() {
     return out;
   };
 
+  
+  
+  const calculateRelevanceScore = (ad: CombinedAd, query: string): number => {
+  const lowerQuery = query.toLowerCase();
+  
+  if ((ad as any).monetized) {
+    const rec = ad as RecommendedAd & { monetized: true };
+    const title = rec.title.toLowerCase();
+    
+    // Exact match gets highest score
+    if (title === lowerQuery) return 100;
+    // Starts with query gets high score
+    if (title.startsWith(lowerQuery)) return 80;
+    // Contains query gets medium score
+    if (title.includes(lowerQuery)) return 60;
+    // No match gets lowest score
+    return 0;
+  } else {
+    const real = ad as RealAd;
+    const productName = real.productName.toLowerCase();
+    const city = real.city.toLowerCase();
+    const description = real.description.toLowerCase();
+    
+    let score = 0;
+    
+    // Product name matches (highest priority)
+    if (productName === lowerQuery) score += 100;
+    else if (productName.startsWith(lowerQuery)) score += 80;
+    else if (productName.includes(lowerQuery)) score += 60;
+    
+    // City matches (medium priority)
+    if (city === lowerQuery) score += 50;
+    else if (city.startsWith(lowerQuery)) score += 40;
+    else if (city.includes(lowerQuery)) score += 30;
+    
+    // Description matches (lower priority)
+    if (description.includes(lowerQuery)) score += 20;
+    
+    return score;
+  }
+};
+
   // Add search functionality
   const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    if (query.trim() === '') {
-      setFilteredAds(combinedAds);
-    } else {
-      const filtered = combinedAds.filter((ad) => {
-        if ((ad as any).monetized) {
-          const rec = ad as RecommendedAd & { monetized: true };
-          return rec.title.toLowerCase().includes(query.toLowerCase());
-        } else {
-          const real = ad as RealAd;
-          return (
-            real.productName.toLowerCase().includes(query.toLowerCase()) ||
-            real.city.toLowerCase().includes(query.toLowerCase()) ||
-            real.description.toLowerCase().includes(query.toLowerCase())
-          );
-        }
-      });
-      setFilteredAds(filtered);
-    }
-  };
+  setSearchQuery(query);
+  if (query.trim() === '') {
+    setFilteredAds(combinedAds);
+  } else {
+    const filtered = combinedAds.filter((ad) => {
+      if ((ad as any).monetized) {
+        const rec = ad as RecommendedAd & { monetized: true };
+        return rec.title.toLowerCase().includes(query.toLowerCase());
+      } else {
+        const real = ad as RealAd;
+        return (
+          real.productName.toLowerCase().includes(query.toLowerCase()) ||
+          real.city.toLowerCase().includes(query.toLowerCase()) ||
+          real.description.toLowerCase().includes(query.toLowerCase())
+        );
+      }
+    });
+    setFilteredAds(filtered);
+  }
+};
   
   
   const refreshData = useCallback(async () => {
@@ -215,9 +257,64 @@ const onRefresh = useCallback(async () => {
 
 
   const handleSelectSuggestion = (suggestion: string) => {
-    handleSearch(suggestion);
+  setSearchQuery(suggestion);
+  
+  // Filter ads that match the suggestion
+  const filtered = combinedAds.filter((ad) => {
+    if ((ad as any).monetized) {
+      const rec = ad as RecommendedAd & { monetized: true };
+      return rec.title.toLowerCase().includes(suggestion.toLowerCase());
+    } else {
+      const real = ad as RealAd;
+      return (
+        real.productName.toLowerCase().includes(suggestion.toLowerCase()) ||
+        real.city.toLowerCase().includes(suggestion.toLowerCase()) ||
+        real.description.toLowerCase().includes(suggestion.toLowerCase())
+      );
+    }
+  });
+  const sortedFiltered = filtered.sort((a, b) => {
+    const scoreA = calculateRelevanceScore(a, suggestion);
+    const scoreB = calculateRelevanceScore(b, suggestion);
+    return scoreB - scoreA; // Sort descending (highest score first)
+  });
+  
+  const rebuildWithAdsRelationship = (sortedAds: CombinedAd[]): CombinedAd[] => {
+    const result: CombinedAd[] = [];
+    const realAds = sortedAds.filter(ad => !(ad as any).monetized) as RealAd[];
+    const monetizedAds = sortedAds.filter(ad => (ad as any).monetized) as (RecommendedAd & { monetized: true })[];
+    
+    let monetizedIndex = 0;
+    
+    for (let i = 0; i < realAds.length; i++) {
+      result.push(realAds[i]);
+      
+      // Insert monetized ad every 3 real ads (maintaining original pattern)
+      if ((i + 1) % 3 === 0 && monetizedIndex < monetizedAds.length) {
+        result.push(monetizedAds[monetizedIndex]);
+        monetizedIndex++;
+      }
+    }
+    
+    // Add any remaining monetized ads at the end
+    while (monetizedIndex < monetizedAds.length) {
+      result.push(monetizedAds[monetizedIndex]);
+      monetizedIndex++;
+    }
+    
+    return result;
   };
-
+  const finalSortedAds = rebuildWithAdsRelationship(sortedFiltered);
+  setFilteredAds(finalSortedAds);
+  
+  console.log(`🔍 Sorted results for "${suggestion}":`, finalSortedAds.map(ad => {
+    if ((ad as any).monetized) {
+      return `[AD] ${(ad as RecommendedAd).title}`;
+    } else {
+      return `${(ad as RealAd).productName} (Score: ${calculateRelevanceScore(ad, suggestion)})`;
+    }
+    }));
+  };
   useEffect(() => {
     console.log("IN USE EFFECTTTTTTTTTTT");
     // 1) fetch top-5 data
@@ -419,23 +516,23 @@ const onRefresh = useCallback(async () => {
         />
         {/* ──────────────────────────────────────────────────── */}
         
-<ScrollView 
-  contentContainerStyle={styles.scrollContent}
-  style={{ 
-    flex: 1, 
-    marginBottom: Platform.OS === 'android' ? 80 : 0 
-  }}
-  refreshControl={
-    <RefreshControl
-      refreshing={refreshing}
-      onRefresh={onRefresh}
-      colors={['#7E8FA6']} // Android
-      tintColor='#7E8FA6' // iOS
-      title="Pull to refresh..."
-      titleColor='#7E8FA6'
-    />
-  }
->
+    <ScrollView 
+      contentContainerStyle={styles.scrollContent}
+      style={{ 
+        flex: 1, 
+        marginBottom: Platform.OS === 'android' ? 80 : 0 
+      }}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          colors={['#7E8FA6']} // Android
+          tintColor='#7E8FA6' // iOS
+          title="Pull to refresh..."
+          titleColor='#7E8FA6'
+        />
+      }
+    >
   {/* Your existing ads mapping code stays the same */}
   {filteredAds.map((ad, idx) => {
     if ((ad as any).monetized) {
