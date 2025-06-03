@@ -1,15 +1,24 @@
 require('dotenv').config();
+
 const express = require('express');
+
 const app = express();
 app.use(express.json({limit: '50mb'}));
 app.use(express.urlencoded({limit: '50mb', extended: true}));
+
 const cors = require('cors');
 const mongoose =require("mongoose")
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken')
-//const mongoUrl="mongodb+srv://ranwurembrand:ShevShev12%21%40%23@cluster0.m4fkm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+const fetch = require('node-fetch');
 
+// const  = Constants.expoConfig?.extra?.PYTHON_BACKEND_URL;
+const pythonBackendURL = "http://172.20.10.5:5000";
+
+console.log("pythonBackendURL:" + pythonBackendURL);
 const mongoUrl="mongodb+srv://ilanitber:12345679@cluster0.m4fkm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+
+//const mongoUrl="mongodb+srv://ranwurembrand:ShevShev12%21%40%23@cluster0.m4fkm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
 mongoose
 .connect(mongoUrl)
@@ -31,6 +40,7 @@ const User = mongoose.model("userInformation")
 const Warranty = mongoose.model('warrantyInformation')
 const WarrantyAd = mongoose.model('Ad')
 const AdBoard = require('./schemas/AdBoardSchema.js');
+
 app.use(cors());
 app.use(express.json()); // Middleware to parse JSON requests
 
@@ -83,7 +93,6 @@ app.post("/login",async(req,res)=>{
   }
 })
 
-
 app.post("/userdata",async(req,res)=>{
   const {token} = req.body
   try{
@@ -101,8 +110,6 @@ app.post("/userdata",async(req,res)=>{
   }
 })
 
-
-
 app.post("/user-warranties",async(req,res)=>{
   const{token} = req.body
   try{
@@ -119,7 +126,6 @@ app.post("/user-warranties",async(req,res)=>{
     res.status(500).json({error:"Internal server Error!"})
   }
 });
-
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -161,16 +167,15 @@ app.post('/update-user', async(req, res) => {
   }
 });
 
-
-
 app.post('/add-warranty', async(req, res) => {
   const { productName, serviceCenter, store, model,price, purchaseDate,expirationDate,notes} = req.body;
-  console.log("in the problem req.headers is :",req.headers)
+//   console.log("in the problem req.headers is :",req.headers)
+    console.log("In add-warranty");
   try {
     const token = req.headers.authorization?.split(' ')[1];
     const decoded = jwt.verify(token, JWT_SECRET);
     const email = decoded.email;
-    const user = await User.findOne({ email })
+    const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ error: 'User not found' });
     
     const newWarranty = await Warranty.create({
@@ -184,12 +189,39 @@ app.post('/add-warranty', async(req, res) => {
       expirationDate,
       notes
     });
+
     user.products.push(newWarranty._id);
     await user.save();
-    // 4. Send a success response.
+
+    // Send to Python cache
+
+    const payload = {
+      user_id: user._id.toString(),
+      productName,
+      model,
+      price,
+      purchaseDate,
+      expirationDate,
+      store,
+      serviceCenter,
+      notes
+    };
+
+    console.log("🐍 Sending data to Python backend:", payload);
+
+    const pythonResponse = await fetch(`${pythonBackendURL}/add_warranty`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const pythonResponseBody = await pythonResponse.json(); // or .json() if you expect JSON
+    console.log("🐍 Python backend responded with:", pythonResponse.status, pythonResponseBody);
+
+    // Send a success response.
     res.status(201).json({ message: 'Warranty added successfully', warranty: newWarranty });
   } catch (error) {
-    console.error(error);
+    console.error('Error adding warranty:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

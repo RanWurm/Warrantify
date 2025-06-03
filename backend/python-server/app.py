@@ -18,6 +18,8 @@ from collections import Counter
 from pymongo import MongoClient
 import threading
 import time
+from cache_manager import WarrantyCacheManager
+
 
 MONGO_URL ="mongodb+srv://ilanitber:12345679@cluster0.m4fkm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 client = MongoClient(MONGO_URL)
@@ -40,6 +42,8 @@ products_from_db = []
 last_trie_update = None
 # update trie every 50 hours
 TRIE_UPDATE_INTERVAL = 180000000
+
+CSV_PATH = 'data_sets/recommendation_sys_datasets/buying_users.csv'
 
 
 def fetch_products_from_adboard():
@@ -212,8 +216,6 @@ icon_defaults = {
     "tv":"television-classic",
 }
 
-
-
 @app.route('/autocomplete', methods=['GET'])
 def autocomplete():
     query = request.args.get('query', '').lower()
@@ -360,6 +362,50 @@ def top_products():
     values = [item[1] for item in top]
     
     return jsonify({'labels': labels, 'values': values})
+
+
+warranty_cache = WarrantyCacheManager()
+
+@app.route('/add_warranty', methods=['POST'])
+def add_warranty():
+    data = request.json
+    warranty_cache.add_warranty(data)
+    return jsonify({"status": "warranty cached", "current_count": warranty_cache.get_counter()})
+
+@app.route('/flush_warranty_cache', methods=['GET'])
+def flush_warranty_cache():
+    cache_data = warranty_cache.get_and_clear_cache()
+    return jsonify({"cached_warranties": cache_data})
+
+def handle_warranty_flush(warranty_batch):
+    if not warranty_batch:
+        print("⚠️ No warranties to flush.")
+        return
+
+    print(f"\n🚿 Auto-flush triggered: Flushing {len(warranty_batch)} warranties to CSV: {CSV_PATH} \n")
+
+    for i, item in enumerate(warranty_batch, 1):
+        print(f"📦 Warranty {i}:")
+        print(f"  - user_id: {item.get('user')}")
+        print(f"  - productName: {item.get('productName')}")
+        print(f"  - product_id: {item.get('_id')}")
+        print("")
+
+    rows = []
+    for item in warranty_batch:
+        rows.append({
+            "event_type": "purchase",
+            "product_id": item.get("_id"),
+            "category_id": "",  
+            "category_code": "", 
+            "brand": "",
+            "user_id": item.get("user")
+        })
+
+    df = pd.DataFrame(rows)
+
+    os.makedirs(os.path.dirname(CSV_PATH), exist_ok=True)
+    df.to_csv(CSV_PATH, mode='a', header=not os.path.exists(CSV_PATH), index=False)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
