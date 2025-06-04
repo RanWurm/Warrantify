@@ -188,7 +188,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
               ]}
               onPress={() => handleSuggestionPress(item)}
             >
-              <Text>{item}</Text>
+              <Text style={{fontFamily: 'InriaSerif-Bold'}}>{item}</Text>
             </TouchableOpacity>
           )}
           style={[
@@ -265,6 +265,55 @@ const getStyles = (variant: string, screenWidth: number) => {
           fontFamily: 'InriaSerif-Regular',
         },
       };
+    case 'recommended':
+        return {
+        container: {
+            backgroundColor: '#E9E0D4',
+        },
+        searchBar: {
+          width: '90%',
+          alignSelf: 'center',
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          backgroundColor: '#f1f1f1',
+          padding: 8,
+          borderRadius: 8,
+        },
+        filterButton: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#D2BBA1',
+          borderRadius: 4,
+          paddingHorizontal: 10,
+          paddingVertical: 8,
+        },
+        filterButtonText: {
+          fontSize: 14,
+          color: '#000',
+          marginLeft: 5,
+          fontFamily: 'InriaSerif-Regular',
+        },
+        searchInput: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          backgroundColor: '#D2BBA1',
+          borderRadius: 4,
+          flex: 1,
+          marginLeft: 8,
+          paddingHorizontal: 8,
+        },
+        searchText: {
+          flex: 1,
+          color: '#000',
+          fontSize: 14,
+          marginRight: 5,
+          fontFamily: 'InriaSerif-Regular',
+        },
+      };
+
     default:
       return {};
   }
@@ -315,6 +364,7 @@ const styles = StyleSheet.create({
     marginHorizontal: '5%',
     width: '90%',
     alignSelf: 'center',
+    fontFamily: 'InriaSerif-Bold',
   },
   suggestionItem: {
     padding: 12,

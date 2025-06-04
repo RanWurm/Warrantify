@@ -10,13 +10,13 @@ import {
   StyleSheet,
   Dimensions,
   Platform,
-  RefreshControl, // Add this import
-  TouchableOpacity, // Add this import
+  RefreshControl,
+  TouchableOpacity, 
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import BottomNavBar from '../components/BottomNavBar';
-import SearchBar from '../components/SearchBar'; // Add SearchBar import
+import SearchBar from '../components/SearchBar'; 
 import Constants from 'expo-constants';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { BarChart } from 'react-native-chart-kit';
@@ -84,7 +84,6 @@ const productIconMap: Record<string, string> = {
     dehumidifier: 'air-humidifier-off'
 };
 
-
 function getIconName(productName: string) {
   const normalized = productName.toLowerCase().replace(/\s+/g, '');
 
@@ -132,11 +131,12 @@ const CACHE_EXPIRY = 1000 * 60 * 60; // 1 hour
 
 export default function MonetizedAdsIntegration() {
   const [combinedAds, setCombinedAds] = useState<CombinedAd[]>([]);
-  const [filteredAds, setFilteredAds] = useState<CombinedAd[]>([]); // Add filtered ads state
+  const [filteredAds, setFilteredAds] = useState<CombinedAd[]>([]); 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState<string>(''); // Add search query state
+  const [searchQuery, setSearchQuery] = useState<string>(''); 
   const [refreshing, setRefreshing] = useState(false);
+
   // for the top-5 chart:
   const [topLabels, setTopLabels] = useState<string[]>([]);
   const [topValues, setTopValues] = useState<number[]>([])
@@ -203,8 +203,6 @@ const fetchRecommendedAds = useCallback(async (): Promise<RecommendedAd[]> => {
     }
     return out;
   };
-
-  
   
   const calculateRelevanceScore = (ad: CombinedAd, query: string): number => {
   const lowerQuery = query.toLowerCase();
@@ -249,6 +247,7 @@ const fetchRecommendedAds = useCallback(async (): Promise<RecommendedAd[]> => {
   // Add search functionality
   const handleSearch = (query: string) => {
   setSearchQuery(query);
+
   if (query.trim() === '') {
     setFilteredAds(combinedAds);
   } else {
@@ -268,7 +267,6 @@ const fetchRecommendedAds = useCallback(async (): Promise<RecommendedAd[]> => {
     setFilteredAds(filtered);
   }
 };
-  
   
   const refreshData = useCallback(async () => {
   console.log("Refreshing ad board data...");
@@ -305,7 +303,6 @@ const onRefresh = useCallback(async () => {
   await refreshData();
   setRefreshing(false);
 }, [refreshData]);
-
 
   const handleSelectSuggestion = (suggestion: string) => {
   setSearchQuery(suggestion);
@@ -366,8 +363,10 @@ const onRefresh = useCallback(async () => {
     }
     }));
   };
+
   useEffect(() => {
     console.log("IN USE EFFECTTTTTTTTTTT");
+
     // 1) fetch top-5 data
     axios
       .get(`${pythonBackendURL}/top_products`)
@@ -514,7 +513,7 @@ const onRefresh = useCallback(async () => {
                     ],
                     }}
                     width={CARD_WIDTH + 55 }
-                    height={180}
+                    height={170}
                     withInnerLines={false}
                     withHorizontalLabels={false}
                     withCustomBarColorFromData={true}
@@ -540,32 +539,34 @@ const onRefresh = useCallback(async () => {
                         fontSize: 10,
                     },
                     }}
-                    style={{ marginTop: 20, borderRadius: 12, marginHorizontal: '-20%',}}
+                    style={{ marginTop: 0, borderRadius: 12, marginHorizontal: '-20%',}}
                 />
         </View>
   )
 )}
 
+
 {/* Add SearchBar right below the header */}
+
+        
         <SearchBar
-          variant="adBoard"
-          onSearch={handleSearch}
-          onSelectSuggestion={handleSelectSuggestion}
-          placeholder="Search products, cities, or descriptions..."
-          filterOptions={{
-            text: 'All Products',
-            onPress: () => console.log('Filter button pressed'),
-          }}
-          autocompleteEndpoint={`${pythonBackendURL}/autocomplete`}
-          additionalStyles={{
-            container: styles.searchBarContainer,
-            filterButton: styles.filterButton,
-            filterButtonText: styles.filterButtonText,
-            searchInput: styles.searchInput,
-            searchText: styles.searchText,
-          }}
-        />
-        {/* ──────────────────────────────────────────────────── */}
+			variant="recommended"
+			onSearch={handleSearch}
+			onSelectSuggestion={handleSelectSuggestion}
+			placeholder="Products, cities, descriptions..."
+			filterOptions={{
+				text: 'All Products',
+				onPress: () => console.log('Filter button pressed'),
+			}}
+            autocompleteEndpoint={`${pythonBackendURL}/autocomplete`}
+			additionalStyles={{
+				container: styles.searchBarContainer,
+				filterButton: styles.filterButton,
+				filterButtonText: styles.filterButtonText,
+				searchInput: styles.searchInput,
+				searchText: styles.searchText,
+			}}
+			/>
         
     <ScrollView 
       contentContainerStyle={styles.scrollContent}
@@ -665,32 +666,31 @@ const styles = StyleSheet.create({
     marginTop: Platform.OS === 'android' ? '10%' : 0,
   },
   
-  // Add SearchBar styles
   searchBarContainer: {
     marginHorizontal: 10,
-    marginVertical: Platform.OS === 'android' ? 5 : 10,
+    marginVertical: Platform.OS === 'android' ? 5 : 10, 
     width: isWeb ? '100%' : '100%',
     alignSelf: 'center',
   },
-  filterButton: {
+    filterButton: {
     backgroundColor: '#D2BBA1',
     paddingVertical: 10,
     paddingHorizontal: 10,
     borderRadius: 4,
-  },
-  filterButtonText: {
+    },
+    filterButtonText: {
     fontSize: 14,
     color: '#000',
     marginLeft: 5,
-  },
-  searchInput: {
+    },
+    searchInput: {
     backgroundColor: '#D2BBA1',
-  },
-  searchText: {
+    },
+    searchText: {
     fontSize: 12,
     color: '#000',
     marginRight: 5,
-  },
+    },
 
   scrollContent: {
     paddingBottom: 90,
@@ -777,4 +777,5 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
   },
+  
 });

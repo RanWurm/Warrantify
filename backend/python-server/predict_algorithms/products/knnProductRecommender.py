@@ -16,8 +16,9 @@ class KNNProductRecommender:
         """
         self.k = k
         # Load the CSV into a DataFrame
-        self.data = pd.read_csv(csv_file_path)
-        
+        # self.data = pd.read_csv(csv_file_path)
+        self.data = pd.read_csv(csv_file_path, dtype={'product_id': str, 'user_id': str}, low_memory=False)
+
         # Map event types to weights.
         # You can adjust these weights as needed.
         weight_map = {'purchase': 3, 'cart': 2, 'view': 1}
@@ -31,6 +32,8 @@ class KNNProductRecommender:
             aggfunc='sum',
             fill_value=0
         )
+        self.user_item_matrix.columns = self.user_item_matrix.columns.astype(str)
+
         
         # We want to learn latent item features.
         # Compute SVD on the (transposed) user-item matrix to get product (item) factors.
