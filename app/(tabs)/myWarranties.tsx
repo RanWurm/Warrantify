@@ -21,6 +21,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import WarrantyCard from '../components/WarrantyCard';
 import Constants from 'expo-constants';
 
+// import { Swipeable } from 'react-native-gesture-handler';
+// import { MaterialCommunityIcons } from '@expo/vector-icons';
+
+
 
 interface WarrantyItemProps {
   productId: string;

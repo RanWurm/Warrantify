@@ -10,6 +10,9 @@ import {
   ScrollView,
   Image,
   Alert,
+  KeyboardAvoidingView,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -153,157 +156,161 @@ const AddWarrantyForm: React.FC<AddWarrantyFormProps> = ({ onClose, scannedData 
   };
 
   return (
-    <View style={styles.formOverlay}>
-      <View style={styles.formContainer}>
-        <View style={styles.header} >
-          <Ionicons
-            name="close"
-            size={24}
-            color="#555"
-            onPress={() => { console.log("AddWarrantyForm: Close icon pressed"); onClose(); }}
-			style={{ position: 'absolute', left: 10 }}
-          />
-          <Text style={styles.headerTitle}>Add a Warranty</Text>
-        </View>
+    <KeyboardAvoidingView style={styles.formOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={40} >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View style={styles.formOverlay}>
+                <View style={styles.formContainer}>
+                    <View style={styles.header} >
+                    <Ionicons
+                        name="close"
+                        size={24}
+                        color="#555"
+                        onPress={() => { console.log("AddWarrantyForm: Close icon pressed"); onClose(); }}
+                        style={{ position: 'absolute', left: 10 }}
+                    />
+                    <Text style={styles.headerTitle}>Add a Warranty</Text>
+                    </View>
 
-        <View style={styles.imageContainer}>
-          <Image
-            source={require('../../assets/images/warranty-placeholder.png')}
-            style={styles.image}
-          />
-        </View>
+                    <View style={styles.imageContainer}>
+                    <Image
+                        source={require('../../assets/images/warranty-placeholder.png')}
+                        style={styles.image}
+                    />
+                    </View>
 
-        <ScrollView style={styles.inputContainer} contentContainerStyle={{ paddingBottom: 20 }}>
-          <View style={styles.row}>
-            <TextInput
-              style={styles.input}
-              placeholder="Product Name"
-			   placeholderTextColor="black"
-              value={formData.productName}
-              onChangeText={(text) => setFormData({ ...formData, productName: text })}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Service Center"
-			   placeholderTextColor="black"
-              value={formData.serviceCenter}
-              onChangeText={(text) => setFormData({ ...formData, serviceCenter: text })}
-            />
-          </View>
+                    <ScrollView style={styles.inputContainer} contentContainerStyle={{ paddingBottom: 20 }}>
+                    <View style={styles.row}>
+                        <TextInput
+                        style={styles.input}
+                        placeholder="Product Name"
+                        placeholderTextColor="black"
+                        value={formData.productName}
+                        onChangeText={(text) => setFormData({ ...formData, productName: text })}
+                        />
+                        <TextInput
+                        style={styles.input}
+                        placeholder="Service Center"
+                        placeholderTextColor="black"
+                        value={formData.serviceCenter}
+                        onChangeText={(text) => setFormData({ ...formData, serviceCenter: text })}
+                        />
+                    </View>
 
-          <View style={styles.row}>
-            <TextInput
-              style={styles.input}
-              placeholder="Manufacturer"
-			  placeholderTextColor="black"
-              value={formData.manufacturer}
-              onChangeText={(text) => setFormData({ ...formData, manufacturer: text })}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Store"
-			  placeholderTextColor="black"
-              value={formData.store}
-              onChangeText={(text) => setFormData({ ...formData, store: text })}
-            />
-          </View>
+                    <View style={styles.row}>
+                        <TextInput
+                        style={styles.input}
+                        placeholder="Manufacturer"
+                        placeholderTextColor="black"
+                        value={formData.manufacturer}
+                        onChangeText={(text) => setFormData({ ...formData, manufacturer: text })}
+                        />
+                        <TextInput
+                        style={styles.input}
+                        placeholder="Store"
+                        placeholderTextColor="black"
+                        value={formData.store}
+                        onChangeText={(text) => setFormData({ ...formData, store: text })}
+                        />
+                    </View>
 
-          <View style={styles.row}>
-            <TextInput
-              style={styles.input}
-              placeholder="Model"
-			  placeholderTextColor="black"
-              value={formData.model}
-              onChangeText={(text) => setFormData({ ...formData, model: text })}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Price"
-			  placeholderTextColor="black"
-              value={formData.price}
-              onChangeText={(text) => setFormData({ ...formData, price: text })}
-              keyboardType="numeric"
-            />
-          </View>
+                    <View style={styles.row}>
+                        <TextInput
+                        style={styles.input}
+                        placeholder="Model"
+                        placeholderTextColor="black"
+                        value={formData.model}
+                        onChangeText={(text) => setFormData({ ...formData, model: text })}
+                        />
+                        <TextInput
+                        style={styles.input}
+                        placeholder="Price"
+                        placeholderTextColor="black"
+                        value={formData.price}
+                        onChangeText={(text) => setFormData({ ...formData, price: text })}
+                        keyboardType="numeric"
+                        />
+                    </View>
 
-          {/* Date Fields with Pop-up Calendars */}
-          <View style={styles.row}>
-            <TouchableOpacity 
-              style={styles.dateInput} 
-              onPress={showPurchaseDatePickerModal}
-            >
-              <Text style={styles.dateInputText}>
-                {formData.purchaseDate || 'Purchase Date'}
-              </Text>
-              <Ionicons name="calendar-outline" size={16} color="#555" />
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.dateInput} 
-              onPress={showExpirationDatePickerModal}
-            >
-              <Text style={styles.dateInputText}>
-                {formData.expirationDate || 'Expiration Date'}
-              </Text>
-              <Ionicons name="calendar-outline" size={16} color="#555" />
-            </TouchableOpacity>
-          </View>
+                    {/* Date Fields with Pop-up Calendars */}
+                    <View style={styles.row}>
+                        <TouchableOpacity 
+                        style={styles.dateInput} 
+                        onPress={showPurchaseDatePickerModal}
+                        >
+                        <Text style={styles.dateInputText}>
+                            {formData.purchaseDate || 'Purchase Date'}
+                        </Text>
+                        <Ionicons name="calendar-outline" size={16} color="#555" />
+                        </TouchableOpacity>
+                        
+                        <TouchableOpacity 
+                        style={styles.dateInput} 
+                        onPress={showExpirationDatePickerModal}
+                        >
+                        <Text style={styles.dateInputText}>
+                            {formData.expirationDate || 'Expiration Date'}
+                        </Text>
+                        <Ionicons name="calendar-outline" size={16} color="#555" />
+                        </TouchableOpacity>
+                    </View>
 
-          {/* Pop-up Date Pickers */}
-          {showPurchaseDatePicker && (
-            <DateTimePicker
-              testID="purchaseDateTimePicker"
-              value={purchaseDate}
-              mode="date"
-              is24Hour={true}
-              display="default"
-              onChange={onPurchaseDateChange}
-            />
-          )}
+                    {/* Pop-up Date Pickers */}
+                    {showPurchaseDatePicker && (
+                        <DateTimePicker
+                        testID="purchaseDateTimePicker"
+                        value={purchaseDate}
+                        mode="date"
+                        is24Hour={true}
+                        display="default"
+                        onChange={onPurchaseDateChange}
+                        />
+                    )}
 
-          {showExpirationDatePicker && (
-            <DateTimePicker
-              testID="expirationDateTimePicker"
-              value={expirationDate}
-              mode="date"
-              is24Hour={true}
-              display="default"
-              onChange={onExpirationDateChange}
-            />
-          )}
+                    {showExpirationDatePicker && (
+                        <DateTimePicker
+                        testID="expirationDateTimePicker"
+                        value={expirationDate}
+                        mode="date"
+                        is24Hour={true}
+                        display="default"
+                        onChange={onExpirationDateChange}
+                        />
+                    )}
 
-          <View style={styles.row}>
-            <TouchableOpacity style={styles.iconButton}>
-              <Ionicons name="scan-outline" size={24} color="#555" />
-              <Text style={styles.iconButtonText}>Scan Receipt</Text>
-            </TouchableOpacity>
+                    <View style={styles.row}>
+                        <TouchableOpacity style={styles.iconButton}>
+                        <Ionicons name="scan-outline" size={24} color="#555" />
+                        <Text style={styles.iconButtonText}>Scan Receipt</Text>
+                        </TouchableOpacity>
 
-            <TouchableOpacity style={styles.iconButton}>
-              <Ionicons name="add-outline" size={24} color="#555" />
-              <Text style={styles.iconButtonText}>Add Receipt</Text>
-            </TouchableOpacity>
+                        <TouchableOpacity style={styles.iconButton}>
+                        <Ionicons name="add-outline" size={24} color="#555" />
+                        <Text style={styles.iconButtonText}>Add Receipt</Text>
+                        </TouchableOpacity>
 
-            <TouchableOpacity style={styles.iconButton}>
-              <Ionicons name="document-attach-outline" size={24} color="#555" />
-              <Text style={styles.iconButtonText}>Add Files</Text>
-            </TouchableOpacity>
-          </View>
+                        <TouchableOpacity style={styles.iconButton}>
+                        <Ionicons name="document-attach-outline" size={24} color="#555" />
+                        <Text style={styles.iconButtonText}>Add Files</Text>
+                        </TouchableOpacity>
+                    </View>
 
-          <TextInput
-            style={styles.notesInput}
-            placeholder="Add notes"
-			placeholderTextColor="black"
-            value={formData.notes}
-            onChangeText={(text) => setFormData({ ...formData, notes: text })}
-            multiline
-          />
-        </ScrollView>
+                    <TextInput
+                        style={styles.notesInput}
+                        placeholder="Add notes"
+                        placeholderTextColor="black"
+                        value={formData.notes}
+                        onChangeText={(text) => setFormData({ ...formData, notes: text })}
+                        multiline
+                    />
+                    </ScrollView>
 
-        <TouchableOpacity style={styles.addButton} onPress={handleAddWarranty}>
-          <Text style={styles.addButtonText}>Add a Warranty</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+                    <TouchableOpacity style={styles.addButton} onPress={handleAddWarranty}>
+                    <Text style={styles.addButtonText}>Add a Warranty</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        </TouchableWithoutFeedback>
+  </KeyboardAvoidingView>
   );
 };
 
