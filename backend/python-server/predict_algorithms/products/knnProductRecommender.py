@@ -18,7 +18,7 @@ class KNNProductRecommender:
         # Load the CSV into a DataFrame
         # self.data = pd.read_csv(csv_file_path)
         self.data = pd.read_csv(csv_file_path, dtype={'product_id': str, 'user_id': str}, low_memory=False)
-        unique_categories = self.data['category_code'].dropna().unique()
+        # unique_categories = self.data['category_code'].dropna().unique()
         # print("🧩 Unique category_code values:")
         # for cat in sorted(unique_categories):
         #     print("-", cat)
@@ -37,7 +37,6 @@ class KNNProductRecommender:
             fill_value=0
         )
         self.user_item_matrix.columns = self.user_item_matrix.columns.astype(str)
-
         
         # We want to learn latent item features.
         # Compute SVD on the (transposed) user-item matrix to get product (item) factors.
@@ -51,7 +50,7 @@ class KNNProductRecommender:
         self.item_factors = self.item_factors / (norms + 1e-10)
         
         # Keep track of product IDs in the same order as self.item_factors
-        self.product_ids = list(self.user_item_matrix.columns)
+        self.category_codes = list(self.user_item_matrix.columns)
         
         # Build a mapping from product_id to a dictionary of product details.
         # Here we take the first occurrence (e.g., category_code, brand) for each product.
@@ -127,7 +126,6 @@ class KNNProductRecommender:
         
         print("🦀 Recommendations:", recommendations)
         return recommendations
-    
 
     def infer_category_code(self, product_name: str) -> str:
         name = product_name.lower().replace(' ', '')
