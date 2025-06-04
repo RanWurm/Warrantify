@@ -40,7 +40,7 @@ const ProductInformation = () => {
 
       alert('Warranty updated successfully!');
       setIsEditing(false);
-      
+
     } catch (err) {
       console.error('Failed to update warranty:', err);
       alert('Failed to save changes.');
@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     alignItems: 'center',
-    width: '90%',
+    width: '95%',
   },
   brandRow: {
     flexDirection: 'row',
@@ -420,7 +420,6 @@ const styles = StyleSheet.create({
     marginVertical: 4,
     marginLeft:'2%',
     marginTop:'3.5%',
-
   },
   rowText: {
     marginLeft: 8,
@@ -450,10 +449,10 @@ const styles = StyleSheet.create({
   iconBadge: {
   position: 'absolute',
   top: "15%",
-  left:"35%",
+  left:"34%",
   backgroundColor: '#D1BB9E',
   borderRadius: 50,
-  padding: 8,
+  padding: 10,
   flexDirection: 'row',
   alignItems: 'center',
   zIndex: 1,

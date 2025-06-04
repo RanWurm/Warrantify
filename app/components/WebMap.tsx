@@ -4,56 +4,73 @@ import { WebView } from 'react-native-webview';
 
 const GOOGLE_MAPS_API_KEY = 'AIzaSyCn-qqKYulPv-Ken38MtqimNa1AiJFluic';
 
-const htmlContent = `
- <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <title>Google Map</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <style>
-      html, body, #map {
-        height: 100%;
-        margin: 0;
-        padding: 0;
-      }
-    </style>
-    <script>
-      function initMap() {
-        const myLatLng = { lat: 31.78496, lng: 34.7078656 };
+interface GoogleMapViewProps {
+  center: { latitude: number; longitude: number };
+  markers?: { latitude: number; longitude: number; name?: string }[];
+}
 
-        const map = new google.maps.Map(document.getElementById("map"), {
-          zoom: 13,
-          center: myLatLng,
-        });
+export default function GoogleMapView({ center, markers = [] }: GoogleMapViewProps) {
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>Google Map</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <style>
+          html, body, #map {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+          }
+        </style>
+        <script>
+          function initMap() {
+            const myLatLng = { lat: ${center.latitude}, lng: ${center.longitude} };
 
-        new google.maps.Marker({
-          position: myLatLng,
-          map,
-          title: "מחסני חשמל",
-        });
-      }
-    </script>
-  </head>
-  <body>
-    <div id="map"></div>
+            const map = new google.maps.Map(document.getElementById("map"), {
+              zoom: 13,
+              center: myLatLng,
+            });
 
-    <script
-      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCn-qqKYulPv-Ken38MtqimNa1AiJFluic&callback=initMap"
-      async
-      defer
-    ></script>
-  </body>
-</html>`;
+            new google.maps.Marker({
+              position: myLatLng,
+              map,
+              title: "You are here",
+            });
 
-export default function GoogleMapView() {
+            ${markers
+              .map(
+                (m) => `
+              new google.maps.Marker({
+                position: { lat: ${m.latitude}, lng: ${m.longitude} },
+                map,
+                title: "${m.name || 'Service Center'}"
+              });
+            `
+              )
+              .join('')}
+          }
+        </script>
+      </head>
+      <body>
+        <div id="map"></div>
+
+        <script
+          src="https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&callback=initMap"
+          async
+          defer
+        ></script>
+      </body>
+    </html>`;
+
   if (Platform.OS === 'web') {
     return (
       <iframe
         srcDoc={htmlContent}
         style={{ width: '100%', height: '500px', border: 'none' }}
         title="Google Map"
-        />
+      />
     );
   }
 
