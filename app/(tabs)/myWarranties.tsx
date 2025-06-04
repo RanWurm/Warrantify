@@ -107,9 +107,9 @@ const MyWarranties = () => {
             title: warranty.productName,
             subtitle: warranty.model || 'No model specified',
             date: warranty.purchaseDate
-              ? new Date(warranty.purchaseDate).toLocaleDateString()
+              ? new Date(warranty.expirationDate).toLocaleDateString()
               : 'No date',
-            timeAgo: getTimeAgo(warranty.purchaseDate),
+            timeAgo: getTimeAgo(warranty.expirationDate),
             iconName: getIconName(warranty.productName),
             progress: calculateProgress(warranty.purchaseDate, warranty.expirationDate),
             notes: warranty.notes || 'No additional notes'
@@ -206,14 +206,24 @@ const MyWarranties = () => {
   };
 
   const getTimeAgo = (date: Date | null) => {
+
+    // the date is the expiration date
     if (!date) return 'No date';
     const now = new Date();
     const diff = now.getTime() - new Date(date).getTime();
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     if (days === 0) return 'Today';
     if (days === 1) return 'Yesterday';
+
+    if(days < 0) {
+        if (Math.abs(days) < 30) return `In ${Math.abs(days)} days`;
+        if (Math.abs(days) < 365) return `In ${Math.floor(Math.abs(days) / 30)} months`;
+        if(Math.floor(Math.abs(days) / 365) == 1) return `In ${Math.floor(Math.abs(days) / 365)} year`;
+        return `In ${Math.floor(Math.abs(days) / 365)} years`;
+    }
     if (days < 30) return `${days} days ago`;
     if (days < 365) return `${Math.floor(days / 30)} months ago`;
+    if(Math.floor(days / 365) == 1) return `One ${Math.floor(Math.abs(days) / 365)} year ago`;
     return `${Math.floor(days / 365)} years ago`;
   };
 

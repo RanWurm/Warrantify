@@ -12,10 +12,10 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken')
 const fetch = require('node-fetch');
 
-// const  = Constants.expoConfig?.extra?.PYTHON_BACKEND_URL;
-const pythonBackendURL = "http://172.20.10.5:5000";
+const pythonBackendURL = process.env.PYTHON_BACKEND_URL;
+// const  = "http://172.20.10.5:5000";
 
-console.log("pythonBackendURL:" + pythonBackendURL);
+console.log("🐍pythonBackendURL:" + pythonBackendURL);
 const mongoUrl="mongodb+srv://ilanitber:12345679@cluster0.m4fkm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
 //const mongoUrl="mongodb+srv://ranwurembrand:ShevShev12%21%40%23@cluster0.m4fkm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
