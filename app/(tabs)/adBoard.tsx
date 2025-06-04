@@ -31,38 +31,85 @@ const isWeb = Platform.OS === 'web';
 
 // Map product names (or keywords) to MaterialCommunityIcons names:
 const productIconMap: Record<string, string> = {
-  Headphones: 'headphones',
-  iPad: 'tablet',
-  Monitor: 'monitor',
-  Laptop: 'laptop',
-  iPhone: 'cellphone',
-  Charger: 'power-plug',
-  Vacuum: 'robot-vacuum',
-  Television: 'television-classic',
-  Earphones: 'headphones',
-  HairDryer: 'hair-dryer', 
-  Tablet: 'tablet',
-  Coffe_machine: 'coffee',
+  monitor: 'monitor',
+    tablet: 'tablet',
+    coffemachine: 'coffee',
+    headphones: 'headphones',
+    earphones: 'headphones',
+    ipad: 'tablet',
+    laptop: 'laptop',
+    iphone: 'cellphone',
+    android: 'cellphone',
+    charger: 'power-plug',
+    vacuum: 'robot-vacuum',
+    television: 'television-classic',
+    hairdryer: 'hair-dryer',
+    microwave: 'microwave',
+    oven: 'stove',
+    toaster: 'toaster',
+    blender: 'blender',
+    kettle: 'kettle',
+    fridge: 'fridge-outline',
+    freezer: 'snowflake',
+    dishwasher: 'dishwasher',
+    washingmachine: 'washing-machine',
+    dryer: 'tumble-dryer',
+    fan: 'fan',
+    airconditioner: 'air-conditioner',
+    airpurifier: 'air-filter',
+    printer: 'printer',
+    scanner: 'scanner',
+    router: 'router-wireless',
+    smartwatch: 'watch-variant',
+    camera: 'camera',
+    drone: 'drone',
+    speaker: 'speaker',
+    soundbar: 'soundbar',
+    projector: 'projector',
+    lightbulb: 'lightbulb',
+    electricshaver: 'razor-electric',
+    straightener: 'hair-straightener',
+    iron: 'iron',
+    heater: 'radiator',
+    powerbank: 'battery-charging',
+    ups: 'battery-high',
+    smartwatchcharger: 'watch-variant',
+    stylus: 'pen',
+    gameconsole: 'gamepad-variant',
+    controller: 'controller',
+    electricbike: 'bike-electric',
+    scooter: 'scooter-electric',
+    treadmill: 'treadmill',
+    humidifier: 'air-humidifier',
+    dehumidifier: 'air-humidifier-off'
 };
 
 
-
-
-
 function getIconName(productName: string) {
-  const normalizedMap: Record<string, string> = {
-    'Hair Dryer': 'HairDryer',
-    'Coffe machine': 'Coffe_machine',
-    'Coffe Machine': 'Coffe_machine',
-  };
+  const normalized = productName.toLowerCase().replace(/\s+/g, '');
 
-  const normalized = normalizedMap[productName] || productName;
-  if (productIconMap[normalized]) return productIconMap[normalized];
+     //  Fuzzy alias checks (before strict productMap match)
+    if (normalized.includes('refrigerator') || normalized.includes('fridge')) return 'fridge-outline';
+    if (normalized.includes('television') || normalized.includes('tv')) return 'television-classic';
+    if (normalized.includes('macbook') || normalized.includes('mac') || normalized.includes('applelaptop')) return 'laptop';
+    if (normalized.includes('ice') && normalized.includes('maker')) return 'snowflake';
+    if (normalized.includes('coffee') || normalized.includes('coffe')) return 'coffee';
+    if (normalized.includes('playstation') || normalized.includes('ps5') || normalized.includes('ps4') || normalized.includes('ps')) return 'gamepad-variant';
+    if (normalized.includes('airpods') || normalized.includes('pods')) return 'headphones';
+    if (normalized.includes('smarttv') || normalized.includes('androidtv')) return 'television-classic';
+    if (normalized.includes('smartwatch') || normalized.includes('fitbit') || normalized.includes('watch')) return 'watch-variant';
+    if (normalized.includes('earbuds') || normalized.includes('in-ear')) return 'headphones';
+    if (normalized.includes('soundbar')) return 'soundbar';
+    if (normalized.includes('xbox')) return 'controller';
+    if (normalized.includes('lightbulb') || normalized.includes('light') || normalized.includes('bulb') || normalized.includes('hue')) return 'lightbulb';
+    if (normalized.includes('switch')) return 'gamepad-variant';
+    
+
+    if (productIconMap[normalized]) return productIconMap[normalized];
   
-  const key = Object.keys(productIconMap).find(k =>
-    productName.toLowerCase().includes(k.toLowerCase())
+    const key = Object.keys(productIconMap).find(k => productName.toLowerCase().includes(k.toLowerCase())
   );
-  return key ? productIconMap[key] : 'package-variant-closed';
+  return key ? productIconMap[key] : 'devices';
 }
 
 interface RealAd {
