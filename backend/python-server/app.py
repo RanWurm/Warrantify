@@ -237,17 +237,6 @@ def autocomplete():
         print("❌ Trie is still None after rebuild attempt")
         return jsonify([])
 
-# @app.route('/autocomplete', methods=['GET'])
-# def autocomplete():
-#     query = request.args.get('query', '').lower()
-#     if not query:
-#         return jsonify([])
-    
-#     # Get suggestions from trie
-#     suggestions = trie.autocomplete(query, max_suggestions=5)
-    
-#     return jsonify(suggestions)
-
 @app.route('/health', methods=['GET'])
 def health():
     return "Python server is running!"
@@ -362,6 +351,7 @@ def top_products():
     values = [item[1] for item in top]
     
     return jsonify({'labels': labels, 'values': values})
+
 
 def handle_warranty_flush(warranty_batch):
     if not warranty_batch:

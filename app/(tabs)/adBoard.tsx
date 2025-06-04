@@ -124,6 +124,10 @@ interface RecommendedAd {
   iconName: string;
 }
 
+function capitalize(str: string): string {
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+}
+
 type CombinedAd = RealAd | (RecommendedAd & { monetized: true });
 
 const CACHE_KEY = 'cachedRecommendations';
@@ -148,21 +152,23 @@ export default function MonetizedAdsIntegration() {
 
 const fetchRecommendedAds = useCallback(async (): Promise<RecommendedAd[]> => {
     console.log('fetchRecommendedAds function started');
-  // Move this BEFORE the cache check
-  const token = await AsyncStorage.getItem('token');
-  const userId = (await axios.post(
-    `${serverBackendURL}/userdata`,
-    { token }
-  )).data.data.id;
-  console.log('User ID:', userId);
 
-  const cached = await AsyncStorage.getItem(CACHE_KEY);
-  if (cached) {
-    const { timestamp, recommendations } = JSON.parse(cached);
-    if (Date.now() - timestamp < CACHE_EXPIRY) {
-      return recommendations; // This was preventing your console.log from running
-    }
-  }
+    const token = await AsyncStorage.getItem('token');
+    const userId = (await axios.post(
+        `${serverBackendURL}/userdata`,
+        { token }
+    )).data.data.id;
+
+    console.log('User ID:', userId);
+
+    const cached = await AsyncStorage.getItem(CACHE_KEY);
+//     if (cached) {
+//         const { timestamp, recommendations } = JSON.parse(cached);
+//         if (Date.now() - timestamp < CACHE_EXPIRY) {
+//         console.log("🐋 Recommendations:\n" + JSON.stringify(recommendations, null, 2));
+//         return recommendations; 
+//         }
+//   }
 
   const warranties = (await axios.post(
     `${serverBackendURL}/user-warranties`,
@@ -174,12 +180,16 @@ const fetchRecommendedAds = useCallback(async (): Promise<RecommendedAd[]> => {
     { products: warranties, event_type: 'purchase', user_id: Number(userId) }
   )).data.recommendations || [];
 
-    const mapped = rawRecs.map((rec: any) => ({
-      title: rec.brand
-        ? `${rec.brand} ${rec.category_code.split('.').pop() || 'Product'}`
-        : `Product ${rec.product_id}`,
-      iconName: rec.iconName || 'cellphone',
-    }));
+    console.log("recommended ads fetched: " + rawRecs);
+
+    const mapped = rawRecs.map((rec: any) => {
+        const category = rec.category_code?.split('.').pop() || 'product';
+        return {
+            productName: capitalize(category),
+            brand: capitalize(rec.brand || 'Unknown'),
+            iconName: rec.iconName || 'ad',
+        };
+    });
 
     await AsyncStorage.setItem(
       CACHE_KEY,
@@ -385,6 +395,7 @@ const onRefresh = useCallback(async () => {
           fetchRecommendedAds(),
         ]);
         const combined = combineAds(real, recs);
+
         setCombinedAds(combined);
         setFilteredAds(combined); // Initialize filtered ads
       } catch {
@@ -415,8 +426,6 @@ const onRefresh = useCallback(async () => {
       <SafeAreaView style={styles.container}>
         
         <Text style={styles.header}>Recommended</Text>
-
-        
 
         {/* ─── Top-5 Products Chart ───────────────────────────── */}
         <Text style={{ fontSize: 16, fontFamily: 'InriaSerif-Bold', marginBottom: 5, marginHorizontal: '6%',}}>
@@ -544,10 +553,6 @@ const onRefresh = useCallback(async () => {
         </View>
   )
 )}
-
-
-{/* Add SearchBar right below the header */}
-
         
         <SearchBar
 			variant="recommended"
@@ -565,8 +570,8 @@ const onRefresh = useCallback(async () => {
 				filterButtonText: styles.filterButtonText,
 				searchInput: styles.searchInput,
 				searchText: styles.searchText,
-			}}
-			/>
+		}}
+		/>
         
     <ScrollView 
       contentContainerStyle={styles.scrollContent}
@@ -594,9 +599,13 @@ const onRefresh = useCallback(async () => {
           key={`monetized-${idx}`}
           style={[styles.cardContainer, styles.monetizedCard]}
         >
-          <Text style={styles.monetizedHeader}>Sponsored</Text>
-          <Text style={styles.productName}>{rec.title}</Text>
-          <Text style={styles.iconName}>Icon: {rec.iconName}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <MaterialCommunityIcons name="bullhorn" size={20} color="#AF6F6F" />
+            <Text style={styles.monetizedHeader}>Sponsored</Text>
+        </View>
+        <Text style={styles.adTitle}>Try {rec.productName} by {rec.brand} </Text>
+        <Text style={styles.description}>This is a personolizsed recommedation based on your personal product preferences.</Text>
+
         </View>
       );
     }
@@ -732,6 +741,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#000',
   },
+  adTitle: {
+    fontFamily: 'InriaSerif-Bold',
+    fontSize: 18,
+    color: '#000',
+    marginTop: 2,
+  },
   salePrice: {
     fontFamily: 'InriaSerif-Bold',
     fontSize: 16,
@@ -758,13 +773,13 @@ const styles = StyleSheet.create({
 
   monetizedCard: {
     // borderColor: '#AF6F6F',
-    backgroundColor: '#FDEDEC',
+   // backgroundColor: '#FDEDEC',
   },
   monetizedHeader: {
     fontFamily: 'InriaSerif-Bold',
-    fontSize: 14,
+    fontSize: 18,
     color: '#AF6F6F',
-    marginBottom: 4,
+    marginBottom: 0,
   },
   iconName: {
     fontFamily: 'InriaSerif-Regular',
