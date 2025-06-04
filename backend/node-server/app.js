@@ -48,6 +48,11 @@ app.use(express.json()); // Middleware to parse JSON requests
 app.post('/register',async(req,res)=>{
   console.log("in reg")
   const {firstname,lastname,email,password} = req.body
+
+  const warranties = await Warranty.find({ user: user._id });
+  console.log("User warranties:", warranties.map(w => w._id.toString()));
+
+
   const oldUser = await User.findOne({email:email})
   if (oldUser){
     return res.send({data:"User alreadt exsists!"})
@@ -378,6 +383,61 @@ app.get('/check-market-status/:productId', async(req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+app.put('/update-warranty/:warrantyId', async (req, res) => {
+  const { warrantyId } = req.params;
+  const updateData = req.body;
+
+  console.log("📦 In update: warranty id is: ", warrantyId);
+
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const email = decoded.email;
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const warranty = await Warranty.findOne({ _id: warrantyId, user: user._id });
+    if (!warranty) return res.status(404).json({ error: 'Warranty not found' });
+
+    // Update allowed fields only
+    const allowedFields = ['productName', 'serviceCenter', 'store', 'model', 'price', 'purchaseDate', 'expirationDate', 'notes'];
+    allowedFields.forEach(field => {
+      if (updateData[field] !== undefined) {
+        warranty[field] = updateData[field];
+      }
+    });
+
+    await warranty.save();
+
+    // (Optional) Notify Python backend of update
+    const payload = {
+      warranty_id: warranty._id.toString(),
+      user_id: user._id.toString(),
+      ...updateData
+    };
+
+    try {
+      const pythonRes = await fetch(`${pythonBackendURL}/update_warranty`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const pythonResponse = await pythonRes.json();
+      console.log("🐍 Python backend responded to update:", pythonResponse);
+    } catch (err) {
+      console.warn("🐍 Could not reach Python backend:", err.message);
+    }
+
+    return res.status(200).json({ message: 'Warranty updated successfully', warranty });
+  } catch (error) {
+    console.error('Error updating warranty:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 
 // Start the server
 const PORT = process.env.PORT || 3000;

@@ -25,7 +25,6 @@ import Constants from 'expo-constants';
 // import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 
-
 interface WarrantyItemProps {
   productId: string;
   title: string;
@@ -35,6 +34,12 @@ interface WarrantyItemProps {
   iconName: string;
   progress: number;
   notes: string;
+  model: string;
+  purchaseDate: string;
+  expirationDate: string;
+  price: string;
+  serviceCenter: string;
+  store: string;
 }
 
 const isWeb = Platform.OS === 'web';
@@ -116,7 +121,13 @@ const MyWarranties = () => {
             timeAgo: getTimeAgo(warranty.expirationDate),
             iconName: getIconName(warranty.productName),
             progress: calculateProgress(warranty.purchaseDate, warranty.expirationDate),
-            notes: warranty.notes || 'No additional notes'
+            notes: warranty.notes || 'No additional notes',
+            model: warranty.model || 'Unknown model',
+            purchaseDate: warranty.purchaseDate || 'Unknown purchase date',
+            expirationDate: warranty.expirationDate || 'Unknown expiration date',
+            price: warranty.price || 'Unknown price',
+            serviceCenter: warranty.serviceCenter || 'Unknown service center',
+            store: warranty.store || 'Unknown store',
           };
         });
 

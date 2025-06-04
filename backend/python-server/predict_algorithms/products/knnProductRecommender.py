@@ -80,8 +80,8 @@ class KNNProductRecommender:
         # Gather latent factor vectors for each category.
         vectors = []
         for category in user_categories:
-            if category in self.product_ids:  # product_ids now stores category_codes
-                idx = self.product_ids.index(category)
+            if category in self.category_codes:  # product_ids now stores category_codes
+                idx = self.category_codes.index(category)
                 vectors.append(self.item_factors[idx])
 
         print("🐋Vectors:" , vectors)
@@ -107,7 +107,7 @@ class KNNProductRecommender:
         similarities = cosine_similarity(user_vector, self.item_factors)[0]
         
         # Rank categories by similarity
-        sim_df = pd.DataFrame({'category_code': self.product_ids, 'score': similarities})
+        sim_df = pd.DataFrame({'category_code': self.category_codes, 'score': similarities})
         sim_df = sim_df[~sim_df['category_code'].isin(user_categories)]
         sim_df = sim_df.sort_values(by='score', ascending=False)
         

@@ -185,6 +185,7 @@ const fetchRecommendedAds = useCallback(async (): Promise<RecommendedAd[]> => {
     const mapped = rawRecs.map((rec: any) => {
         const category = rec.category_code?.split('.').pop() || 'product';
         return {
+            title: capitalize(category),  // Use this for search
             productName: capitalize(category),
             brand: capitalize(rec.brand || 'Unknown'),
             iconName: rec.iconName || 'ad',

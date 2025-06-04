@@ -18,6 +18,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Progress from 'react-native-progress';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
+import { useRouter } from 'expo-router';
 
 const serverBackendURL = Constants.expoConfig!.extra!.SERVER_BACKEND_URL;
 
@@ -31,6 +32,11 @@ interface WarrantyCardProps {
   progress: number;
   notes: string;
   onDelete?: () => void;
+
+  model: string;
+  purchaseDate: string;
+  expirationDate: string;
+  price: string;
 }
 
 const isWeb = Platform.OS === 'web';
@@ -45,7 +51,14 @@ const WarrantyCard: React.FC<WarrantyCardProps> = ({
   progress,
   notes,
   onDelete,
+  model,
+  purchaseDate,
+  expirationDate,
+  price,
+  serviceCenter,
+  store,
 }) => {
+  const router = useRouter();
   const [expanded, setExpanded] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [salePrice, setSalePrice] = useState('');
@@ -53,7 +66,7 @@ const WarrantyCard: React.FC<WarrantyCardProps> = ({
   const [description, setDescription] = useState('');
   const [isOnMarket, setIsOnMarket] = useState(false);
   const [loading, setLoading] = useState(false);
-  
+
   // Determine progress color based on the progress value.
   let progressColor = '#7E8FA6';
   if (progress >= 75) {
@@ -64,12 +77,12 @@ const WarrantyCard: React.FC<WarrantyCardProps> = ({
     progressColor = '#B3D2A1';
   }
 
-  // Check market status when component mounts or when expanded
   useEffect(() => {
     if (expanded) {
       checkMarketStatus();
     }
   }, [expanded, productId]);
+
 
   const checkMarketStatus = async () => {
     try {
@@ -240,7 +253,26 @@ const WarrantyCard: React.FC<WarrantyCardProps> = ({
   };
 
   return (
-    <TouchableOpacity onPress={toggleExpanded} activeOpacity={0.8}>
+    <TouchableOpacity
+        onPress={() =>
+            router.push({
+            pathname: '/productInformation',
+            params: {
+                productId,
+                productName: title,
+                model,
+                purchaseDate,
+                expirationDate,
+                price,
+                serviceCenter,
+                store,
+            },
+            })
+        }
+        activeOpacity={0.8}
+        onLongPress={toggleExpanded}
+    >
+
       <View style={[styles.cardContainer, expanded && styles.cardExpanded]}>
         
         {/* Delete button - positioned absolutely in top-right corner */}

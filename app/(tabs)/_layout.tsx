@@ -106,6 +106,14 @@ export default function TabsLayout() {
             headerShown: false, // Hides the header for Login screen
           }}
         />
+
+        <Stack.Screen
+            name="productInformation"
+            options={{
+                title: 'product Information',
+                headerShown: false,
+            }}
+            />
       </Stack>
     </UserProvider>
   );

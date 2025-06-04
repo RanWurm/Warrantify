@@ -142,7 +142,10 @@ const SearchBar: React.FC<SearchBarProps> = ({
             placeholderTextColor="#666"
             style={[styles.searchText, dynamicStyles.searchText, additionalStyles.searchText]}
             value={query}
-            onChangeText={(text) => setQuery(text)}
+            onChangeText={(text) => {
+            setQuery(text);
+            onSearch(text); 
+            }}
             onSubmitEditing={handleSearch}
             returnKeyType="search"
           />
