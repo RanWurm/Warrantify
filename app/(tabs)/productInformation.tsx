@@ -40,6 +40,19 @@ const ProductInformation = () => {
 
       alert('Warranty updated successfully!');
       setIsEditing(false);
+      router.replace({
+        pathname: '/productInformation',
+        params: {
+            productId,
+            productName,
+            model,
+            purchaseDate,
+            expirationDate,
+            price,
+            serviceCenter: editedServiceCenter,
+            store: editedStore,
+        }
+        });
 
     } catch (err) {
       console.error('Failed to update warranty:', err);

@@ -385,6 +385,8 @@ app.get('/check-market-status/:productId', async(req, res) => {
 });
 
 app.put('/update-warranty/:warrantyId', async (req, res) => {
+    console.log('🛠️ Received update request for warranty:', warrantyId);
+
   const { warrantyId } = req.params;
   const updateData = req.body;
 
@@ -411,25 +413,25 @@ app.put('/update-warranty/:warrantyId', async (req, res) => {
 
     await warranty.save();
 
-    // (Optional) Notify Python backend of update
-    const payload = {
-      warranty_id: warranty._id.toString(),
-      user_id: user._id.toString(),
-      ...updateData
-    };
+    // Notify Python backend of update
+    // const payload = {
+    //   warranty_id: warranty._id.toString(),
+    //   user_id: user._id.toString(),
+    //   ...updateData
+    // };
 
-    try {
-      const pythonRes = await fetch(`${pythonBackendURL}/update_warranty`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+    // try {
+    //   const pythonRes = await fetch(`${pythonBackendURL}/update_warranty`, {
+    //     method: 'POST',
+    //     headers: { 'Content-Type': 'application/json' },
+    //     body: JSON.stringify(payload)
+    //   });
 
-      const pythonResponse = await pythonRes.json();
-      console.log("🐍 Python backend responded to update:", pythonResponse);
-    } catch (err) {
-      console.warn("🐍 Could not reach Python backend:", err.message);
-    }
+    //   const pythonResponse = await pythonRes.json();
+    //   console.log("🐍 Python backend responded to update:", pythonResponse);
+    // } catch (err) {
+    //   console.warn("🐍 Could not reach Python backend:", err.message);
+    // }
 
     return res.status(200).json({ message: 'Warranty updated successfully', warranty });
   } catch (error) {
