@@ -196,6 +196,7 @@ app.post('/add-warranty', async(req, res) => {
     // Send to Python cache
 
     const payload = {
+      warranty_id: newWarranty._id.toString(),
       user_id: user._id.toString(),
       productName,
       model,
@@ -378,9 +379,9 @@ app.get('/check-market-status/:productId', async(req, res) => {
   }
 });
 
-
 // Start the server
 const PORT = process.env.PORT || 3000;
+
 app.listen(3000, '0.0.0.0', () => {
   console.log(`Node.js server running on port ${PORT}`);
 });
