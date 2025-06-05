@@ -1,6 +1,9 @@
 require('dotenv').config();
 
 const express = require('express');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 const app = express();
 app.use(express.json({limit: '50mb'}));
@@ -12,11 +15,59 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken')
 const fetch = require('node-fetch');
 
+
 const pythonBackendURL = process.env.PYTHON_BACKEND_URL;
 // const  = "http://172.20.10.5:5000";
 
 console.log("🐍pythonBackendURL:" + pythonBackendURL);
 const mongoUrl="mongodb+srv://ilanitber:12345679@cluster0.m4fkm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+
+// File upload configuration
+// REPLACE your multer configuration with this:
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const warrantyId = req.params.warrantyId;
+    const uploadPath = path.join(__dirname, 'uploads', 'warranties', warrantyId);
+    
+    console.log('📁 Creating directory:', uploadPath);
+    fs.mkdirSync(uploadPath, { recursive: true });
+    cb(null, uploadPath);
+  },
+  filename: function (req, file, cb) {
+    console.log('📄 Processing file:', file.originalname, 'mimetype:', file.mimetype);
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const fileExtension = path.extname(file.originalname);
+    const fileName = file.fieldname + '-' + uniqueSuffix + fileExtension;
+    cb(null, fileName);
+  }
+});
+
+const fileFilter = (req, file, cb) => {
+  console.log('🔍 File filter check:', file.mimetype);
+  const allowedMimes = [
+    'image/jpeg',
+    'image/jpg', 
+    'image/png',
+    'image/gif',
+    'application/pdf'
+  ];
+  
+  if (allowedMimes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error(`File type ${file.mimetype} not allowed`), false);
+  }
+};
+
+const upload = multer({ 
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit
+  }
+});
+
+
 
 //const mongoUrl="mongodb+srv://ranwurembrand:ShevShev12%21%40%23@cluster0.m4fkm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
@@ -43,6 +94,7 @@ const AdBoard = require('./schemas/AdBoardSchema.js');
 
 app.use(cors());
 app.use(express.json()); // Middleware to parse JSON requests
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 
 app.post('/register',async(req,res)=>{
@@ -98,6 +150,23 @@ app.post("/login",async(req,res)=>{
   }
 })
 
+
+// Middleware to verify JWT token
+const verifyToken = (req, res, next) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({ error: 'No token provided' });
+  }
+  
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.userEmail = decoded.email;
+    next();
+  } catch (error) {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+};
+
 app.post("/userdata",async(req,res)=>{
   const {token} = req.body
   try{
@@ -131,6 +200,241 @@ app.post("/user-warranties",async(req,res)=>{
     res.status(500).json({error:"Internal server Error!"})
   }
 });
+
+// REPLACE your upload endpoint with this debug version:
+app.post('/warranty/:warrantyId/upload-files', verifyToken, upload.array('files', 5), async (req, res) => {
+  const { warrantyId } = req.params;
+  
+  console.log('🔍 Upload endpoint called');
+  console.log('🔍 req.files:', req.files);
+  console.log('🔍 req.body:', req.body);
+  console.log('🔍 req.headers:', req.headers);
+  
+  if (req.files && req.files.length > 0) {
+    req.files.forEach((file, index) => {
+      console.log(`📄 File ${index} properties:`, Object.keys(file));
+      console.log(`📄 File ${index} details:`, file);
+    });
+  } else {
+    console.log('❌ No files received by multer');
+  }
+  
+  try {
+    const user = await User.findOne({ email: req.userEmail });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const warranty = await Warranty.findOne({ _id: warrantyId, user: user._id });
+    if (!warranty) return res.status(404).json({ error: 'Warranty not found' });
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: 'No files received' });
+    }
+
+    const uploadedFiles = req.files.map(file => ({
+      filename: file.filename,
+      originalName: file.originalname,
+      mimeType: file.mimetype || 'application/octet-stream', // Fallback if mimetype is undefined
+      size: file.size,
+      uploadDate: new Date(),
+      path: `/uploads/warranties/${warrantyId}/${file.filename}`
+    }));
+
+    console.log('📁 Processed uploadedFiles:', uploadedFiles);
+
+    // Add files to warranty document
+    if (!warranty.files) {
+      warranty.files = [];
+    }
+    warranty.files.push(...uploadedFiles);
+        
+    await warranty.save();
+
+    res.status(200).json({ 
+      message: 'Files uploaded successfully', 
+      files: uploadedFiles,
+      totalFiles: warranty.files.length
+    });
+  } catch (error) {
+    console.error('File upload error:', error);
+    res.status(500).json({ error: 'File upload failed', details: error.message });
+  }
+});
+// 2. Get all files for a warranty/product
+app.get('/warranty/:warrantyId/files', verifyToken, async (req, res) => {
+  const { warrantyId } = req.params;
+  
+  try {
+    const user = await User.findOne({ email: req.userEmail });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const warranty = await Warranty.findOne({ _id: warrantyId, user: user._id });
+    if (!warranty) return res.status(404).json({ error: 'Warranty not found' });
+
+    const files = warranty.files || [];
+    
+    // Add full URL for each file
+    const filesWithUrls = files.map(file => ({
+      ...file.toObject(),
+      downloadUrl: `${req.protocol}://${req.get('host')}${file.path}`
+    }));
+
+    res.status(200).json({ files: filesWithUrls });
+  } catch (error) {
+    console.error('Get files error:', error);
+    res.status(500).json({ error: 'Failed to retrieve files' });
+  }
+});
+
+// 3. Download a specific file
+app.get('/warranty/:warrantyId/download/:filename', verifyToken, async (req, res) => {
+  const { warrantyId, filename } = req.params;
+  
+  try {
+    const user = await User.findOne({ email: req.userEmail });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const warranty = await Warranty.findOne({ _id: warrantyId, user: user._id });
+    if (!warranty) return res.status(404).json({ error: 'Warranty not found' });
+
+    // Check if file exists in warranty files
+    const fileInfo = warranty.files?.find(f => f.filename === filename);
+    if (!fileInfo) return res.status(404).json({ error: 'File not found' });
+
+    const filePath = path.join(__dirname, 'uploads', 'warranties', warrantyId, filename);
+    
+    // Check if file exists on disk
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'File not found on disk' });
+    }
+
+    // Set appropriate headers
+    res.setHeader('Content-Disposition', `attachment; filename="${fileInfo.originalName}"`);
+    const contentType = fileInfo.mimeType || fileInfo.mimetype || 'application/octet-stream';
+    res.setHeader('Content-Type', contentType);
+
+    
+    // Send file
+    res.sendFile(filePath);
+  } catch (error) {
+    console.error('Download error:', error);
+    res.status(500).json({ error: 'Download failed' });
+  }
+});
+
+// 4. Delete a specific file
+app.delete('/warranty/:warrantyId/files/:filename', verifyToken, async (req, res) => {
+  const { warrantyId, filename } = req.params;
+  
+  try {
+    const user = await User.findOne({ email: req.userEmail });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const warranty = await Warranty.findOne({ _id: warrantyId, user: user._id });
+    if (!warranty) return res.status(404).json({ error: 'Warranty not found' });
+
+    // Find and remove file from warranty document
+    const fileIndex = warranty.files?.findIndex(f => f.filename === filename);
+    if (fileIndex === -1) return res.status(404).json({ error: 'File not found' });
+
+    const fileToDelete = warranty.files[fileIndex];
+    warranty.files.splice(fileIndex, 1);
+    await warranty.save();
+
+    // Delete physical file
+    const filePath = path.join(__dirname, 'uploads', 'warranties', warrantyId, filename);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    res.status(200).json({ 
+      message: 'File deleted successfully',
+      deletedFile: fileToDelete,
+      remainingFiles: warranty.files.length
+    });
+  } catch (error) {
+    console.error('Delete file error:', error);
+    res.status(500).json({ error: 'Failed to delete file' });
+  }
+});
+
+// 5. Delete all files for a warranty
+app.delete('/warranty/:warrantyId/files', verifyToken, async (req, res) => {
+  const { warrantyId } = req.params;
+  
+  try {
+    const user = await User.findOne({ email: req.userEmail });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const warranty = await Warranty.findOne({ _id: warrantyId, user: user._id });
+    if (!warranty) return res.status(404).json({ error: 'Warranty not found' });
+
+    const deletedCount = warranty.files?.length || 0;
+
+    // Delete physical directory
+    const warrantyDir = path.join(__dirname, 'uploads', 'warranties', warrantyId);
+    if (fs.existsSync(warrantyDir)) {
+      fs.rmSync(warrantyDir, { recursive: true, force: true });
+    }
+
+    // Clear files from warranty document
+    warranty.files = [];
+    await warranty.save();
+
+    res.status(200).json({ 
+      message: 'All files deleted successfully',
+      deletedCount: deletedCount
+    });
+  } catch (error) {
+    console.error('Delete all files error:', error);
+    res.status(500).json({ error: 'Failed to delete files' });
+  }
+});
+
+// 6. Get file info without downloading
+app.get('/warranty/:warrantyId/files/:filename/info', verifyToken, async (req, res) => {
+  const { warrantyId, filename } = req.params;
+  
+  try {
+    const user = await User.findOne({ email: req.userEmail });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const warranty = await Warranty.findOne({ _id: warrantyId, user: user._id });
+    if (!warranty) return res.status(404).json({ error: 'Warranty not found' });
+
+    const fileInfo = warranty.files?.find(f => f.filename === filename);
+    if (!fileInfo) return res.status(404).json({ error: 'File not found' });
+
+    const fileWithUrl = {
+      ...fileInfo.toObject(),
+      downloadUrl: `${req.protocol}://${req.get('host')}/warranty/${warrantyId}/download/${filename}`
+    };
+
+    res.status(200).json({ file: fileWithUrl });
+  } catch (error) {
+    console.error('Get file info error:', error);
+    res.status(500).json({ error: 'Failed to get file info' });
+  }
+});
+
+// Error handling middleware for multer
+app.use((error, req, res, next) => {
+  if (error instanceof multer.MulterError) {
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ error: 'File too large. Maximum size is 10MB.' });
+    }
+    if (error.code === 'LIMIT_FILE_COUNT') {
+      return res.status(400).json({ error: 'Too many files. Maximum is 5 files per upload.' });
+    }
+  }
+  
+  if (error.message === 'Only images (JPEG, PNG, GIF) and PDF files are allowed') {
+    return res.status(400).json({ error: error.message });
+  }
+  
+  next(error);
+});
+
+// [Include all your existing endpoints here - register, login, userdata, etc.]
 
 // Health check endpoint
 app.get('/health', (req, res) => {

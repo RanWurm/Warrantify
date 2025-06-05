@@ -563,14 +563,14 @@ const styles = StyleSheet.create({
     color: '#333',
     fontFamily: 'InriaSerif-Bold',
   },
-bottomNavContainer: {
-  position: 'absolute',
-  bottom: Platform.OS === 'android' ? 20 : 0, // Move up 20px on Android
-  left: 0,
-  right: 0,
-  backgroundColor: '#E9E0D4', // Add background to hide content underneath
-  paddingTop: 10, // Add padding above nav bar
-},
+  bottomNavContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#E9E0D4',
+    height: Platform.OS === 'android' ? 85 : 90,
+  },
 });
 
 export default MyWarranties;

@@ -118,17 +118,16 @@ const BottomNavBar = () => {
 };
 
 const styles = StyleSheet.create({
-  bottomNav: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-    backgroundColor: '#E9E0D4',
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#DDD',
-    position: 'absolute',
-    bottom: 10,
-  },
+bottomNav: {
+  flexDirection: 'row',
+  justifyContent: 'space-around',
+  width: '100%',
+  backgroundColor: '#E9E0D4',
+  paddingVertical: 10,
+  borderTopWidth: 1,
+  borderTopColor: '#DDD',
+  // Remove position: 'absolute' and bottom: 10
+},
   navButton: {
     alignItems: 'center',
   },

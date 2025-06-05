@@ -19,7 +19,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import DateTimePicker from '@react-native-community/datetimepicker';
-
+import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
+import { FlatList } from 'react-native';
 const serverBackendURL = Constants.expoConfig!.extra!.SERVER_BACKEND_URL;
 
 interface AddWarrantyFormProps {
@@ -27,6 +29,12 @@ interface AddWarrantyFormProps {
   scannedData: any; // scannedData passed in (or null if not provided)
 }
 
+interface UploadedFile {
+  uri: string;
+  name: string;
+  type: string;
+  size?: number;
+}
 const isWeb = Platform.OS === 'web';
 
 const AddWarrantyForm: React.FC<AddWarrantyFormProps> = ({ onClose, scannedData }) => {
@@ -47,7 +55,9 @@ const AddWarrantyForm: React.FC<AddWarrantyFormProps> = ({ onClose, scannedData 
   const [showExpirationDatePicker, setShowExpirationDatePicker] = useState(false);
   const [purchaseDate, setPurchaseDate] = useState(new Date());
   const [expirationDate, setExpirationDate] = useState(new Date());
-
+  const [selectedFiles, setSelectedFiles] = useState<UploadedFile[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  
   useEffect(() => {
     if (scannedData) {
       console.log("AddWarrantyForm: Populating form with scannedData:", scannedData);
@@ -109,7 +119,181 @@ const AddWarrantyForm: React.FC<AddWarrantyFormProps> = ({ onClose, scannedData 
     // Example: always return true for now.
     return true;
   };
+  
+  const pickDocumentFiles = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['image/*', 'application/pdf'],
+        allowsMultipleSelection: true,
+        copyToCacheDirectory: true,
+      });
 
+      if (!result.canceled && result.assets) {
+        const newFiles: UploadedFile[] = result.assets.map(asset => ({
+          uri: asset.uri,
+          name: asset.name,
+          type: asset.mimeType || 'application/octet-stream',
+          size: asset.size,
+        }));
+        
+        setSelectedFiles(prev => [...prev, ...newFiles]);
+        Alert.alert('Success', `${newFiles.length} file(s) selected for upload`);
+      }
+    } catch (error) {
+      console.error('Error picking files:', error);
+      Alert.alert('Error', 'Failed to pick files');
+    }
+  };
+
+  const pickImageFromCamera = async () => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Camera permission is required to take photos');
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const asset = result.assets[0];
+        const newFile: UploadedFile = {
+          uri: asset.uri,
+          name: `receipt_${Date.now()}.jpg`,
+          type: 'image/jpeg',
+          size: asset.fileSize,
+        };
+        
+        setSelectedFiles(prev => [...prev, newFile]);
+        Alert.alert('Success', 'Receipt photo added');
+      }
+    } catch (error) {
+      console.error('Error taking photo:', error);
+      Alert.alert('Error', 'Failed to take photo');
+    }
+  };
+
+  const pickImageFromGallery = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Photo library permission is required');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+        allowsMultipleSelection: true,
+      });
+
+      if (!result.canceled && result.assets) {
+        const newFiles: UploadedFile[] = result.assets.map((asset, index) => ({
+          uri: asset.uri,
+          name: `image_${Date.now()}_${index}.jpg`,
+          type: 'image/jpeg',
+          size: asset.fileSize,
+        }));
+        
+        setSelectedFiles(prev => [...prev, ...newFiles]);
+        Alert.alert('Success', `${newFiles.length} image(s) added`);
+      }
+    } catch (error) {
+      console.error('Error picking images:', error);
+      Alert.alert('Error', 'Failed to pick images');
+    }
+  };
+
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const showReceiptOptions = () => {
+    Alert.alert(
+      'Add Receipt',
+      'Choose an option',
+      [
+        { text: 'Take Photo', onPress: pickImageFromCamera },
+        { text: 'Choose from Gallery', onPress: pickImageFromGallery },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
+
+  const uploadFilesToWarranty = async (warrantyId: string) => {
+    if (selectedFiles.length === 0) return;
+
+    setIsUploading(true);
+    try {
+      const token = await AsyncStorage.getItem("token");
+      const formData = new FormData();
+
+      selectedFiles.forEach((file, index) => {
+        formData.append('files', {
+          uri: file.uri,
+          type: file.type,
+          name: file.name,
+        } as any);
+      });
+
+      const response = await fetch(`${serverBackendURL}/warranty/${warrantyId}/upload-files`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+        body: formData,
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Files uploaded successfully:', result);
+        Alert.alert('Success', `${selectedFiles.length} file(s) uploaded successfully`);
+        setSelectedFiles([]); // Clear selected files after successful upload
+      } else {
+        const errorData = await response.json();
+        console.error('Upload error:', errorData);
+        Alert.alert('Upload Error', errorData.error || 'Failed to upload files');
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      Alert.alert('Error', 'Failed to upload files');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const renderFileItem = ({ item, index }: { item: UploadedFile; index: number }) => (
+    <View style={styles.fileItem}>
+      <View style={styles.fileInfo}>
+        <Ionicons 
+          name={item.type.startsWith('image/') ? 'image-outline' : 'document-outline'} 
+          size={20} 
+          color="#555" 
+        />
+        <Text style={styles.fileName} numberOfLines={1}>
+          {item.name}
+        </Text>
+        {item.size && (
+          <Text style={styles.fileSize}>
+            {(item.size / 1024).toFixed(1)} KB
+          </Text>
+        )}
+      </View>
+      <TouchableOpacity onPress={() => removeFile(index)}>
+        <Ionicons name="close-circle" size={20} color="#FF6B6B" />
+      </TouchableOpacity>
+    </View>
+  );
+
+// CHANGED FUNCTION - handleAddWarranty (added file upload after warranty creation):
   const handleAddWarranty = async () => {
     console.log("AddWarrantyForm: handleAddWarranty called with formData:", formData);
   
@@ -122,7 +306,6 @@ const AddWarrantyForm: React.FC<AddWarrantyFormProps> = ({ onClose, scannedData 
     }
   
     try {
-      // Assume you have a way to retrieve the token (e.g., from storage or context)
       const token = await AsyncStorage.getItem("token");
     
       const response = await fetch(`${serverBackendURL}/add-warranty`, {
@@ -135,6 +318,14 @@ const AddWarrantyForm: React.FC<AddWarrantyFormProps> = ({ onClose, scannedData 
       });
   
       if (response.ok) {
+        const result = await response.json();
+        const warrantyId = result.warranty._id; // NEW: Get warranty ID
+        
+        // NEW: Upload files if any are selected
+        if (selectedFiles.length > 0) {
+          await uploadFilesToWarranty(warrantyId);
+        }
+        
         Alert.alert(
           'Success',
           'Warranty added successfully!',
@@ -155,6 +346,7 @@ const AddWarrantyForm: React.FC<AddWarrantyFormProps> = ({ onClose, scannedData 
     }
   };
 
+  
   return (
     <KeyboardAvoidingView style={styles.formOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={40} >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -278,22 +470,33 @@ const AddWarrantyForm: React.FC<AddWarrantyFormProps> = ({ onClose, scannedData 
                     )}
 
                     <View style={styles.row}>
-                        <TouchableOpacity style={styles.iconButton}>
+                        <TouchableOpacity style={styles.iconButton} onPress={pickImageFromCamera}>
                         <Ionicons name="scan-outline" size={24} color="#555" />
                         <Text style={styles.iconButtonText}>Scan Receipt</Text>
                         </TouchableOpacity>
 
-                        <TouchableOpacity style={styles.iconButton}>
+                        <TouchableOpacity style={styles.iconButton} onPress={showReceiptOptions}>
                         <Ionicons name="add-outline" size={24} color="#555" />
                         <Text style={styles.iconButtonText}>Add Receipt</Text>
                         </TouchableOpacity>
 
-                        <TouchableOpacity style={styles.iconButton}>
+                        <TouchableOpacity style={styles.iconButton} onPress={pickDocumentFiles}>
                         <Ionicons name="document-attach-outline" size={24} color="#555" />
                         <Text style={styles.iconButtonText}>Add Files</Text>
                         </TouchableOpacity>
                     </View>
-
+                     {selectedFiles.length > 0 && (
+                        <View style={styles.filesContainer}>
+                        <Text style={styles.filesHeader}>Selected Files ({selectedFiles.length})</Text>
+                        <FlatList
+                            data={selectedFiles}
+                            renderItem={renderFileItem}
+                            keyExtractor={(item, index) => `${item.name}_${index}`}
+                            style={styles.filesList}
+                            showsVerticalScrollIndicator={false}
+                        />
+                        </View>
+                    )}
                     <TextInput
                         style={styles.notesInput}
                         placeholder="Add notes"
@@ -304,8 +507,14 @@ const AddWarrantyForm: React.FC<AddWarrantyFormProps> = ({ onClose, scannedData 
                     />
                     </ScrollView>
 
-                    <TouchableOpacity style={styles.addButton} onPress={handleAddWarranty}>
-                    <Text style={styles.addButtonText}>Add a Warranty</Text>
+                   <TouchableOpacity 
+                        style={[styles.addButton, isUploading && styles.addButtonDisabled]} 
+                        onPress={handleAddWarranty}
+                        disabled={isUploading}
+                    >
+                    <Text style={styles.addButtonText}>
+                        {isUploading ? 'Adding Warranty...' : 'Add a Warranty'}
+                    </Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -415,8 +624,9 @@ const styles = StyleSheet.create({
   },
   iconButtonText: {
     marginLeft: 8,
-    fontSize: 14,
+    fontSize: 12, // CHANGED: from 14 to 12 to fit better
     color: '#555',
+    textAlign: 'center', // ADDED
   },
   notesInput: {
     backgroundColor: '#FFF',
@@ -447,6 +657,52 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
 	fontFamily: 'InriaSerif-Bold',
   },
+    filesContainer: {
+    backgroundColor: '#FFF',
+    borderRadius: 10,
+    padding: 10,
+    marginHorizontal: 5,
+    marginBottom: 10,
+    maxHeight: 120,
+  },
+  filesHeader: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 8,
+    fontFamily: 'InriaSerif-Bold',
+  },
+  filesList: {
+    flexGrow: 0,
+  },
+  fileItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEE',
+  },
+  fileInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  fileName: {
+    marginLeft: 8,
+    fontSize: 12,
+    color: '#333',
+    flex: 1,
+  },
+  fileSize: {
+    fontSize: 10,
+    color: '#888',
+    marginLeft: 4,
+  },
+  addButtonDisabled: {
+    backgroundColor: '#A0A0A0',
+  },
+
 });
 
 export default AddWarrantyForm;

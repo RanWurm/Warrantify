@@ -69,7 +69,11 @@
     "react-native-svg": "^15.11.2",
     "react-native-vector-icons": "^10.2.0",
     "react-native-web": "~0.20.0",
-    "react-native-webview": "13.13.5"
+    "react-native-webview": "13.13.5",
+    "expo-document-picker": "~13.1.5",
+    "expo-file-system": "~18.1.10",
+    "expo-sharing": "~13.1.5",
+    "expo-intent-launcher": "~12.1.4"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
