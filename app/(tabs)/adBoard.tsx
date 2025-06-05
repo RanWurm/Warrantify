@@ -628,7 +628,7 @@ const onRefresh = useCallback(async () => {
           </View>
           <View style={styles.headerRight}>
             <Text style={styles.salePrice}>
-              ${real.salePrice}
+              ₪{real.salePrice}
             </Text>
             <MaterialCommunityIcons
               name="cash"
