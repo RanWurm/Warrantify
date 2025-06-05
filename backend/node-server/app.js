@@ -385,11 +385,9 @@ app.get('/check-market-status/:productId', async(req, res) => {
 });
 
 app.put('/update-warranty/:warrantyId', async (req, res) => {
-    console.log('🛠️ Received update request for warranty:', warrantyId);
-
   const { warrantyId } = req.params;
   const updateData = req.body;
-
+  
   console.log("📦 In update: warranty id is: ", warrantyId);
 
   try {
@@ -440,6 +438,30 @@ app.put('/update-warranty/:warrantyId', async (req, res) => {
   }
 });
 
+// DELETE warranty by ID
+app.delete('/delete-warranty/:warrantyId', async (req, res) => {
+  const { warrantyId } = req.params;
+  const token = req.headers.authorization?.split(' ')[1];
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const email = decoded.email;
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    // Remove warranty from Warranty collection
+    await Warranty.findByIdAndDelete(warrantyId);
+
+    // Also remove from user's product list
+    user.products = user.products.filter(p => p.toString() !== warrantyId);
+    await user.save();
+
+    res.status(200).json({ message: 'Warranty deleted successfully' });
+  } catch (err) {
+    console.error('❌ Delete error:', err);
+    res.status(500).json({ error: 'Server error while deleting' });
+  }
+});
 
 // Start the server
 const PORT = process.env.PORT || 3000;

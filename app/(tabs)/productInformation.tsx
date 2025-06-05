@@ -9,6 +9,11 @@ import { TextInput } from 'react-native';
 import Constants from 'expo-constants';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { KeyboardAvoidingView, ScrollView, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import BottomNavBar from '../components/BottomNavBar';
+import { Alert } from 'react-native';
+import { useEffect } from 'react';
+
 
 const serverBackendURL = Constants.expoConfig!.extra!.SERVER_BACKEND_URL;
 
@@ -19,19 +24,56 @@ const ProductInformation = () => {
   const router = useRouter();
   const isWeb = Platform.OS === 'web';
 
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedServiceCenter, setEditedServiceCenter] = useState(serviceCenter as string);
-  const [editedStore, setEditedStore] = useState(store as string);
+//   const [isEditing, setIsEditing] = useState(false);
+    const [editedServiceCenter, setEditedServiceCenter] = useState(serviceCenter as string);
+    const [editedStore, setEditedStore] = useState(store as string);
+    const [editedPrice, setEditedPrice] = useState(price as string);
+
+    const [editingServiceCenter, setEditingServiceCenter] = useState(false);
+    const [editingStore, setEditingStore] = useState(false);
+    const [editingPrice, setEditingPrice] = useState(false);
+
+    const [isOnMarket, setIsOnMarket] = useState(false);
+
+    useEffect(() => {
+        const checkMarketStatus = async () => {
+            try {
+            const token = await AsyncStorage.getItem('token');
+            const response = await fetch(`${serverBackendURL}/check-market-status/${productId}`, {
+                headers: {
+                Authorization: `Bearer ${token}`,
+                },
+            });
+
+            const data = await response.json();
+            setIsOnMarket(data.isOnMarket);
+            } catch (error) {
+                console.error("❌ Error checking market status:", error);
+            }
+    };
+
+  checkMarketStatus();
+}, []);
+
 
   const handleSaveEdits = async () => {
+      console.log("💾 Save button pressed");
+
     try {
       const token = await AsyncStorage.getItem('token');
+
+      if (!editedPrice || isNaN(Number(editedPrice))) {
+      alert("Please enter a valid price.");
+      return;
+    }
+
       console.log('📦 Updating productId:', productId);
       console.log("🔗 Calling URL:", `${serverBackendURL}/update-warranty/${productId}`);
 
       await axios.put(`${serverBackendURL}/update-warranty/${productId}`, {
         serviceCenter: editedServiceCenter,
         store: editedStore,
+        price: editedPrice,
       }, {
         headers: {
           Authorization: `Bearer ${token}`
@@ -39,7 +81,11 @@ const ProductInformation = () => {
       });
 
       alert('Warranty updated successfully!');
-      setIsEditing(false);
+      //setIsEditing(false);
+      setEditingServiceCenter(false);
+      setEditingStore(false);
+      setEditingPrice(false);
+
       router.replace({
         pathname: '/productInformation',
         params: {
@@ -59,7 +105,6 @@ const ProductInformation = () => {
       alert('Failed to save changes.');
     }
   };
-  
 
   const getTimeUntilExpiration = () => {
     const expiration = new Date(expirationDate as string).getTime();
@@ -206,117 +251,245 @@ const progress = isValidDate(parsedPurchaseDate) && isValidDate(parsedExpiration
     }
 
   return (
-    
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Product Information</Text>
 
-      <View style={styles.iconBadge}>
-            <MaterialCommunityIcons name={getIconName(productName as string)} size={20} color="#333" />
-            <Text style={styles.iconBadgeText}>Warranty Item</Text>
-     </View>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={{ flex: 1, backgroundColor:'#F5EFE6', }}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 50 : 0}>
+            <ScrollView contentContainerStyle={{ flexGrow: 1 }}   showsVerticalScrollIndicator={false}
+>
+                <SafeAreaView style={styles.container}>
+                    <Text style={styles.title}>Product Information</Text>
 
-      <View style={styles.productBox}>
-        <View style={styles.brandRow}>
-          {/* <Image source={require('../assets/apple.png')} style={styles.brandLogo} /> */}
-        </View>
+                    <View style={styles.iconBadge}>
+                            <MaterialCommunityIcons name={getIconName(productName as string)} size={20} color="#333" />
+                            <Text style={styles.iconBadgeText}>Warranty Item</Text>
+                    </View>
 
-        <View style={styles.productInnerBox}>
-            <Text style={styles.productName}>{productName}</Text>
-            <Text style={styles.productModel}>{model}</Text>
-            <View style={styles.progressContainer}>
-        
-            <View style={styles.timeRow}>
-                <MaterialCommunityIcons
-                        name="clock-fast"
-                        size={25}
-                        color="#000"
-                        style={styles.iconSpacing}
-                />
-                <Text style={styles.inLabel}>{getTimeUntilExpiration()}</Text>
-            </View>
-            <Progress.Bar
-                            progress={progress / 100}
-                            width={isWeb ? 600 : Dimensions.get('window').width * 0.7}
-                            color={progressColor}
-                            unfilledColor="#E8E8E8"
-                            borderWidth={0}
-                            height={8}
-                            style={styles.progressBar}
-                />
-            </View>
-            
-            <Text style={styles.progressLabel}>{Math.round(progress)}% warranty used</Text>
+                    <View style={styles.productBox}>
 
-        </View>
-        
+                        <View style={styles.productInnerBox}>
+                            <Text> </Text>
+                            <Text style={styles.productName}>{productName}</Text>
+                            <Text style={styles.productModel}>{model}</Text>
 
-        <View style={styles.dateRow}>
-          <View style={styles.dateBlock}>
-            <MaterialCommunityIcons name="calendar" size={22} color="#7F8FA6" />
-            <Text style={[styles.dateText, { color: '#7F8FA6' }]}>Purchase Date</Text>
-            <Text style={[styles.dateValue, { color: '#7F8FA6' }]}>{new Date(purchaseDate as string).toLocaleDateString('en-GB')}</Text>
-          </View>
+                                <View style={styles.progressContainer}>
+                                <View style={styles.timeRow}>
+                                    <MaterialCommunityIcons
+                                            name="clock-fast"
+                                            size={25}
+                                            color="#000"
+                                            style={styles.iconSpacing}
+                                    />
+                                    <Text style={styles.inLabel}>{getTimeUntilExpiration()}</Text>
+                                </View>
 
-          <View style={styles.dateBlock}>
-            <MaterialCommunityIcons name="calendar-check" size={22} color="green" />
-            <Text style={[styles.dateText, { color: 'green' }]}>Warranty Expiration</Text>
-            <Text style={[styles.dateValue, { color: 'green' }]}>{new Date(expirationDate as string).toLocaleDateString('en-GB')}</Text>
-          </View>
-        </View>
+                                
+                                <Progress.Bar
+                                                progress={progress / 100}
+                                                width={isWeb ? 600 : Dimensions.get('window').width * 0.75}
+                                                color={progressColor}
+                                                unfilledColor="#E8E8E8"
+                                                borderWidth={0}
+                                                height={8}
+                                                style={styles.progressBar}
+                                />
+
+
+                                <View style={styles.dateRow}>
+                                    <View style={styles.dateBlockLeft}>
+                                        <MaterialCommunityIcons name="calendar" size={25} color="#7F8FA6" />
+                                        <View style={styles.dateTextGroup}>
+                                        <Text style={[styles.dateText, { color: '#7F8FA6' }]}>Purchase</Text>
+                                        <Text style={[styles.dateValue, { color: '#7F8FA6' }]}>
+                                            {new Date(purchaseDate as string).toLocaleDateString('en-GB')}
+                                        </Text>
+                                        </View>
+                                    </View>
+
+                                    <View style={styles.dateBlockRight}>
+                                        <MaterialCommunityIcons name="calendar-check" size={25} color="green" />
+                                        <View style={styles.dateTextGroup}>
+                                        <Text style={[styles.dateText, { color: 'green' }]}>Expiration</Text>
+                                        <Text style={[styles.dateValue, { color: 'green' }]}>
+                                            {new Date(expirationDate as string).toLocaleDateString('en-GB')}
+                                        </Text>
+                                        </View>
+                                    </View>
+                                    
+                                </View>
+                            </View>
+
+                            <Text style={styles.progressLabel}>{Math.round(progress)}% of the warranty used</Text>
+                        </View>
+                    </View>
+
+                    <View style={styles.infoBox}>
+
+                        <Text style={styles.sectionLabel}>Service centers:</Text>
+                        <View style={styles.infoLine}>
+                            {!editingServiceCenter && (
+                                <TouchableOpacity
+                                onPress={() => setEditingServiceCenter(true)}
+                                style={styles.editToggleButton}
+                                >
+                                <MaterialCommunityIcons name="pencil" size={24} color="#333" />
+                                </TouchableOpacity>
+                            )}
+
+                            {editingServiceCenter && (
+                                <TouchableOpacity
+                                onPress={handleSaveEdits}
+                                style={styles.editToggleButton}
+                                >
+                                <MaterialCommunityIcons name="content-save" size={24} color="green" />
+                                </TouchableOpacity>
+                            )}
+
+                            <View style={styles.rowItem}>
+                                <MaterialCommunityIcons name="tools" size={35} />
+                                {editingServiceCenter ? (
+                                <TextInput
+                                    value={editedServiceCenter}
+                                    onChangeText={setEditedServiceCenter}
+                                    style={styles.editableTextInput}
+                                />
+                                ) : (
+                                <Text style={styles.rowText}>{editedServiceCenter}</Text>
+                                )}
+                            </View>
+                        </View>
+
+                        <Text style={styles.sectionLabel}>Store:</Text>
+                        <View style={styles.infoLine}>
+                            {!editingStore && (
+                            <TouchableOpacity
+                                onPress={() => setEditingStore(true)}
+                                style={styles.editToggleButton}>
+                                <MaterialCommunityIcons name="pencil" size={24} color="#333" />
+                            </TouchableOpacity>
+                            )}
+
+                            {editingStore && (
+                            <TouchableOpacity
+                                onPress={handleSaveEdits}
+                                style={styles.editToggleButton}>
+                                <MaterialCommunityIcons name="content-save" size={24} color="green" />
+                            </TouchableOpacity>
+                            )}
+
+                            <View style={styles.rowItem}>
+                                <MaterialCommunityIcons name="store" size={35} />
+                                {editingStore ? (
+                                <TextInput
+                                    value={editedStore}
+                                    onChangeText={setEditedStore}
+                                    style={styles.editableTextInput}
+                                />
+                                ) : (
+                                <Text style={styles.rowText}>{editedStore}</Text>
+                                )}
+                            </View>
+                        </View>
+
+                        <Text style={styles.sectionLabel}>Price:</Text>
+                        <View style={styles.infoLine}>
+                            {!editingPrice && (
+                                <TouchableOpacity
+                                onPress={() => setEditingPrice(true)}
+                                style={styles.editToggleButton}
+                                >
+                                <MaterialCommunityIcons name="pencil" size={24} color="#333" />
+                                </TouchableOpacity>
+                            )}
+
+                            {editingPrice && (
+                                <TouchableOpacity
+                                onPress={handleSaveEdits}
+                                style={styles.editToggleButton}
+                                >
+                                <MaterialCommunityIcons name="content-save" size={24} color="green" />
+                                </TouchableOpacity>
+                            )}
+
+                            <View style={styles.rowItem}>
+                                <MaterialCommunityIcons name="cash" size={35} />
+                                {editingPrice ? (
+                                <TextInput
+                                    value={editedPrice}
+                                    onChangeText={setEditedPrice}
+                                    keyboardType="numeric"
+                                    style={styles.editableTextInput}
+                                />
+                                ) : (
+                                <Text style={styles.rowText}>{editedPrice} ₪</Text>
+                                )}
+                            </View>
+                        </View>
+
+                        <View style={styles.actionBox}>
+                            <TouchableOpacity style={styles.actionBtn}>
+                                <MaterialCommunityIcons name="image-plus" size={24} color="black" />
+                            <   Text style={styles.actionText}>Add Image</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity style={styles.actionBtn}>
+                                <MaterialCommunityIcons name="file-pdf-box" size={24} color="black" />
+                                <Text style={styles.actionText}>Add PDF</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        <TouchableOpacity
+                            style={[styles.deleteBtn, isOnMarket && { backgroundColor: 'gray' }]}
+                            onPress={() => {
+                                if (isOnMarket) {
+                                Alert.alert('Cannot Delete', 'This product is listed in the marketplace.');
+                                return;
+                                }
+
+                                Alert.alert(
+                                'Delete Warranty',
+                                'Are you sure you want to delete this warranty?',
+                                [
+                                    { text: 'Cancel', style: 'cancel' },
+                                    {
+                                    text: 'Delete',
+                                    style: 'destructive',
+                                    onPress: async () => {
+                                        try {
+                                        const token = await AsyncStorage.getItem('token');
+                                        await axios.delete(`${serverBackendURL}/delete-warranty/${productId}`, {
+                                            headers: { Authorization: `Bearer ${token}` },
+                                        });
+                                        alert('Warranty deleted successfully!');
+                                        router.replace('/myWarranties');
+                                        } catch (err) {
+                                        console.error('❌ Failed to delete:', err);
+                                        alert('Failed to delete warranty.');
+                                        }
+                                    },
+                                    },
+                                ]
+                                );
+                            }}
+                            >
+                            <Text style={styles.deleteBtnText}>
+                                {isOnMarket ? 'Listed in Marketplace' : 'Delete Warranty'}
+                            </Text>
+                        </TouchableOpacity>
+
+                    </View>
+                </SafeAreaView>
+            </ScrollView>
+
+            {!isWeb ? (
+      <View style={styles.bottomNavContainer}>
+        <BottomNavBar />
       </View>
-
-      <View style={styles.infoBox}>
-
-        <Text style={styles.sectionLabel}>Service centers:</Text>
-        <View style={styles.infoLine}>
-            <TouchableOpacity onPress={isEditing ? handleSaveEdits : () => setIsEditing(true)} style={[styles.editToggleButton, { zIndex: 10, position: 'absolute', top: 10, right: 20 }]}
-      >
-        <MaterialCommunityIcons name={isEditing ? 'content-save' : 'pencil'} size={24} color="#333" />
-      </TouchableOpacity>
-            <View style={styles.rowItem}>
-                <MaterialCommunityIcons name="tools" size={35} />
-                {isEditing ? (
-                <TextInput
-                value={editedServiceCenter}
-                onChangeText={setEditedServiceCenter}
-                style={styles.editableTextInput}
-                />
-            ) : (
-                <Text style={styles.rowText}>{editedServiceCenter}</Text>
-            )}
-            </View>
-        </View>
-    
-        
-        <Text style={styles.sectionLabel}>Store:</Text>
-        <View style={styles.infoLine}>
-            <View style={styles.rowItem}>
-                <MaterialCommunityIcons name="store" size={35} />
-                <Text style={styles.rowText}>{store}</Text>
-            </View>
-        </View>
-
-        <Text style={styles.sectionLabel}>Price:</Text>
-        <View style={styles.infoLine}>
-            <View style={styles.rowItem}>
-                <MaterialCommunityIcons name="cash" size={35} />
-                <Text style={styles.rowText}>{price} ₪</Text>
-            </View>
-        </View>
-
-      </View>
-
-      <View style={styles.actionBox}>
-        <TouchableOpacity style={styles.actionBtn}>
-          <MaterialCommunityIcons name="image-plus" size={24} color="black" />
-          <Text style={styles.actionText}>Add Image</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionBtn}>
-          <MaterialCommunityIcons name="file-pdf-box" size={24} color="black" />
-          <Text style={styles.actionText}>Add PDF</Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+    ) : null}
+        </KeyboardAvoidingView>
+    </TouchableWithoutFeedback>
   );
 };
 
@@ -343,15 +516,9 @@ const styles = StyleSheet.create({
   },
   productInnerBox: {
     backgroundColor: '#fff',
-    padding: 16,
     borderRadius: 12,
     alignItems: 'center',
     width: '95%',
-  },
-  brandRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
   },
   productName: {
     fontSize: 22,
@@ -376,6 +543,8 @@ const styles = StyleSheet.create({
     width: '100%',
     marginTop: 10,
     alignItems: 'center',
+    borderRadius: 5,
+    // borderWidth: 1,
   },
   progressBar: {
     height: 10,
@@ -383,49 +552,77 @@ const styles = StyleSheet.create({
   },
   progressLabel: {
     fontSize: 15,
-    marginTop: 4,
+    marginTop: 6,
+    marginBottom:6,    
     color: '#333',
     fontFamily: 'InriaSerif-Regular',
   },
   dateRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    marginTop: 8,
-  },
-  dateBlock: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  dateText: {
-    fontSize: 15,
-    marginTop: 4,
-    fontFamily: 'InriaSerif-Bold',
-  },
-  dateValue: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    fontFamily: 'InriaSerif-Bold',
-  },
-  infoBox: {
-    marginTop: "2%",
-    // backgroundColor: '#fff',
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  width: '100%',
+  paddingHorizontal: 8,
+  marginTop: 10,
+},
+
+dateBlockLeft: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'flex-start',
+  flex: 1,
+  gap: 6,
+},
+
+dateBlockRight: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'flex-end',
+  flex: 1,
+  gap: 6,
+},
+
+dateBlock: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: 8,
+},
+
+dateTextGroup: {
+  flexDirection: 'column',
+  justifyContent: 'center',
+},
+
+dateText: {
+  fontSize: 12,
+  fontFamily: 'InriaSerif-Bold',
+},
+
+dateValue: {
+  fontSize: 12,
+  fontWeight: 'bold',
+  fontFamily: 'InriaSerif-Bold',
+},
+infoBox: {
     padding: 16,
     borderRadius: 12,
+    paddingTop:0,
+    paddingBottom:0,
   },
   infoLine:{
     backgroundColor: '#fff',
     borderRadius: 12,
-    marginTop: 8,
-    height:"15%",
+    marginTop: "2%",
+    height:"12%",
+    width:"95%",
+    marginLeft:'3%',
   },
   sectionLabel: {
     fontWeight: 'bold',
     marginTop: 8,
     fontFamily: 'InriaSerif-Bold',
     fontSize:18,
-    marginLeft:'2%',
-
+    marginLeft:'4%',
   },
   rowItem: {
     flexDirection: 'row',
@@ -438,6 +635,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     fontSize: 18,
     fontFamily: 'InriaSerif-Regular',
+    width: '30%',
   },
   actionBox: {
     flexDirection: 'row',
@@ -461,11 +659,11 @@ const styles = StyleSheet.create({
   },
   iconBadge: {
   position: 'absolute',
-  top: "15%",
-  left:"34%",
+  top: "13%",
+  left:"30%",
   backgroundColor: '#D1BB9E',
   borderRadius: 50,
-  padding: 10,
+  padding: 12,
   flexDirection: 'row',
   alignItems: 'center',
   zIndex: 1,
@@ -474,12 +672,13 @@ const styles = StyleSheet.create({
   shadowOpacity: 0.3,
   shadowRadius: 4,
   elevation: 5,
+  width:'40%',
 },
 
 iconBadgeText: {
   color: '#333',
   marginLeft: 5,
-  fontSize: 12,
+  fontSize: 15,
   fontFamily: 'InriaSerif-Regular',
 },
 editIcon: {
@@ -498,15 +697,42 @@ editableTextInput: {
   flex: 1,
 },
 editToggleButton: {
-  position: 'absolute',
+   position: 'absolute',
   right: 20,
   top: 10,
-  backgroundColor: '#ccc',
   paddingVertical: 6,
   paddingHorizontal: 12,
   borderRadius: 8,
+  zIndex: 999,             
+},
+bottomNavContainer: {
+  position: 'absolute',
+  bottom: Platform.OS === 'android' ? 20 : 0, // Move up 20px on Android
+  left: 0,
+  right: 0,
+  backgroundColor: '#E9E0D4', // Add background to hide content underneath
+  paddingTop: 10, // Add padding above nav bar
 },
 
+deleteBtn: {
+  backgroundColor: '#AF6F6F',
+  padding: 12,
+  marginTop: 20,
+  borderRadius: 12,
+  alignItems: 'center',
+  width: '94%',
+  alignSelf: 'center',
+},
+
+deleteBtnText: {
+  color: '#fff',
+  fontWeight: 'bold',
+  fontSize: 16,
+  fontFamily: 'InriaSerif-Bold',
+}
+
+
 });
+
 
 export default ProductInformation;
