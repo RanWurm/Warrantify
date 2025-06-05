@@ -122,6 +122,22 @@ const WarrantyCard: React.FC<WarrantyCardProps> = ({
       handleAddToMarket();
     }
   };
+  
+  const handleNavigateToProductInfo = () => {
+  router.push({
+    pathname: '/productInformation',
+    params: {
+      productId,
+      productName: title,
+      model,
+      purchaseDate,
+      expirationDate,
+      price,
+      serviceCenter,
+      store,
+    },
+  });
+};
 
   const handleAddToMarket = () => {
     // Reset form and open modal
@@ -253,25 +269,10 @@ const WarrantyCard: React.FC<WarrantyCardProps> = ({
   };
 
   return (
-    <TouchableOpacity
-        onPress={() =>
-            router.push({
-            pathname: '/productInformation',
-            params: {
-                productId,
-                productName: title,
-                model,
-                purchaseDate,
-                expirationDate,
-                price,
-                serviceCenter,
-                store,
-            },
-            })
-        }
+      <TouchableOpacity
+        onPress={toggleExpanded}
         activeOpacity={0.8}
-        onLongPress={toggleExpanded}
-    >
+      >
 
       <View style={[styles.cardContainer, expanded && styles.cardExpanded]}>
         
@@ -331,30 +332,49 @@ const WarrantyCard: React.FC<WarrantyCardProps> = ({
           </View>
         </View>
         {expanded && (
-          <View style={styles.expandedContainer}>
-            <Text style={styles.expandedText}>{notes}</Text>
-            <TouchableOpacity
-              style={[
-                styles.marketListButton,
-                isOnMarket ? styles.removeFromMarketButton : styles.addToMarketButton,
-                loading && styles.disabledButton
-              ]}
-              onPress={handleMarketAction}
-              disabled={loading}
-            >
-              <Text style={[
-                styles.marketListButtonText,
-                isOnMarket ? styles.removeFromMarketButtonText : styles.addToMarketButtonText
-              ]}>
-                {loading ? 'Loading...' : (isOnMarket ? 'Remove from market list' : 'Add to market list')}
-              </Text>
-              {/* Debug text - remove this later */}
-              {/* <Text style={{ fontSize: 10, color: '#999' }}>
-                Debug: isOnMarket={isOnMarket.toString()}
-              </Text> */}
-            </TouchableOpacity>
-          </View>
-        )}
+  <View style={styles.expandedContainer}>
+    <Text style={styles.expandedText}>{notes}</Text>
+    
+    {/* Button row for expanded actions */}
+    <View style={styles.expandedButtonsContainer}>
+      <TouchableOpacity
+        style={styles.productInfoButton}
+        onPress={handleNavigateToProductInfo}
+      >
+        <MaterialCommunityIcons
+          name="information"
+          size={16}
+          color="#fff"
+          style={styles.buttonIcon}
+        />
+        <Text style={styles.productInfoButtonText}>Product Info</Text>
+      </TouchableOpacity>
+      
+      <TouchableOpacity
+        style={[
+          styles.marketListButton,
+          isOnMarket ? styles.removeFromMarketButton : styles.addToMarketButton,
+          loading && styles.disabledButton
+        ]}
+        onPress={handleMarketAction}
+        disabled={loading}
+      >
+        <MaterialCommunityIcons
+          name={isOnMarket ? "cart-remove" : "cart-plus"}
+          size={16}
+          color="#fff"
+          style={styles.buttonIcon}
+        />
+        <Text style={[
+          styles.marketListButtonText,
+          isOnMarket ? styles.removeFromMarketButtonText : styles.addToMarketButtonText
+        ]}>
+          {loading ? 'Loading...' : (isOnMarket ? 'Remove from market' : 'Add to market')}
+        </Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+)}
 
         {/* Modal for entering market item details */}
         <Modal
@@ -498,19 +518,20 @@ const styles = StyleSheet.create({
     padding: 15,
     backgroundColor: '#FDFDFD',
   },
-  expandedText: {
-    marginBottom: 10,
-    fontFamily: 'InriaSerif-Regular',
-    color: '#000',
-  },
-  marketListButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 10,
-  },
+expandedText: {
+  marginBottom: 15, // Changed from 10 to 15
+  fontFamily: 'InriaSerif-Regular',
+  color: '#000',
+},
+marketListButton: {
+  paddingVertical: 12,
+  paddingHorizontal: 15, // Changed from 20 to 15
+  borderRadius: 16,
+  alignItems: 'center',
+  justifyContent: 'center',
+  flex: 1, // Added
+  flexDirection: 'row', // Added
+},
   addToMarketButton: {
     backgroundColor: '#7E8FA6',
   },
@@ -522,7 +543,7 @@ const styles = StyleSheet.create({
   },
   marketListButtonText: {
     fontFamily: 'InriaSerif-Regular',
-    fontSize: 16,
+    fontSize: 14,
   },
   addToMarketButtonText: {
     color: '#fff',
@@ -604,7 +625,29 @@ const styles = StyleSheet.create({
     color: '#7E8FA6',
     fontFamily: 'InriaSerif-Regular',
     fontSize: 16,
-  }
+  },
+  expandedButtonsContainer: {
+  flexDirection: 'row',
+  gap: 10,
+},
+productInfoButton: {
+  backgroundColor: '#7E8FA6',
+  paddingVertical: 12,
+  paddingHorizontal: 15,
+  borderRadius: 16,
+  alignItems: 'center',
+  justifyContent: 'center',
+  flex: 1,
+  flexDirection: 'row',
+},
+productInfoButtonText: {
+  color: '#fff',
+  fontFamily: 'InriaSerif-Regular',
+  fontSize: 14,
+},
+buttonIcon: {
+  marginRight: 5,
+},
 });
 
 export default WarrantyCard;

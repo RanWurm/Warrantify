@@ -23,7 +23,7 @@ const PhotoPreviewSection = ({photo, handleRetakePhoto,onClose}) => {
     try {
       setLoading(true);
 
-      const SERVER_URL = 'http://10.0.0.12:5000/scan_recepit';
+      const SERVER_URL = 'http://10.0.0.3:5000/scan_recepit';
 
       const payload = {
         image: photo.base64,
