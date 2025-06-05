@@ -361,7 +361,6 @@ return (
               style={styles.profileImage}
             />
           </View>
-          <Text>Hi</Text>
 
           <View style={styles.statisticsContainer}>
             <View style={styles.statBlock}>

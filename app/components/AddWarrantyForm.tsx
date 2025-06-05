@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   formContainer: {
-    backgroundColor: isWeb ? '#e0c3a9' : '#DCC0AB',
+    backgroundColor: isWeb ? '#e0c3a9' : '#E9E0D4',
     borderRadius: 20,
     padding: 20,
     maxHeight: '90%',
