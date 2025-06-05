@@ -503,8 +503,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     textAlign: 'center',
-    fontWeight: 'bold',
-    marginTop: Platform.OS === 'android' ? 13 : 15, // Less margin on Android
+    marginTop: Platform.OS === 'android' ? 20 : 15, // Less margin on Android
     marginBottom: Platform.OS === 'android' ? 13 : 15, // Less margin on Android
     fontFamily: 'InriaSerif-Bold',
   },
@@ -518,11 +517,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 12,
     alignItems: 'center',
-    width: '95%',
+    width: Platform.OS === 'android' ? '105%': '95%',
   },
   productName: {
     fontSize: 22,
-    fontWeight: 'bold',
     marginTop: 20,
     fontFamily: 'InriaSerif-Bold',
   },
@@ -533,11 +531,9 @@ const styles = StyleSheet.create({
   inLabel: {
     marginVertical: 6,
     color: '#444',
-    fontStyle: 'italic',
     marginBottom: 0,
     fontFamily: 'InriaSerif-Regular',
     fontSize: 16
-
   },
   progressContainer: {
     width: '100%',
@@ -600,7 +596,6 @@ dateText: {
 
 dateValue: {
   fontSize: 12,
-  fontWeight: 'bold',
   fontFamily: 'InriaSerif-Bold',
 },
 infoBox: {
@@ -614,11 +609,10 @@ infoBox: {
     borderRadius: 12,
     marginTop: "2%",
     height:"12%",
-    width:"95%",
-    marginLeft:'3%',
+    width: Platform.OS === 'android' ? '105%': '95%',
+    marginLeft:Platform.OS === 'android' ? '-1%':'3%',
   },
   sectionLabel: {
-    fontWeight: 'bold',
     marginTop: 8,
     fontFamily: 'InriaSerif-Bold',
     fontSize:18,
@@ -659,8 +653,8 @@ infoBox: {
   },
   iconBadge: {
   position: 'absolute',
-  top: "13%",
-  left:"30%",
+  top: Platform.OS === 'android' ? "10%": "13%",
+  left:Platform.OS === 'android' ? "32%": "30%",
   backgroundColor: '#D1BB9E',
   borderRadius: 50,
   padding: 12,
@@ -672,7 +666,7 @@ infoBox: {
   shadowOpacity: 0.3,
   shadowRadius: 4,
   elevation: 5,
-  width:'40%',
+  width:Platform.OS === 'android' ? '43%':'40%',
 },
 
 iconBadgeText: {
@@ -695,9 +689,10 @@ editableTextInput: {
   borderColor: '#888',
   padding: 2,
   flex: 1,
+  textAlign: 'left',  
 },
 editToggleButton: {
-   position: 'absolute',
+  position: 'absolute',
   right: 20,
   top: 10,
   paddingVertical: 6,
@@ -726,7 +721,6 @@ deleteBtn: {
 
 deleteBtnText: {
   color: '#fff',
-  fontWeight: 'bold',
   fontSize: 16,
   fontFamily: 'InriaSerif-Bold',
 }

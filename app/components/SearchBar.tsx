@@ -12,6 +12,7 @@ import {
   ViewStyle,
   TextStyle,
   Dimensions,
+  Platform
 } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import debounce from 'lodash.debounce';
@@ -274,7 +275,7 @@ const getStyles = (variant: string, screenWidth: number) => {
             backgroundColor: '#E9E0D4',
         },
         searchBar: {
-          width: '90%',
+          width: Platform.OS === 'android' ? '98%' :'90%',
           alignSelf: 'center',
           flexDirection: 'row',
           alignItems: 'center',

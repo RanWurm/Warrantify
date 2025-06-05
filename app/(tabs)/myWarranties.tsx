@@ -83,6 +83,10 @@ const MyWarranties = () => {
     setRefreshTrigger((prev) => prev + 1);
   };
 
+  const getTotalWarrantyCount = () => {
+     return warranties.length;
+  };
+
   useEffect(() => {
     const fetchWarranties = async () => {
       try {
@@ -363,20 +367,22 @@ return (
           </View>
 
           <View style={styles.statisticsContainer}>
-            <View style={styles.statBlock}>
-              <Text style={styles.statNumber}>{expiredPercentage}%</Text>
-              <Text style={styles.statLabel}>Expired</Text>
-            </View>
-            <View style={styles.statBlock}>
-              <Text style={styles.statNumber}>{inProgressPercentage}%</Text>
-              <Text style={styles.statLabel}>In Progress</Text>
-            </View>
-            <View style={styles.statBlock}>
-              <Text style={styles.statNumber}>{recentPercentage}%</Text>
-              <Text style={styles.statLabel}>Recent</Text>
-            </View>
+                <View style={styles.statBlock}>
+                    <Text style={styles.statNumber}>{expiredPercentage}%</Text>
+                    <Text style={styles.statLabel}>Expired</Text>
+                </View>
+                <View style={styles.statBlock}>
+                    <Text style={styles.statNumber}>{inProgressPercentage}%</Text>
+                    <Text style={styles.statLabel}>In Progress</Text>
+                </View>
+                <View style={styles.statBlock}>
+                    <Text style={styles.statNumber}>{recentPercentage}%</Text>
+                    <Text style={styles.statLabel}>Recent</Text>
+                </View>
           </View>
         </View>
+                  <Text style={styles.totalLabel}>{getTotalWarrantyCount()} warranties in total</Text>
+
       </View>
     </View>
 
@@ -425,11 +431,26 @@ const styles = StyleSheet.create({
   statBlock: {
 	alignItems: 'center',
 	marginHorizontal: isWeb ? 15 : 5,
+    marginBottom:0,
+  },
+  totalBlock:{
+    alignItems: 'center',
+    marginLeft:'30%',
+    marginTop:0,
+    marginBottom:0,
+
+  },
+  totalLabel: {
+	fontSize: 16,
+	color: '#D0BBA2',
+	fontFamily: 'InriaSerif-Bold',
+    marginTop:'-8%',
+    marginLeft:'30%',
+    marginBottom:'2%',
   },
   
   statNumber: {
 	fontSize: isWeb ? 30 : 20,
-	fontWeight: 'bold',
 	color: '#333',
 	fontFamily: 'InriaSerif-Bold',
   },

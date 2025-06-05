@@ -159,14 +159,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
 	width: '100%',
+    marginTop: Platform.OS === 'android' ? '10%' : 0,
+
   },
   logo: {
     resizeMode: 'contain',
     marginBottom: '2%',
-    //marginTop: dynamicMarginTop
+    marginTop: Platform.OS === 'android' ? '10%' : 0,
   },
   title: {
-    fontWeight: 'bold',
     fontFamily: 'InriaSerif-Bold',
     marginTop: 0,
     textAlign: 'center',

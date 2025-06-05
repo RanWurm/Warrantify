@@ -67,40 +67,6 @@ export default function LoginScreen() {
           }
     
   }
-  
-  
-  
-  // const handleLogin = async () => {
-  //   if (!email || !password) {
-  //     Alert.alert('Error', 'Please enter both email and password.');
-  //     return;
-  //   }
-
-  //   try {
-  //     // Attempt to sign in
-  //     const userCredential = await signInWithEmailAndPassword(auth, email, password);
-  //     const firebaseUserId = userCredential.user.uid;
-  //     console.log('User logged in:', firebaseUserId);
-
-  //     // Assign or retrieve `user_id`
-  //     await assignUserId(firebaseUserId);
-
-  //     // Navigate to home page or wherever you want
-  //     router.replace('/home')
-  //   } catch (error: any) {
-  //     // Handle different auth errors
-  //     if (error.code === 'auth/user-not-found') {
-  //       Alert.alert('Login Failed', 'No user found with this email. Please register first.');
-  //     } else if (error.code === 'auth/wrong-password') {
-  //       Alert.alert('Login Failed', 'Incorrect password. Please try again.');
-  //     } else if (error.code === 'auth/invalid-email') {
-  //       Alert.alert('Login Failed', 'Invalid email format. Please check and try again.');
-  //     } else {
-  //       Alert.alert('Login Failed', `Error: ${error.message}`);
-  //     }
-  //     console.error('Error signing in:', error);
-  //   }
-  // };
 
   const navigateToRegister = () => {
     router.push('/register');
@@ -211,7 +177,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontWeight: 'bold',
+    fontFamily: 'InriaSerif-Bold',
     color: '#4f3e2f',
     letterSpacing: 0.5,
   },
@@ -222,6 +188,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     maxWidth: '80%',
     lineHeight: 22,
+    fontFamily: 'InriaSerif-Bold',
   },
   formContainer: {
     width: '100%',
@@ -246,6 +213,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
+    fontFamily: 'InriaSerif-Regular',
+
   },
   showPasswordButton: {
     marginTop: 8,
@@ -254,7 +223,7 @@ const styles = StyleSheet.create({
   showPasswordText: {
     color: '#4f3e2f',
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: 'InriaSerif-Bold',
   },
   forgotPassword: {
     alignSelf: 'flex-end',
@@ -263,6 +232,7 @@ const styles = StyleSheet.create({
   forgotPasswordText: {
     color: '#4f3e2f',
     fontSize: 14,
+    fontFamily: 'InriaSerif-Bold',
   },
   button: {
     width: '100%',
@@ -279,7 +249,7 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: 'InriaSerif-Bold',
     letterSpacing: 0.5,
   },
   signupContainer: {
@@ -290,10 +260,12 @@ const styles = StyleSheet.create({
   signupText: {
     color: '#7a6858',
     fontSize: 14,
+    fontFamily: 'InriaSerif-Regular',
+
   },
   signupLink: {
     color: '#4f3e2f',
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: 'InriaSerif-Bold',
   },
 });

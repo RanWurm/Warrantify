@@ -79,8 +79,7 @@ const MyServiceCenters: React.FC = () => {
         const warranties: Warranty[] = data.data;
         const seen = new Set<string>();
         const unique = warranties
-          .map((w) => w.serviceCenter)
-          .filter((s): s is string => !!s && !seen.has(s) && seen.add(s));
+          .map((w) => w.serviceCenter);
 
         // Parallel geocode + details
         const fresh: LocatedCenter[] = (
@@ -122,8 +121,21 @@ const MyServiceCenters: React.FC = () => {
           )
         ).filter((c): c is LocatedCenter => !!c);
 
-        setCenters(fresh);
-        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(fresh));
+    // Deduplicate using normalized name + coordinates
+      const uniqueMap = new Map<string, LocatedCenter>();
+      for (const c of fresh) {
+        const normalizedName = c.name.trim().toLowerCase().replace(/\s+/g, '');
+        const coordKey = `${normalizedName}::${c.latitude.toFixed(4)}:${c.longitude.toFixed(4)}`;
+        if (!uniqueMap.has(coordKey)) {
+          uniqueMap.set(coordKey, c);
+        }
+      }
+
+      const uniqueCenters = Array.from(uniqueMap.values());
+
+      setCenters(uniqueCenters);
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(uniqueCenters));
+
       } catch (err) {
         console.error('Error loading centers:', err);
       } finally {
