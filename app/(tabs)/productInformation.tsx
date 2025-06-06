@@ -303,17 +303,15 @@ const uploadFiles = async (fileType: 'image' | 'pdf' | 'camera') => {
 // REPLACE your downloadAndViewFile function with this version that OPENS files:
 
 const downloadAndViewFile = async (file: ProductFile) => {
-  console.log('📥 Opening file:', file.originalName);
+  console.log('📥 Downloading and opening file:', file.originalName);
   
   try {
     const token = await AsyncStorage.getItem('token');
     const downloadUrl = `${serverBackendURL}/warranty/${productId}/download/${file.filename}`;
     
-    console.log('📥 Download URL:', downloadUrl);
-    
-    // Download the file to device storage
+    // Step 1: Download the file to device storage
     const fileUri = FileSystem.documentDirectory + file.originalName;
-    console.log('📥 Saving to:', fileUri);
+    console.log('📥 Downloading to:', fileUri);
     
     const downloadResult = await FileSystem.downloadAsync(downloadUrl, fileUri, {
       headers: {
@@ -324,46 +322,41 @@ const downloadAndViewFile = async (file: ProductFile) => {
     console.log('📥 Download result:', downloadResult);
 
     if (downloadResult.status === 200) {
-      console.log('✅ Download successful, attempting to open file');
+      console.log('✅ Download successful, opening with default app');
       
-      // Method 1: Use WebBrowser for PDFs (opens in app)
-      if (file.mimeType === 'application/pdf') {
-        console.log('📖 Opening PDF in WebBrowser');
-        const { WebBrowser } = require('expo-web-browser');
-        await WebBrowser.openBrowserAsync(downloadResult.uri);
-        return;
-      }
-      
-      // Method 2: Use IntentLauncher for Android (opens with appropriate app)
       if (Platform.OS === 'android') {
-        console.log('📱 Opening with Android intent');
-        const { IntentLauncher } = require('expo-intent-launcher');
+        // For Android: Use IntentLauncher to open with default app
+        try {
+          // First, try using IntentLauncher with proper MIME type
+          const contentUri = await FileSystem.getContentUriAsync(downloadResult.uri);
+          
+          await IntentLauncher.startActivityAsync('android.intent.action.VIEW', {
+            data: contentUri,
+            type: file.mimeType,
+            flags: 1, // FLAG_GRANT_READ_URI_PERMISSION
+          });
+          
+        } catch (intentError) {
+          console.log('❌ IntentLauncher failed, falling back to sharing:', intentError);
+          // Fallback to sharing if IntentLauncher fails
+          await Sharing.shareAsync(downloadResult.uri, {
+            mimeType: file.mimeType,
+            dialogTitle: `Open ${file.originalName}`,
+          });
+        }
         
-        await IntentLauncher.startActivityAsync('android.intent.action.VIEW', {
-          data: downloadResult.uri,
-          type: file.mimeType,
-          flags: 1, // FLAG_ACTIVITY_NEW_TASK
-        });
-        return;
-      }
-      
-      // Method 3: Use Linking for iOS (opens with system app)
-      if (Platform.OS === 'ios') {
-        console.log('🍎 Opening with iOS Linking');
-        const { Linking } = require('react-native');
-        await Linking.openURL(downloadResult.uri);
-        return;
-      }
-      
-      // Fallback: Share if opening directly doesn't work
-      console.log('📤 Fallback to sharing');
-      if (await Sharing.isAvailableAsync()) {
+      } else if (Platform.OS === 'ios') {
+        // For iOS: Use Sharing with UTI (this should open with default app)
+        const uti = getUTIFromMimeType(file.mimeType);
+        
         await Sharing.shareAsync(downloadResult.uri, {
+          UTI: uti,
           mimeType: file.mimeType,
-          dialogTitle: `Open ${file.originalName}`,
         });
+        
       } else {
-        Alert.alert('Downloaded', `File downloaded: ${file.originalName}`);
+        // For other platforms (web, etc.)
+        await Sharing.shareAsync(downloadResult.uri);
       }
       
     } else {
@@ -371,31 +364,7 @@ const downloadAndViewFile = async (file: ProductFile) => {
       Alert.alert('Error', `Download failed. Status: ${downloadResult.status}`);
     }
   } catch (error) {
-    console.error('💥 Error opening file:', error);
-    Alert.alert('Error', 'Failed to open file: ' + error.message);
-  }
-};
-
-// ALTERNATIVE: Simple version using WebBrowser for all files
-const downloadAndViewFileSimple = async (file: ProductFile) => {
-  console.log('📥 Opening file with WebBrowser:', file.originalName);
-  
-  try {
-    const token = await AsyncStorage.getItem('token');
-    const downloadUrl = `${serverBackendURL}/warranty/${productId}/download/${file.filename}`;
-    
-    // For React Native, we can try opening the URL directly with WebBrowser
-    const { WebBrowser } = require('expo-web-browser');
-    
-    // Open the download URL directly in WebBrowser
-    // This will download and open the file in the browser/viewer
-    await WebBrowser.openBrowserAsync(downloadUrl, {
-      presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
-      // Add authorization headers if the browser supports it
-    });
-    
-  } catch (error) {
-    console.error('💥 Error opening file:', error);
+    console.error('💥 Error downloading/opening file:', error);
     Alert.alert('Error', 'Failed to open file: ' + error.message);
   }
 };
