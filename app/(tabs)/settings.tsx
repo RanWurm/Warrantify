@@ -55,7 +55,7 @@ const NavItem = ({ label, destination }: { label: string; destination: string })
 
 const settingsOptions: SettingOption[] = [
   { id: '1', name: 'Account', icon: 'person-outline', type: 'navigation', route: '/account' },
-  { id: '2', name: 'Notifications', icon: 'notifications-outline', type: 'toggle' },
+//   { id: '2', name: 'Notifications', icon: 'notifications-outline', type: 'toggle' },
 //   { id: '3', name: 'Privacy', icon: 'lock-closed-outline', type: 'navigation', route: '/privacy' },
 //   { id: '4', name: 'Help & Support', icon: 'help-circle-outline', type: 'navigation', route: '/helpAndSupport' },
 //   { id: '5', name: 'About', icon: 'information-circle-outline', type: 'navigation', route: '/about' },
