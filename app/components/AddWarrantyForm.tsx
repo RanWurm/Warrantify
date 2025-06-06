@@ -57,6 +57,9 @@ const AddWarrantyForm: React.FC<AddWarrantyFormProps> = ({ onClose, scannedData 
   const [expirationDate, setExpirationDate] = useState(new Date());
   const [selectedFiles, setSelectedFiles] = useState<UploadedFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [createdWarrantyId, setCreatedWarrantyId] = useState<string | null>(null);
+  const [showFileUploadOption, setShowFileUploadOption] = useState(false);
+  const [isUploadingFiles, setIsUploadingFiles] = useState(false);
   
   useEffect(() => {
     if (scannedData) {
@@ -227,6 +230,155 @@ const AddWarrantyForm: React.FC<AddWarrantyFormProps> = ({ onClose, scannedData 
     );
   };
 
+  
+  const uploadFiles = async (fileType: 'image' | 'pdf' | 'camera') => {
+  console.log('📤 Starting upload process for type:', fileType);
+  
+  try {
+    let result;
+    
+    if (fileType === 'camera') {
+      console.log('📷 Requesting camera permissions...');
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        console.log('❌ Camera permission denied');
+        Alert.alert('Permission Required', 'Camera permission is required');
+        return;
+      }
+      
+      console.log('📷 Launching camera...');
+      result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+    } else if (fileType === 'image') {
+      console.log('🖼️ Requesting photo library permissions...');
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        console.log('❌ Photo library permission denied');
+        Alert.alert('Permission Required', 'Photo library permission is required');
+        return;
+      }
+      
+      console.log('🖼️ Launching image picker...');
+      result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+        allowsMultipleSelection: true,
+      });
+    } else {
+      console.log('📄 Launching document picker...');
+      result = await DocumentPicker.getDocumentAsync({
+        type: 'application/pdf',
+        allowsMultipleSelection: true,
+        copyToCacheDirectory: true,
+      });
+    }
+
+    console.log('📋 Picker result:', result);
+
+    if (result.canceled || !result.assets) {
+      console.log('📋 User canceled or no assets selected');
+      return;
+    }
+
+    console.log('📁 Selected assets:', result.assets.length);
+    result.assets.forEach((asset, index) => {
+      console.log(`📄 Asset ${index}:`, {
+        uri: asset.uri,
+        name: asset.name,
+        type: asset.mimeType,
+        size: asset.size
+      });
+    });
+
+    setIsUploadingFiles(true);
+    const token = await AsyncStorage.getItem('token');
+    console.log('🔑 Using token for upload:', token ? 'Yes' : 'No');
+    
+    // Create FormData with proper React Native format
+    const formData = new FormData();
+
+    result.assets.forEach((asset, index) => {
+      // Use the exact format that React Native expects
+      const fileData = {
+        uri: asset.uri,
+        type: asset.mimeType || (fileType === 'pdf' ? 'application/pdf' : 'image/jpeg'),
+        name: asset.name || `${fileType}_${Date.now()}_${index}.${fileType === 'pdf' ? 'pdf' : 'jpg'}`,
+      };
+      
+      console.log(`📎 Adding file ${index} to form data:`, fileData);
+      
+      // For React Native, we need to append like this:
+      formData.append('files', fileData as any);
+    });
+
+    const uploadUrl = `${serverBackendURL}/warranty/${productId}/upload-files`;
+    console.log('🌐 Uploading to URL:', uploadUrl);
+
+    // Use fetch with proper headers for React Native
+    const response = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        // DON'T set Content-Type for multipart/form-data in React Native
+        // Let the browser/React Native set it automatically with boundary
+      },
+      body: formData,
+    });
+
+    console.log('📡 Upload response status:', response.status);
+    console.log('📡 Upload response ok:', response.ok);
+    
+    const responseText = await response.text();
+    console.log('📄 Upload response text:', responseText);
+
+    if (response.ok) {
+      const responseData = JSON.parse(responseText);
+      console.log('✅ Upload successful:', responseData);
+      Alert.alert('Success', `${result.assets.length} file(s) uploaded successfully`);
+      
+      console.log('🔄 Refreshing files list...');
+      // You'll need to call your refresh function here
+      // fetchProductFiles(); 
+    } else {
+      console.error('❌ Upload failed with status:', response.status);
+      console.error('❌ Upload error response:', responseText);
+      
+      try {
+        const errorData = JSON.parse(responseText);
+        Alert.alert('Upload Error', errorData.error || 'Failed to upload files');
+      } catch (parseError) {
+        Alert.alert('Upload Error', `Failed to upload files. Status: ${response.status}`);
+      }
+    }
+  } catch (error) {
+    console.error('💥 Upload error:', error);
+    
+    // More detailed error logging
+    if (error.message.includes('Network request failed')) {
+      console.error('🌐 Network error details:', {
+        message: error.message,
+        serverURL: serverBackendURL,
+        productId: productId
+      });
+      Alert.alert(
+        'Network Error', 
+        'Failed to connect to server. Please check:\n1. Server is running\n2. Network connection\n3. Server URL is correct'
+      );
+    } else {
+      Alert.alert('Error', 'Failed to upload files: ' + error.message);
+    }
+  } finally {
+    setIsUploadingFiles(false);
+    console.log('📤 Upload process completed');
+  }
+};
+  
   const uploadFilesToWarranty = async (warrantyId: string) => {
     if (selectedFiles.length === 0) return;
 
@@ -294,58 +446,189 @@ const AddWarrantyForm: React.FC<AddWarrantyFormProps> = ({ onClose, scannedData 
   );
 
 // CHANGED FUNCTION - handleAddWarranty (added file upload after warranty creation):
-  const handleAddWarranty = async () => {
-    console.log("AddWarrantyForm: handleAddWarranty called with formData:", formData);
+const handleAddWarranty = async () => {
+  console.log("AddWarrantyForm: handleAddWarranty called with formData:", formData);
+
+  if (!validateDate(formData.purchaseDate) || !validateDate(formData.expirationDate)) {
+    Alert.alert(
+      'Invalid Date Format',
+      'Please enter dates in YYYY-MM-DD format.'
+    );
+    return;
+  }
+
+  try {
+    const token = await AsyncStorage.getItem("token");
   
-    if (!validateDate(formData.purchaseDate) || !validateDate(formData.expirationDate)) {
+    const response = await fetch(`${serverBackendURL}/add-warranty`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(formData),
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      const warrantyId = result.warranty._id;
+      
+      // Store the warranty ID for potential file uploads
+      setCreatedWarrantyId(warrantyId);
+      
+      // Show file upload option dialog
       Alert.alert(
-        'Invalid Date Format',
-        'Please enter dates in YYYY-MM-DD format.'
+        'Warranty Created Successfully!',
+        'Would you like to add files (receipts, photos, PDFs) to this warranty?',
+        [
+          {
+            text: 'Skip',
+            style: 'cancel',
+            onPress: () => onClose(),
+          },
+          {
+            text: 'Add Files',
+            onPress: () => setShowFileUploadOption(true),
+          },
+        ]
       );
+    } else {
+      const errorData = await response.json();
+      Alert.alert('Error', errorData.error || 'Something went wrong');
+    }
+  } catch (error) {
+    console.error(error);
+    Alert.alert('Error', 'Something went wrong');
+  }
+};
+
+const uploadFilesToCreatedWarranty = async (fileType: 'image' | 'pdf' | 'camera') => {
+  if (!createdWarrantyId) {
+    Alert.alert('Error', 'No warranty found to upload files to');
+    return;
+  }
+
+  console.log('📤 Starting upload process for type:', fileType);
+  
+  try {
+    let result;
+    
+    if (fileType === 'camera') {
+      console.log('📷 Requesting camera permissions...');
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Camera permission is required');
+        return;
+      }
+      
+      result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+    } else if (fileType === 'image') {
+      console.log('🖼️ Requesting photo library permissions...');
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Photo library permission is required');
+        return;
+      }
+      
+      result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+        allowsMultipleSelection: true,
+      });
+    } else {
+      console.log('📄 Launching document picker...');
+      result = await DocumentPicker.getDocumentAsync({
+        type: 'application/pdf',
+        allowsMultipleSelection: true,
+        copyToCacheDirectory: true,
+      });
+    }
+
+    if (result.canceled || !result.assets) {
+      console.log('📋 User canceled or no assets selected');
       return;
     }
-  
-    try {
-      const token = await AsyncStorage.getItem("token");
-    
-      const response = await fetch(`${serverBackendURL}/add-warranty`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(formData),
-      });
-  
-      if (response.ok) {
-        const result = await response.json();
-        const warrantyId = result.warranty._id; // NEW: Get warranty ID
-        
-        // NEW: Upload files if any are selected
-        if (selectedFiles.length > 0) {
-          await uploadFilesToWarranty(warrantyId);
-        }
-        
-        Alert.alert(
-          'Success',
-          'Warranty added successfully!',
-          [
-            {
-              text: 'OK',
-              onPress: () => onClose(),
-            },
-          ]
-        );
-      } else {
-        const errorData = await response.json();
-        Alert.alert('Error', errorData.error || 'Something went wrong');
-      }
-    } catch (error) {
-      console.error(error);
-      Alert.alert('Error', 'Something went wrong');
-    }
-  };
 
+    setIsUploadingFiles(true);
+    const token = await AsyncStorage.getItem('token');
+    
+    // Create FormData
+    const formData = new FormData();
+    result.assets.forEach((asset, index) => {
+      const fileData = {
+        uri: asset.uri,
+        type: asset.mimeType || (fileType === 'pdf' ? 'application/pdf' : 'image/jpeg'),
+        name: asset.name || `${fileType}_${Date.now()}_${index}.${fileType === 'pdf' ? 'pdf' : 'jpg'}`,
+      };
+      formData.append('files', fileData as any);
+    });
+
+    const uploadUrl = `${serverBackendURL}/warranty/${createdWarrantyId}/upload-files`;
+    const response = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    if (response.ok) {
+      Alert.alert(
+        'Files Uploaded Successfully!',
+        `${result.assets.length} file(s) uploaded to your warranty.`,
+        [
+          {
+            text: 'Add More Files',
+            onPress: () => showPostWarrantyUploadOptions(),
+          },
+          {
+            text: 'Done',
+            onPress: () => {
+              setShowFileUploadOption(false);
+              onClose();
+            },
+          },
+        ]
+      );
+    } else {
+      const errorData = await response.json();
+      Alert.alert('Upload Error', errorData.error || 'Failed to upload files');
+    }
+  } catch (error) {
+    console.error('💥 Upload error:', error);
+    Alert.alert('Error', 'Failed to upload files: ' + error.message);
+  } finally {
+    setIsUploadingFiles(false);
+  }
+};
+
+// Show upload options for the created warranty
+const showPostWarrantyUploadOptions = () => {
+  Alert.alert(
+    'Add Files to Warranty',
+    'Choose file type to upload',
+    [
+      { text: 'Take Photo', onPress: () => uploadFilesToCreatedWarranty('camera') },
+      { text: 'Choose Image', onPress: () => uploadFilesToCreatedWarranty('image') },
+      { text: 'Choose PDF', onPress: () => uploadFilesToCreatedWarranty('pdf') },
+      { 
+        text: 'Done', 
+        style: 'cancel',
+        onPress: () => {
+          setShowFileUploadOption(false);
+          onClose();
+        }
+      },
+    ]
+  );
+};
   
   return (
     <KeyboardAvoidingView style={styles.formOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={40} >
@@ -468,23 +751,6 @@ const AddWarrantyForm: React.FC<AddWarrantyFormProps> = ({ onClose, scannedData 
                         onChange={onExpirationDateChange}
                         />
                     )}
-
-                    <View style={styles.row}>
-                        <TouchableOpacity style={styles.iconButton} onPress={pickImageFromCamera}>
-                        <Ionicons name="scan-outline" size={24} color="#555" />
-                        <Text style={styles.iconButtonText}>Scan Receipt</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity style={styles.iconButton} onPress={showReceiptOptions}>
-                        <Ionicons name="add-outline" size={24} color="#555" />
-                        <Text style={styles.iconButtonText}>Add Receipt</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity style={styles.iconButton} onPress={pickDocumentFiles}>
-                        <Ionicons name="document-attach-outline" size={24} color="#555" />
-                        <Text style={styles.iconButtonText}>Add Files</Text>
-                        </TouchableOpacity>
-                    </View>
                      {selectedFiles.length > 0 && (
                         <View style={styles.filesContainer}>
                         <Text style={styles.filesHeader}>Selected Files ({selectedFiles.length})</Text>
@@ -516,6 +782,54 @@ const AddWarrantyForm: React.FC<AddWarrantyFormProps> = ({ onClose, scannedData 
                         {isUploading ? 'Adding Warranty...' : 'Add a Warranty'}
                     </Text>
                     </TouchableOpacity>
+                    
+                    {showFileUploadOption && (
+                        <View style={styles.fileUploadModal}>
+                          <Text style={styles.fileUploadTitle}>Add Files to Your Warranty</Text>
+                          <Text style={styles.fileUploadSubtitle}>Upload receipts, photos, or documents</Text>
+                          
+                          <View style={styles.fileUploadButtons}>
+                            <TouchableOpacity 
+                              style={styles.fileUploadButton} 
+                              onPress={() => uploadFilesToCreatedWarranty('camera')}
+                              disabled={isUploadingFiles}
+                            >
+                              <Ionicons name="camera" size={24} color="#555" />
+                              <Text style={styles.fileUploadButtonText}>Take Photo</Text>
+                            </TouchableOpacity>
+                            
+                            <TouchableOpacity 
+                              style={styles.fileUploadButton} 
+                              onPress={() => uploadFilesToCreatedWarranty('image')}
+                              disabled={isUploadingFiles}
+                            >
+                              <Ionicons name="image" size={24} color="#555" />
+                              <Text style={styles.fileUploadButtonText}>Choose Image</Text>
+                            </TouchableOpacity>
+                            
+                            <TouchableOpacity 
+                              style={styles.fileUploadButton} 
+                              onPress={() => uploadFilesToCreatedWarranty('pdf')}
+                              disabled={isUploadingFiles}
+                            >
+                              <Ionicons name="document" size={24} color="#555" />
+                              <Text style={styles.fileUploadButtonText}>Choose PDF</Text>
+                            </TouchableOpacity>
+                          </View>
+                          
+                          <TouchableOpacity 
+                            style={styles.skipButton}
+                            onPress={() => {
+                              setShowFileUploadOption(false);
+                              onClose();
+                            }}
+                          >
+                            <Text style={styles.skipButtonText}>
+                              {isUploadingFiles ? 'Uploading...' : 'Skip for Now'}
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      )}
                 </View>
             </View>
         </TouchableWithoutFeedback>
@@ -702,7 +1016,68 @@ const styles = StyleSheet.create({
   addButtonDisabled: {
     backgroundColor: '#A0A0A0',
   },
-
+  fileUploadModal: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  fileUploadTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: 'white',
+    textAlign: 'center',
+    marginBottom: 8,
+    fontFamily: 'InriaSerif-Bold',
+  },
+  fileUploadSubtitle: {
+    fontSize: 14,
+    color: 'white',
+    textAlign: 'center',
+    marginBottom: 20,
+    fontFamily: 'InriaSerif-Regular',
+  },
+  fileUploadButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  fileUploadButton: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    flex: 1,
+    marginHorizontal: 5,
+  },
+  fileUploadButtonText: {
+    marginTop: 8,
+    fontSize: 12,
+    color: '#555',
+    textAlign: 'center',
+    fontFamily: 'InriaSerif-Regular',
+  },
+  skipButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: 'white',
+    borderRadius: 12,
+    padding: 12,
+    paddingHorizontal: 30,
+  },
+  skipButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+    fontFamily: 'InriaSerif-Bold',
+  },
 });
 
 export default AddWarrantyForm;
