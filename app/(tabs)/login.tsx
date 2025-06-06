@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontFamily: 'InriaSerif-Bold',
+    fontFamily: 'Times-Bold',
     color: '#4f3e2f',
     letterSpacing: 0.5,
   },
@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     maxWidth: '80%',
     lineHeight: 22,
-    fontFamily: 'InriaSerif-Bold',
+    fontFamily: 'Times',
   },
   formContainer: {
     width: '100%',
@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
-    fontFamily: 'InriaSerif-Regular',
+    fontFamily: 'Times',
 
   },
   showPasswordButton: {
@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
   showPasswordText: {
     color: '#4f3e2f',
     fontSize: 14,
-    fontFamily: 'InriaSerif-Bold',
+    fontFamily: 'Times',
   },
   forgotPassword: {
     alignSelf: 'flex-end',
@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
   forgotPasswordText: {
     color: '#4f3e2f',
     fontSize: 14,
-    fontFamily: 'InriaSerif-Bold',
+    fontFamily: 'Times-Bold',
   },
   button: {
     width: '100%',
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#fff',
     fontSize: 16,
-    fontFamily: 'InriaSerif-Bold',
+    fontFamily: 'Times-Bold',
     letterSpacing: 0.5,
   },
   signupContainer: {
@@ -260,12 +260,11 @@ const styles = StyleSheet.create({
   signupText: {
     color: '#7a6858',
     fontSize: 14,
-    fontFamily: 'InriaSerif-Regular',
-
+    fontFamily: 'Times',
   },
   signupLink: {
     color: '#4f3e2f',
     fontSize: 14,
-    fontFamily: 'InriaSerif-Bold',
+    fontFamily: 'Times-Bold',
   },
 });

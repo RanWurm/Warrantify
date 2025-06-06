@@ -22,8 +22,6 @@ import * as IntentLauncher from 'expo-intent-launcher';
 
 const serverBackendURL = Constants.expoConfig!.extra!.SERVER_BACKEND_URL;
 
-
-
 interface ProductFile {
   _id: string;
   filename: string;
@@ -691,11 +689,10 @@ const progress = isValidDate(parsedPurchaseDate) && isValidDate(parsedExpiration
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={{ flex: 1, backgroundColor:'#F5EFE6', }}
+            style={{  backgroundColor:'#E9E0D4', }}
             keyboardVerticalOffset={Platform.OS === 'ios' ? 50 : 0}>
-            <ScrollView contentContainerStyle={{ flexGrow: 1 }}   showsVerticalScrollIndicator={false}
->
-                <SafeAreaView style={styles.container}>
+            <ScrollView   contentContainerStyle={{ paddingBottom: 120 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+            <SafeAreaView style={[styles.container]}>
                     <Text style={styles.title}>Product Information</Text>
 
                     <View style={styles.iconBadge}>
@@ -864,6 +861,8 @@ const progress = isValidDate(parsedPurchaseDate) && isValidDate(parsedExpiration
                         </View>
 
                         <View style={styles.actionBox}>
+
+                          <View style={styles.actionButtonsColumn}>          
                             <TouchableOpacity 
                                 style={styles.actionBtn}
                                 onPress={() => uploadFiles('image')}
@@ -891,94 +890,141 @@ const progress = isValidDate(parsedPurchaseDate) && isValidDate(parsedExpiration
                                     <Text style={styles.actionText}>
                                         {isUploadingFiles ? 'Uploading...' : 'Add Files'}
                                     </Text>
-                                </TouchableOpacity>
-                          <View style={styles.filesSection}>
-                            <View style={styles.filesSectionHeader}>
-                                <Text style={styles.sectionLabel}>
-                                    Attached Files ({productFiles.length})
-                                </Text>
-                                {productFiles.length > 0 && (
-                                    <TouchableOpacity onPress={() => setShowFileModal(true)}>
-                                        <MaterialCommunityIcons name="eye" size={20} color="#7E8FA6" />
-                                    </TouchableOpacity>
-                                )}
-                            </View>
-                            
-                            {isLoadingFiles ? (
-                                <Text style={styles.loadingText}>Loading files...</Text>
-                            ) : productFiles.length > 0 ? (
-                                <View style={styles.filesPreview}>
-                                    {productFiles.slice(0, 2).map((file) => (
-                                        <TouchableOpacity 
-                                            key={file._id}
-                                            style={styles.filePreviewItem}
-                                            onPress={() => downloadAndViewFile(file)}
-                                        >
-                                            <MaterialCommunityIcons 
-                                                name={file.mimeType.startsWith('image/') ? 'image' : 'file-pdf-box'}
-                                                size={16} 
-                                                color="#7E8FA6" 
-                                            />
-                                            <Text style={styles.filePreviewName} numberOfLines={1}>
-                                                {file.originalName}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    ))}
-                                    {productFiles.length > 2 && (
-                                        <TouchableOpacity 
-                                            style={styles.moreFilesButton}
-                                            onPress={() => setShowFileModal(true)}
-                                        >
-                                            <Text style={styles.moreFilesText}>
-                                                +{productFiles.length - 2} more
-                                            </Text>
+                            </TouchableOpacity>
+
+                          </View>
+
+                           {productFiles.length > 0 && (
+                                <TouchableOpacity
+                                    style={[styles.inlineDeleteBtn, isOnMarket && { backgroundColor: 'gray' }]}
+                                    onPress={() => {
+                                    if (isOnMarket) {
+                                        Alert.alert('Cannot Delete', 'This product is listed in the marketplace.');
+                                        return;
+                                    }
+                                    Alert.alert(
+                                        'Delete Warranty',
+                                        'Are you sure you want to delete this warranty?',
+                                        [
+                                        { text: 'Cancel', style: 'cancel' },
+                                        {
+                                            text: 'Delete',
+                                            style: 'destructive',
+                                            onPress: async () => {
+                                            try {
+                                                const token = await AsyncStorage.getItem('token');
+                                                await axios.delete(`${serverBackendURL}/delete-warranty/${productId}`, {
+                                                headers: { Authorization: `Bearer ${token}` },
+                                                });
+                                                alert('Warranty deleted successfully!');
+                                                router.replace('/myWarranties');
+                                            } catch (err) {
+                                                console.error('❌ Failed to delete:', err);
+                                                alert('Failed to delete warranty.');
+                                            }
+                                            },
+                                        },
+                                        ]
+                                    );
+                                    }}
+                                >
+                                    <Text style={styles.inlineDeleteBtnText}>
+                                    {isOnMarket ? 'Listed in Marketplace' : 'Delete Warranty'}
+                                    </Text>
+                                </TouchableOpacity>   
+                           )}
+                        </View>
+
+                        <View style={productFiles.length > 0 ? styles.filesSection : styles.filesSectionNofiles}>
+                                <View style={styles.filesSectionHeader}>
+                                    <Text style={styles.sectionLabel}>
+                                        Attached Files ({productFiles.length})
+                                    </Text>
+                                    {productFiles.length > 0 && (
+                                        <TouchableOpacity onPress={() => setShowFileModal(true)}>
+                                            <MaterialCommunityIcons name="eye" size={20} color="#7E8FA6" />
                                         </TouchableOpacity>
                                     )}
                                 </View>
-                            ) : (
-                                <Text style={styles.noFilesText}>No files attached</Text>
-                            )}
-                        </View>
-                        </View>
+                                
+                                {isLoadingFiles ? (
+                                    <Text style={styles.loadingText}>Loading files...</Text>
+                                ) : productFiles.length > 0 ? (
+                                    <View style={styles.filesPreview}>
+                                        {productFiles.slice(0, 2).map((file) => (
+                                            <TouchableOpacity 
+                                                key={file._id}
+                                                style={styles.filePreviewItem}
+                                                onPress={() => downloadAndViewFile(file)}
+                                            >
+                                                <MaterialCommunityIcons 
+                                                    name={file.mimeType.startsWith('image/') ? 'image' : 'file-pdf-box'}
+                                                    size={16} 
+                                                    color="#7E8FA6" 
+                                                />
+                                                <Text style={styles.filePreviewName} numberOfLines={1}>
+                                                    {file.originalName}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                        {productFiles.length > 2 && (
+                                            <TouchableOpacity 
+                                                style={styles.moreFilesButton}
+                                                onPress={() => setShowFileModal(true)}
+                                            >
+                                                <Text style={styles.moreFilesText}>
+                                                    +{productFiles.length - 2} more
+                                                </Text>
+                                            </TouchableOpacity>
+                                        )}
+                                    </View>
+                                ) : (
+                                    <Text style={styles.noFilesText}>No files attached</Text>
+                                )}
 
-                        <TouchableOpacity
-                            style={[styles.deleteBtn, isOnMarket && { backgroundColor: 'gray' }]}
-                            onPress={() => {
-                                if (isOnMarket) {
-                                Alert.alert('Cannot Delete', 'This product is listed in the marketplace.');
-                                return;
-                                }
+                        
+                        </View>
+                         
+                         {productFiles.length == 0 && (           
+                            <TouchableOpacity
+                                style={[styles.deleteBtn, isOnMarket && { backgroundColor: 'gray' }]}
+                                onPress={() => {
+                                    if (isOnMarket) {
+                                    Alert.alert('Cannot Delete', 'This product is listed in the marketplace.');
+                                    return;
+                                    }
 
-                                Alert.alert(
-                                'Delete Warranty',
-                                'Are you sure you want to delete this warranty?',
-                                [
-                                    { text: 'Cancel', style: 'cancel' },
-                                    {
-                                    text: 'Delete',
-                                    style: 'destructive',
-                                    onPress: async () => {
-                                        try {
-                                        const token = await AsyncStorage.getItem('token');
-                                        await axios.delete(`${serverBackendURL}/delete-warranty/${productId}`, {
-                                            headers: { Authorization: `Bearer ${token}` },
-                                        });
-                                        alert('Warranty deleted successfully!');
-                                        router.replace('/myWarranties');
-                                        } catch (err) {
-                                        console.error('❌ Failed to delete:', err);
-                                        alert('Failed to delete warranty.');
-                                        }
-                                    },
-                                    },
-                                ]
-                                );
-                            }}
-                            >
-                            <Text style={styles.deleteBtnText}>
-                                {isOnMarket ? 'Listed in Marketplace' : 'Delete Warranty'}
-                            </Text>
-                        </TouchableOpacity>
+                                    Alert.alert(
+                                    'Delete Warranty',
+                                    'Are you sure you want to delete this warranty?',
+                                    [
+                                        { text: 'Cancel', style: 'cancel' },
+                                        {
+                                        text: 'Delete',
+                                        style: 'destructive',
+                                        onPress: async () => {
+                                            try {
+                                            const token = await AsyncStorage.getItem('token');
+                                            await axios.delete(`${serverBackendURL}/delete-warranty/${productId}`, {
+                                                headers: { Authorization: `Bearer ${token}` },
+                                            });
+                                            alert('Warranty deleted successfully!');
+                                            router.replace('/myWarranties');
+                                            } catch (err) {
+                                            console.error('❌ Failed to delete:', err);
+                                            alert('Failed to delete warranty.');
+                                            }
+                                        },
+                                        },
+                                    ]
+                                    );
+                                }}
+                                >
+                                <Text style={styles.deleteBtnText}>
+                                    {isOnMarket ? 'Listed in Marketplace' : 'Delete Warranty'}
+                                </Text>
+                            </TouchableOpacity>
+                         )}
 
                     </View>
                 </SafeAreaView>
@@ -1033,7 +1079,7 @@ const progress = isValidDate(parsedPurchaseDate) && isValidDate(parsedExpiration
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    // flex: 1,
     backgroundColor: '#E9E0D4',
     padding: Platform.OS === 'android' ? 12 : 16,
     paddingTop: Platform.OS === 'android' ? 15 : 0,
@@ -1177,10 +1223,14 @@ const styles = StyleSheet.create({
   },
 
   actionBox: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: 'column',
+    // justifyContent: 'space-around',
     marginTop: Platform.OS === 'android' ? 15 : 20,
   },
+  actionButtonsColumn: {
+  flexDirection: 'row',
+  gap: 8,
+},
 
   actionBtn: {
     alignItems: 'center',
@@ -1260,12 +1310,12 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: '#E9E0D4',
-    height: Platform.OS === 'android' ? 75 : 90,
+    height: Platform.OS === 'android' ? 75 : 70,
   },
 
   bottomNavWrapper: {
     position: 'absolute',
-    top: Platform.OS === 'android' ? -15 : -10,
+    top: Platform.OS === 'android' ? -15 : 0,
     left: 0,
     right: 0,
   },
@@ -1273,7 +1323,7 @@ const styles = StyleSheet.create({
   deleteBtn: {
     backgroundColor: '#AF6F6F',
     padding: Platform.OS === 'android' ? 10 : 12,
-    marginTop: Platform.OS === 'android' ? 15 : 20,
+    marginTop: Platform.OS === 'android' ? 15 : 0,
     borderRadius: 12,
     alignItems: 'center',
     width: '94%',
@@ -1285,9 +1335,33 @@ const styles = StyleSheet.create({
     fontSize: Platform.OS === 'android' ? 14 : 16,
     fontFamily: 'InriaSerif-Bold',
   },
+
+  inlineDeleteBtn: {
+  backgroundColor: '#AF6F6F',
+  paddingVertical: 10,
+  paddingHorizontal: 15,
+  borderRadius: 8,
+  marginTop: 12,
+  alignSelf: 'flex-start', // makes it left-aligned within the flex row
+  marginLeft: Platform.OS === 'android' ? 0 : '8%',
+
+},
+
+inlineDeleteBtnText: {
+  color: '#fff',
+  fontSize: 13,
+  fontFamily: 'InriaSerif-Bold',
+},
+
   filesSection: {
-    marginTop: Platform.OS === 'android' ? 15 : 20,
+    marginTop: Platform.OS === 'android' ? 15 : -95,
+    marginBottom: Platform.OS === 'android' ? 10 : 25,
+    marginLeft: Platform.OS === 'android' ? 0 : 175,
+  },
+  filesSectionNofiles: {
+    marginTop: Platform.OS === 'android' ? 15 : -50,
     marginBottom: Platform.OS === 'android' ? 10 : 15,
+    marginLeft: Platform.OS === 'android' ? 0 : 180,
   },
   filesSectionHeader: {
     flexDirection: 'row',

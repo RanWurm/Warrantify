@@ -789,7 +789,7 @@ const styles = StyleSheet.create({
   },
   bottomNavContainer: {
     position: 'absolute',
-    bottom: Platform.OS === 'android' ? 20 : 0, // Move up 20px on Android
+    bottom: Platform.OS === 'android' ? 20 : 10, // Move up 20px on Android
     left: 0,
     right: 0,
   },

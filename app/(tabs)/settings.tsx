@@ -56,9 +56,9 @@ const NavItem = ({ label, destination }: { label: string; destination: string })
 const settingsOptions: SettingOption[] = [
   { id: '1', name: 'Account', icon: 'person-outline', type: 'navigation', route: '/account' },
   { id: '2', name: 'Notifications', icon: 'notifications-outline', type: 'toggle' },
-  { id: '3', name: 'Privacy', icon: 'lock-closed-outline', type: 'navigation', route: '/privacy' },
-  { id: '4', name: 'Help & Support', icon: 'help-circle-outline', type: 'navigation', route: '/helpAndSupport' },
-  { id: '5', name: 'About', icon: 'information-circle-outline', type: 'navigation', route: '/about' },
+//   { id: '3', name: 'Privacy', icon: 'lock-closed-outline', type: 'navigation', route: '/privacy' },
+//   { id: '4', name: 'Help & Support', icon: 'help-circle-outline', type: 'navigation', route: '/helpAndSupport' },
+//   { id: '5', name: 'About', icon: 'information-circle-outline', type: 'navigation', route: '/about' },
   { id: '6', name: 'Logout', icon: 'log-out-outline', type: 'navigation' }, // Removed route since it's handled separately
 ];
 
@@ -406,7 +406,7 @@ columnsContainer: {
   },
 bottomNavContainer: {
   position: 'absolute',
-  bottom: Platform.OS === 'android' ? 20 : 0, // Move up 20px on Android
+  bottom: Platform.OS === 'android' ? 20 : 10, // Move up 20px on Android
   left: 0,
   right: 0,
   backgroundColor: '#E9E0D4', // Hide content underneath

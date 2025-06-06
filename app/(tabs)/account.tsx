@@ -1,7 +1,7 @@
 // app/(tabs)/account.tsx
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ActivityIndicator, ScrollView, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ActivityIndicator, ScrollView, useWindowDimensions, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFonts } from 'expo-font';
 import { Stack, useRouter } from 'expo-router';
@@ -10,8 +10,13 @@ import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
+import BottomNavBar from '../components/BottomNavBar';
+
 
 const serverBackendURL = Constants.expoConfig!.extra!.SERVER_BACKEND_URL;
+
+const isWeb = Platform.OS === 'web';
+
 
 export default function Account() {
   const [fontsLoaded] = useFonts({
@@ -321,6 +326,11 @@ export default function Account() {
           <Text style={[styles.signOutText, { fontSize: buttonFontSize }]}>Sign Out</Text>
         </TouchableOpacity>
       </ScrollView>
+      {!isWeb && (
+            <View style={styles.bottomNavContainer}>
+                <BottomNavBar />
+            </View>
+        )}
     </>
   );
 }
@@ -360,7 +370,7 @@ const styles = StyleSheet.create({
   title: {
     fontWeight: 'bold',
     fontFamily: 'InriaSerif-Bold',
-    marginBottom: 20,
+    marginBottom: 0,
   },
   inputContainer: {
     width: '100%',
@@ -380,13 +390,15 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
+    fontFamily: 'InriaSerif-Regular',
+
   },
   button: {
-    backgroundColor: '#000',
+    backgroundColor: '#859978',
     padding: 15,
     borderRadius: 12,
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: 10,
     width: '100%',
     flexDirection: 'row',
     justifyContent: 'center',
@@ -396,7 +408,7 @@ const styles = StyleSheet.create({
     fontFamily: 'InriaSerif-Bold',
   },
   signOutButton: {
-    backgroundColor: '#FF3B30',
+    backgroundColor: '#AF6F6F',
     padding: 15,
     borderRadius: 12,
     alignItems: 'center',
@@ -410,4 +422,12 @@ const styles = StyleSheet.create({
     fontFamily: 'InriaSerif-Bold',
     marginLeft: 8,
   },
+  bottomNavContainer: {
+  position: 'absolute',
+  bottom: Platform.OS === 'android' ? 20 : 10, // Move up 20px on Android
+  left: 0,
+  right: 0,
+  backgroundColor: '#E9E0D4', // Hide content underneath
+  paddingTop: Platform.OS === 'android' ? 10 : 0, // Add padding above nav bar
+},
 });
