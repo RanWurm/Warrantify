@@ -1,3 +1,4 @@
+// Updated MyServiceCenters.tsx
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -7,38 +8,17 @@ import {
   SafeAreaView,
   ActivityIndicator,
   Platform,
+  RefreshControl,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
-import Constants from 'expo-constants';
 import * as Location from 'expo-location';
 import ServiceCenterCard from '../components/serviceCenterCard';
 import { useNavigation } from 'expo-router';
 import { useLayoutEffect } from 'react';
 import BottomNavBar from '../components/BottomNavBar';
 import GoogleMapView from '../components/WebMap';
+import serviceCentersCache, { LocatedCenter } from '../../services/serviceCentersCache';
 
-const serverBackendURL =
-  Constants.expoConfig?.extra?.SERVER_BACKEND_URL ||
-  (Constants as any).manifest?.extra?.SERVER_BACKEND_URL;
-const googleApiKey = 'AIzaSyCn-qqKYulPv-Ken38MtqimNa1AiJFluic';
 const isWeb = Platform.OS === 'web';
-const STORAGE_KEY = 'cachedServiceCenters';
-
-interface Warranty {
-  serviceCenter?: string;
-}
-
-interface LocatedCenter {
-  name: string;
-  address: string;
-  latitude: number;
-  longitude: number;
-  phone?: string;
-  isOpen?: boolean;
-  closeTime?: string;
-  distanceKm?: number;
-}
 
 const MyServiceCenters: React.FC = () => {
   const navigation = useNavigation();
@@ -48,142 +28,143 @@ const MyServiceCenters: React.FC = () => {
 
   const [centers, setCenters] = useState<LocatedCenter[]>([]);
   const [loading, setLoading] = useState(true);
-  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(
-    null
-  );
+  const [refreshing, setRefreshing] = useState(false);
+  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 
-  // 1. Load cached centers on mount
-  useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY).then((cached) => {
-      if (cached) {
-        setCenters(JSON.parse(cached));
-        setLoading(false);
-      }
-    });
-  }, []);
-
-  // 2. Always fetch fresh data in background
-  useEffect(() => {
-    const fetchAndCache = async () => {
-      setLoading(true);
-      try {
-        // Location
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') throw new Error('Location permission denied');
-        const { coords } = await Location.getCurrentPositionAsync({});
+  // Get location for map
+  const getUserLocation = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === 'granted') {
+        const { coords } = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+          timeout: 5000,
+        });
         setLocation({ latitude: coords.latitude, longitude: coords.longitude });
+      }
+    } catch (error) {
+      console.warn('Failed to get location for map:', error);
+    }
+  };
 
-        // Warranties
-        const token = await AsyncStorage.getItem('token');
-        const { data } = await axios.post(`${serverBackendURL}/user-warranties`, { token });
-        const warranties: Warranty[] = data.data;
-        const seen = new Set<string>();
-        const unique = warranties
-          .map((w) => w.serviceCenter);
-
-        // Parallel geocode + details
-        const fresh: LocatedCenter[] = (
-          await Promise.all(
-            unique.map(async (name) => {
-              const locRes = await fetch(
-                `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(
-                  name
-                )}&location=${coords.latitude},${coords.longitude}&radius=15000&key=${googleApiKey}`
-              ).then((r) => r.json());
-              if (!locRes.results?.length) return null;
-              const [best] = locRes.results.sort(
-                (a: any, b: any) =>
-                  Math.hypot(a.geometry.location.lat - coords.latitude, a.geometry.location.lng - coords.longitude) -
-                  Math.hypot(b.geometry.location.lat - coords.latitude, b.geometry.location.lng - coords.longitude)
-              );
-              const details = await fetch(
-                `https://maps.googleapis.com/maps/api/place/details/json?place_id=${best.place_id}&key=${googleApiKey}`
-              ).then((r) => r.json());
-
-              return {
-                name,
-                address: best.formatted_address || best.vicinity || 'Unknown',
-                latitude: best.geometry.location.lat,
-                longitude: best.geometry.location.lng,
-                phone: details.result.formatted_phone_number,
-                isOpen: details.result.opening_hours?.open_now,
-                closeTime: details.result.opening_hours?.periods?.[0]?.close?.time,
-                distanceKm: Math.round(
-                  10 *
-                    Math.hypot(
-                      best.geometry.location.lat - coords.latitude,
-                      best.geometry.location.lng - coords.longitude
-                    ) *
-                    111
-                ) / 10,
-              };
-            })
-          )
-        ).filter((c): c is LocatedCenter => !!c);
-
-    // Deduplicate using normalized name + coordinates
-      const uniqueMap = new Map<string, LocatedCenter>();
-      for (const c of fresh) {
-        const normalizedName = c.name.trim().toLowerCase().replace(/\s+/g, '');
-        const coordKey = `${normalizedName}::${c.latitude.toFixed(4)}:${c.longitude.toFixed(4)}`;
-        if (!uniqueMap.has(coordKey)) {
-          uniqueMap.set(coordKey, c);
-        }
+  // Load service centers
+  const loadServiceCenters = async (forceRefresh = false) => {
+    try {
+      if (forceRefresh) {
+        setRefreshing(true);
+        await serviceCentersCache.refreshCache();
+      } else {
+        setLoading(true);
       }
 
-      const uniqueCenters = Array.from(uniqueMap.values());
+      // Get cached data immediately
+      const cachedCenters = await serviceCentersCache.getCachedServiceCenters();
+      setCenters(cachedCenters);
 
-      setCenters(uniqueCenters);
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(uniqueCenters));
-
-      } catch (err) {
-        console.error('Error loading centers:', err);
-      } finally {
-        setLoading(false);
+      // If we don't have cached data or it's a force refresh, trigger preload
+      if (cachedCenters.length === 0 || forceRefresh) {
+        await serviceCentersCache.preloadServiceCenters();
+        const freshCenters = await serviceCentersCache.getCachedServiceCenters();
+        setCenters(freshCenters);
       }
+
+    } catch (error) {
+      console.error('Error loading service centers:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  // Initial load
+  useEffect(() => {
+    const initializeScreen = async () => {
+      await Promise.all([
+        loadServiceCenters(),
+        getUserLocation(),
+      ]);
     };
 
-    fetchAndCache();
+    initializeScreen();
   }, []);
 
-  if (loading || !location) {
+  // Pull to refresh handler
+  const onRefresh = () => {
+    loadServiceCenters(true);
+  };
+
+  // Loading state
+  if (loading && centers.length === 0) {
     return (
-      <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color="#4f3e2f" />
-      </View>
+      <SafeAreaView style={styles.container}>
+        <Text style={styles.title}>My Service Centers</Text>
+        <View style={styles.loaderContainer}>
+          <ActivityIndicator size="large" color="#4f3e2f" />
+          <Text style={styles.loadingText}>Loading service centers...</Text>
+        </View>
+        {!isWeb && (
+          <View style={styles.bottomNavContainer}>
+            <BottomNavBar />
+          </View>
+        )}
+      </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>My Service Centers</Text>
-      <View style={styles.mapWrapper}>
-        <GoogleMapView center={location} markers={centers} />
-      </View>
-      <ScrollView contentContainerStyle={styles.content}>
-        {centers.map((c, i) => (
-          <ServiceCenterCard
-            key={i}
-            name={c.name}
-            city={c.address}
-            address={c.address}
-            notes={
-              c.isOpen !== undefined
-                ? c.isOpen
-                  ? `Open now, closes at ${c.closeTime?.slice(0, 2)}:${c.closeTime?.slice(2)}`
-                  : 'Closed now'
-                : ''
-            }
-            phone={c.phone}
-            distance={c.distanceKm}
+      
+      {location && (
+        <View style={styles.mapWrapper}>
+          <GoogleMapView center={location} markers={centers} />
+        </View>
+      )}
+      
+      <ScrollView 
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#4f3e2f']}
+            tintColor="#4f3e2f"
           />
-        ))}
+        }
+      >
+        {centers.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No service centers found</Text>
+            <Text style={styles.emptySubtext}>
+              Pull down to refresh or check your warranties
+            </Text>
+          </View>
+        ) : (
+          centers.map((center, index) => (
+            <ServiceCenterCard
+              key={`${center.name}-${center.latitude}-${index}`}
+              name={center.name}
+              city={center.address}
+              address={center.address}
+              notes={
+                center.isOpen !== undefined
+                  ? center.isOpen
+                    ? `Open now${center.closeTime ? `, closes at ${center.closeTime.slice(0, 2)}:${center.closeTime.slice(2)}` : ''}`
+                    : 'Closed now'
+                  : ''
+              }
+              phone={center.phone}
+              distance={center.distanceKm}
+            />
+          ))
+        )}
       </ScrollView>
+      
       {!isWeb && (
-  <View style={styles.bottomNavContainer}>
-    <BottomNavBar />
-  </View>
-)}
+        <View style={styles.bottomNavContainer}>
+          <BottomNavBar />
+        </View>
+      )}
     </SafeAreaView>
   );
 };
@@ -192,19 +173,29 @@ export default MyServiceCenters;
 
 const styles = StyleSheet.create({
   container: { 
-  flex: 1, 
-  backgroundColor: '#E9E0D4',
-  paddingTop: Platform.OS === 'android' ? 20 : 0, // Less top padding on Android
-},
-
-  loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    flex: 1, 
+    backgroundColor: '#E9E0D4',
+    paddingTop: Platform.OS === 'android' ? 20 : 0,
+  },
+  loaderContainer: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#4f3e2f',
+    fontFamily: 'InriaSerif-Regular',
+  },
   title: {
-  fontSize: 28,
-  fontFamily: 'InriaSerif-Bold',
-  textAlign: 'center',
-  marginVertical: Platform.OS === 'android' ? 8 : 10, // Less margin on Android
-  color: '#000',
-},
+    fontSize: 28,
+    fontFamily: 'InriaSerif-Bold',
+    textAlign: 'center',
+    marginVertical: Platform.OS === 'android' ? 8 : 10,
+    color: '#000',
+  },
   mapWrapper: {
     height: '28%',
     borderRadius: 15,
@@ -218,17 +209,46 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     shadowOffset: { width: 0, height: 2 },
   },
-  content: { paddingBottom: 80 },
+  content: { 
+    paddingBottom: Platform.OS === 'android' ? 100 : 80,
+    flexGrow: 1,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+    paddingTop: 60,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontFamily: 'InriaSerif-Bold',
+    color: '#4f3e2f',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    fontFamily: 'InriaSerif-Regular',
+    color: '#666',
+    textAlign: 'center',
+  },
   bottomNavContainer: {
-  position: 'absolute',
-  bottom: Platform.OS === 'android' ? 20 : 10, // Move up 20px on Android
-  left: 0,
-  right: 0,
-  backgroundColor: '#E9E0D4', // Hide content underneath
-  paddingTop: Platform.OS === 'android' ? 10: 0, // Add padding above nav bar
-},
-scrollViewStyle: {
-  flex: 1,
-  marginBottom: Platform.OS === 'android' ? 80 : 0, // Space for bottom nav on Android
-},
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#E9E0D4',
+    paddingBottom: Platform.OS === 'android' ? 25 : 10,
+    paddingTop: 0,
+    elevation: 10, // Android shadow
+    shadowColor: '#000', // iOS shadow
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: -2 },
+  },
+  scrollViewStyle: {
+    flex: 1,
+    marginBottom: Platform.OS === 'android' ? 80 : 0,
+  },
 });
