@@ -686,13 +686,16 @@ const progress = isValidDate(parsedPurchaseDate) && isValidDate(parsedExpiration
 
   return (
 
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={{  backgroundColor:'#E9E0D4', }}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 50 : 0}>
-            <ScrollView   contentContainerStyle={{ paddingBottom: 120 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-            <SafeAreaView style={[styles.container]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor:'#E9E0D4' }}>
+        <ScrollView 
+            contentContainerStyle={{ paddingBottom: Platform.OS === 'web' ? 20 : 120 }}
+            keyboardShouldPersistTaps="handled" 
+            showsVerticalScrollIndicator={false}
+            removeClippedSubviews={false}
+            scrollEventThrottle={16}
+        >
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View style={styles.container}>
                     <Text style={styles.title}>Product Information</Text>
 
                     <View style={styles.iconBadge}>
@@ -1027,10 +1030,11 @@ const progress = isValidDate(parsedPurchaseDate) && isValidDate(parsedExpiration
                          )}
 
                     </View>
-                </SafeAreaView>
-            </ScrollView>
+                </View>
+            </TouchableWithoutFeedback>
+        </ScrollView>
 
-            {!isWeb ? (
+        {!isWeb ? (
       <View style={styles.bottomNavContainer}>
         <View style={styles.bottomNavWrapper}>
           <BottomNavBar />
@@ -1071,9 +1075,8 @@ const progress = isValidDate(parsedPurchaseDate) && isValidDate(parsedExpiration
                                 </TouchableOpacity>
                             </View>
                         </SafeAreaView>
-                    </Modal>
-        </KeyboardAvoidingView>
-    </TouchableWithoutFeedback>
+                   </Modal>
+    </SafeAreaView>
   );
 };
 
