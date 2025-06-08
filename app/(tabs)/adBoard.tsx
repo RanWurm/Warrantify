@@ -1,6 +1,5 @@
-// app/(tabs)/adBoard.tsx
-
-import React, { useEffect, useState, useCallback } from 'react';
+// Optimized app/(tabs)/adBoard.tsx
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -13,411 +12,148 @@ import {
   RefreshControl,
   TouchableOpacity, 
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
 import BottomNavBar from '../components/BottomNavBar';
 import SearchBar from '../components/SearchBar'; 
 import Constants from 'expo-constants';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { BarChart } from 'react-native-chart-kit';
-
+import adBoardCacheService, { 
+  CombinedAd, 
+  RealAd, 
+  RecommendedAd, 
+  TopProductsData 
+} from '../../services/adBoardCacheService';
 
 const pythonBackendURL = Constants.expoConfig!.extra!.PYTHON_BACKEND_URL;
-const serverBackendURL = Constants.expoConfig!.extra!.SERVER_BACKEND_URL;
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = width * 0.9;
 const isWeb = Platform.OS === 'web';
 
-
-// Map product names (or keywords) to MaterialCommunityIcons names:
-const productIconMap: Record<string, string> = {
-  monitor: 'monitor',
-    tablet: 'tablet',
-    coffemachine: 'coffee',
-    headphones: 'headphones',
-    earphones: 'headphones',
-    ipad: 'tablet',
-    laptop: 'laptop',
-    iphone: 'cellphone',
-    android: 'cellphone',
-    charger: 'power-plug',
-    vacuum: 'robot-vacuum',
-    television: 'television-classic',
-    hairdryer: 'hair-dryer',
-    microwave: 'microwave',
-    oven: 'stove',
-    toaster: 'toaster',
-    blender: 'blender',
-    kettle: 'kettle',
-    fridge: 'fridge-outline',
-    freezer: 'snowflake',
-    dishwasher: 'dishwasher',
-    washingmachine: 'washing-machine',
-    dryer: 'tumble-dryer',
-    fan: 'fan',
-    airconditioner: 'air-conditioner',
-    airpurifier: 'air-filter',
-    printer: 'printer',
-    scanner: 'scanner',
-    router: 'router-wireless',
-    smartwatch: 'watch-variant',
-    camera: 'camera',
-    drone: 'drone',
-    speaker: 'speaker',
-    soundbar: 'soundbar',
-    projector: 'projector',
-    lightbulb: 'lightbulb',
-    electricshaver: 'razor-electric',
-    straightener: 'hair-straightener',
-    iron: 'iron',
-    heater: 'radiator',
-    powerbank: 'battery-charging',
-    ups: 'battery-high',
-    smartwatchcharger: 'watch-variant',
-    stylus: 'pen',
-    gameconsole: 'gamepad-variant',
-    controller: 'controller',
-    electricbike: 'bike-electric',
-    scooter: 'scooter-electric',
-    treadmill: 'treadmill',
-    humidifier: 'air-humidifier',
-    dehumidifier: 'air-humidifier-off'
-};
-
-function getIconName(productName: string) {
-  const normalized = productName.toLowerCase().replace(/\s+/g, '');
-
-     //  Fuzzy alias checks (before strict productMap match)
-    if (normalized.includes('refrigerator') || normalized.includes('fridge')) return 'fridge-outline';
-    if (normalized.includes('television') || normalized.includes('tv')) return 'television-classic';
-    if (normalized.includes('macbook') || normalized.includes('mac') || normalized.includes('applelaptop')) return 'laptop';
-    if (normalized.includes('ice') && normalized.includes('maker')) return 'snowflake';
-    if (normalized.includes('coffee') || normalized.includes('coffe')) return 'coffee';
-    if (normalized.includes('playstation') || normalized.includes('ps5') || normalized.includes('ps4') || normalized.includes('ps')) return 'gamepad-variant';
-    if (normalized.includes('airpods') || normalized.includes('pods')) return 'headphones';
-    if (normalized.includes('smarttv') || normalized.includes('androidtv')) return 'television-classic';
-    if (normalized.includes('smartwatch') || normalized.includes('fitbit') || normalized.includes('watch')) return 'watch-variant';
-    if (normalized.includes('earbuds') || normalized.includes('in-ear')) return 'headphones';
-    if (normalized.includes('soundbar')) return 'soundbar';
-    if (normalized.includes('xbox')) return 'controller';
-    if (normalized.includes('lightbulb') || normalized.includes('light') || normalized.includes('bulb') || normalized.includes('hue')) return 'lightbulb';
-    if (normalized.includes('switch')) return 'gamepad-variant';
-    
-
-    if (productIconMap[normalized]) return productIconMap[normalized];
-  
-    const key = Object.keys(productIconMap).find(k => productName.toLowerCase().includes(k.toLowerCase())
-  );
-  return key ? productIconMap[key] : 'devices';
-}
-
-interface RealAd {
-  _id: string;
-  productName: string;   // top‐level product name
-  city: string;
-  description: string;
-  salePrice: number;
-}
-
-interface RecommendedAd {
-  title: string;
-  iconName: string;
-}
-
-function capitalize(str: string): string {
-  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-}
-
-type CombinedAd = RealAd | (RecommendedAd & { monetized: true });
-
-const CACHE_KEY = 'cachedRecommendations';
-const CACHE_EXPIRY = 1000 * 60 * 60; // 1 hour
-
-export default function MonetizedAdsIntegration() {
+export default function OptimizedAdBoard() {
+  // State management
   const [combinedAds, setCombinedAds] = useState<CombinedAd[]>([]);
-  const [filteredAds, setFilteredAds] = useState<CombinedAd[]>([]); 
+  const [topProducts, setTopProducts] = useState<TopProductsData>({ labels: [], values: [] });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState<string>(''); 
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
-  // for the top-5 chart:
-  const [topLabels, setTopLabels] = useState<string[]>([]);
-  const [topValues, setTopValues] = useState<number[]>([])
+  // Memoized filtered ads to avoid recalculation on every render
+  const filteredAds = useMemo(() => {
+    return adBoardCacheService.filterAds(combinedAds, searchQuery);
+  }, [combinedAds, searchQuery]);
 
-  const fetchRealAds = async (): Promise<RealAd[]> => {
-    const resp = await axios.get(`${serverBackendURL}/ad-board/page/1`);
-    return resp.data.ads as RealAd[];
+  // Load ad board data
+  const loadAdBoardData = async (forceRefresh = false) => {
+    try {
+      if (forceRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+
+      // Get cached data first for instant loading
+      if (!forceRefresh) {
+        const cached = await adBoardCacheService.getCachedData();
+        if (cached) {
+          setCombinedAds(cached.combinedAds);
+          setTopProducts(cached.topProducts);
+          setLoading(false);
+        }
+      }
+
+      // Get fresh data (will use cache if valid, or fetch fresh)
+      const data = forceRefresh 
+        ? await adBoardCacheService.refreshCache()
+        : await adBoardCacheService.preloadAdBoard();
+
+      setCombinedAds(data.combinedAds);
+      setTopProducts(data.topProducts);
+      setError(null);
+
+    } catch (err) {
+      console.error('Error loading ad board data:', err);
+      setError('Failed to load ads. Please try again later.');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   };
 
-const fetchRecommendedAds = useCallback(async (): Promise<RecommendedAd[]> => {
-    console.log('fetchRecommendedAds function started');
-
-    const token = await AsyncStorage.getItem('token');
-    const userId = (await axios.post(
-        `${serverBackendURL}/userdata`,
-        { token }
-    )).data.data.id;
-
-    console.log('User ID:', userId);
-
-    const cached = await AsyncStorage.getItem(CACHE_KEY);
-//     if (cached) {
-//         const { timestamp, recommendations } = JSON.parse(cached);
-//         if (Date.now() - timestamp < CACHE_EXPIRY) {
-//         console.log("🐋 Recommendations:\n" + JSON.stringify(recommendations, null, 2));
-//         return recommendations; 
-//         }
-//   }
-
-  const warranties = (await axios.post(
-    `${serverBackendURL}/user-warranties`,
-    { token }
-  )).data.data;
-  
-  const rawRecs = (await axios.post(
-    `${pythonBackendURL}/get_recommendation`,
-    { products: warranties, event_type: 'purchase', user_id: Number(userId) }
-  )).data.recommendations || [];
-
-    console.log("recommended ads fetched: " + rawRecs);
-
-    const mapped = rawRecs.map((rec: any) => {
-        const category = rec.category_code?.split('.').pop() || 'product';
-        return {
-            title: capitalize(category),  // Use this for search
-            productName: capitalize(category),
-            brand: capitalize(rec.brand || 'Unknown'),
-            iconName: rec.iconName || 'ad',
-        };
-    });
-
-    await AsyncStorage.setItem(
-      CACHE_KEY,
-      JSON.stringify({ timestamp: Date.now(), recommendations: mapped })
-    );
-
-    return mapped;
+  // Initial load
+  useEffect(() => {
+    loadAdBoardData();
   }, []);
 
-  const combineAds = (real: RealAd[], recs: RecommendedAd[]): CombinedAd[] => {
-    const out: CombinedAd[] = [];
-    let ri = 0;
-    for (let i = 0; i < real.length; i++) {
-      out.push(real[i]);
-      if ((i + 1) % 3 === 0 && ri < recs.length) {
-        out.push({ ...recs[ri++], monetized: true });
-      }
-    }
-    while (ri < recs.length) {
-      out.push({ ...recs[ri++], monetized: true });
-    }
-    return out;
-  };
-  
-  const calculateRelevanceScore = (ad: CombinedAd, query: string): number => {
-  const lowerQuery = query.toLowerCase();
-  
-  if ((ad as any).monetized) {
-    const rec = ad as RecommendedAd & { monetized: true };
-    const title = rec.title.toLowerCase();
-    
-    // Exact match gets highest score
-    if (title === lowerQuery) return 100;
-    // Starts with query gets high score
-    if (title.startsWith(lowerQuery)) return 80;
-    // Contains query gets medium score
-    if (title.includes(lowerQuery)) return 60;
-    // No match gets lowest score
-    return 0;
-  } else {
-    const real = ad as RealAd;
-    const productName = real.productName.toLowerCase();
-    const city = real.city.toLowerCase();
-    const description = real.description.toLowerCase();
-    
-    let score = 0;
-    
-    // Product name matches (highest priority)
-    if (productName === lowerQuery) score += 100;
-    else if (productName.startsWith(lowerQuery)) score += 80;
-    else if (productName.includes(lowerQuery)) score += 60;
-    
-    // City matches (medium priority)
-    if (city === lowerQuery) score += 50;
-    else if (city.startsWith(lowerQuery)) score += 40;
-    else if (city.includes(lowerQuery)) score += 30;
-    
-    // Description matches (lower priority)
-    if (description.includes(lowerQuery)) score += 20;
-    
-    return score;
-  }
-};
-
-  // Add search functionality
+  // Search handler (simplified since filtering is memoized)
   const handleSearch = (query: string) => {
-  setSearchQuery(query);
-
-  if (query.trim() === '') {
-    setFilteredAds(combinedAds);
-  } else {
-    const filtered = combinedAds.filter((ad) => {
-      if ((ad as any).monetized) {
-        const rec = ad as RecommendedAd & { monetized: true };
-        return rec.title.toLowerCase().includes(query.toLowerCase());
-      } else {
-        const real = ad as RealAd;
-        return (
-          real.productName.toLowerCase().includes(query.toLowerCase()) ||
-          real.city.toLowerCase().includes(query.toLowerCase()) ||
-          real.description.toLowerCase().includes(query.toLowerCase())
-        );
-      }
-    });
-    setFilteredAds(filtered);
-  }
-};
-  
-  const refreshData = useCallback(async () => {
-  console.log("Refreshing ad board data...");
-  try {
-    setLoading(true); // Show loading indicator
-    
-    // Fetch fresh data
-    const [real, recs] = await Promise.all([
-      fetchRealAds(),
-      fetchRecommendedAds(),
-    ]);
-    
-    const combined = combineAds(real, recs);
-    setCombinedAds(combined);
-    setFilteredAds(combined);
-    
-    // Clear search if active
-    if (searchQuery) {
-      handleSearch(searchQuery);
-    }
-    
-    console.log("Ad board data refreshed successfully");
-  } catch (error) {
-    console.error("Error refreshing data:", error);
-    setError('Failed to refresh ads. Please try again.');
-  } finally {
-    setLoading(false);
-  }
-}, [fetchRecommendedAds, searchQuery]);
-
-// Add this function for pull-to-refresh
-const onRefresh = useCallback(async () => {
-  setRefreshing(true);
-  await refreshData();
-  setRefreshing(false);
-}, [refreshData]);
-
-  const handleSelectSuggestion = (suggestion: string) => {
-  setSearchQuery(suggestion);
-  
-  // Filter ads that match the suggestion
-  const filtered = combinedAds.filter((ad) => {
-    if ((ad as any).monetized) {
-      const rec = ad as RecommendedAd & { monetized: true };
-      return rec.title.toLowerCase().includes(suggestion.toLowerCase());
-    } else {
-      const real = ad as RealAd;
-      return (
-        real.productName.toLowerCase().includes(suggestion.toLowerCase()) ||
-        real.city.toLowerCase().includes(suggestion.toLowerCase()) ||
-        real.description.toLowerCase().includes(suggestion.toLowerCase())
-      );
-    }
-  });
-  const sortedFiltered = filtered.sort((a, b) => {
-    const scoreA = calculateRelevanceScore(a, suggestion);
-    const scoreB = calculateRelevanceScore(b, suggestion);
-    return scoreB - scoreA; // Sort descending (highest score first)
-  });
-  
-  const rebuildWithAdsRelationship = (sortedAds: CombinedAd[]): CombinedAd[] => {
-    const result: CombinedAd[] = [];
-    const realAds = sortedAds.filter(ad => !(ad as any).monetized) as RealAd[];
-    const monetizedAds = sortedAds.filter(ad => (ad as any).monetized) as (RecommendedAd & { monetized: true })[];
-    
-    let monetizedIndex = 0;
-    
-    for (let i = 0; i < realAds.length; i++) {
-      result.push(realAds[i]);
-      
-      // Insert monetized ad every 3 real ads (maintaining original pattern)
-      if ((i + 1) % 3 === 0 && monetizedIndex < monetizedAds.length) {
-        result.push(monetizedAds[monetizedIndex]);
-        monetizedIndex++;
-      }
-    }
-    
-    // Add any remaining monetized ads at the end
-    while (monetizedIndex < monetizedAds.length) {
-      result.push(monetizedAds[monetizedIndex]);
-      monetizedIndex++;
-    }
-    
-    return result;
+    setSearchQuery(query);
   };
-  const finalSortedAds = rebuildWithAdsRelationship(sortedFiltered);
-  setFilteredAds(finalSortedAds);
-  
-  console.log(`🔍 Sorted results for "${suggestion}":`, finalSortedAds.map(ad => {
-    if ((ad as any).monetized) {
-      return `[AD] ${(ad as RecommendedAd).title}`;
-    } else {
-      return `${(ad as RealAd).productName} (Score: ${calculateRelevanceScore(ad, suggestion)})`;
-    }
+
+  // Enhanced suggestion handler with sorting
+  const handleSelectSuggestion = (suggestion: string) => {
+    setSearchQuery(suggestion);
+    
+    // Filter and sort ads by relevance
+    const filtered = adBoardCacheService.filterAds(combinedAds, suggestion);
+    const sortedFiltered = filtered.sort((a, b) => {
+      const scoreA = adBoardCacheService.calculateRelevanceScore(a, suggestion);
+      const scoreB = adBoardCacheService.calculateRelevanceScore(b, suggestion);
+      return scoreB - scoreA; // Sort descending (highest score first)
+    });
+    
+    // Rebuild with ads relationship maintained
+    const finalSortedAds = adBoardCacheService.rebuildWithAdsRelationship(sortedFiltered);
+    setCombinedAds(finalSortedAds);
+    
+    console.log(`🔍 Sorted results for "${suggestion}":`, finalSortedAds.map(ad => {
+      if ((ad as any).monetized) {
+        return `[AD] ${(ad as RecommendedAd).title}`;
+      } else {
+        return `${(ad as RealAd).productName} (Score: ${adBoardCacheService.calculateRelevanceScore(ad, suggestion)})`;
+      }
     }));
   };
 
-  useEffect(() => {
-    console.log("IN USE EFFECTTTTTTTTTTT");
+  // Pull to refresh handler
+  const onRefresh = useCallback(async () => {
+    await loadAdBoardData(true);
+  }, []);
 
-    // 1) fetch top-5 data
-    axios
-      .get(`${pythonBackendURL}/top_products`)
-      .then(res => {
-        console.log("🔝 /top_products:", res.data);
-        setTopLabels(res.data.labels);
-        setTopValues(res.data.values);
-      })
-      .catch(console.warn);
-    // 2) fetch ads + recommendations
-
-    (async () => {
-      try {
-        const [real, recs] = await Promise.all([
-          fetchRealAds(),
-          fetchRecommendedAds(),
-        ]);
-        const combined = combineAds(real, recs);
-
-        setCombinedAds(combined);
-        setFilteredAds(combined); // Initialize filtered ads
-      } catch {
-        setError('Failed to fetch ads. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [fetchRecommendedAds]);
-
-  if (loading) {
+  // Loading state
+  if (loading && combinedAds.length === 0) {
     return (
-      <SafeAreaView style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color="#4f3e2f" />
+      <SafeAreaView style={styles.container}>
+        <Text style={styles.header}>Recommended</Text>
+        <View style={styles.loaderContainer}>
+          <ActivityIndicator size="large" color="#4f3e2f" />
+          <Text style={styles.loadingText}>Loading recommendations...</Text>
+        </View>
+        {!isWeb && (
+          <View style={styles.bottomNavContainer}>
+            <BottomNavBar />
+          </View>
+        )}
       </SafeAreaView>
     );
   }
-  if (error) {
+
+  // Error state  
+  if (error && combinedAds.length === 0) {
     return (
       <SafeAreaView style={styles.container}>
-        <Text style={styles.errorText}>{error}</Text>
+        <Text style={styles.header}>Recommended</Text>
+        <View style={styles.loaderContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity onPress={() => loadAdBoardData(true)} style={styles.retryButton}>
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+        {!isWeb && (
+          <View style={styles.bottomNavContainer}>
+            <BottomNavBar />
+          </View>
+        )}
       </SafeAreaView>
     );
   }
@@ -425,232 +161,228 @@ const onRefresh = useCallback(async () => {
   return (
     <>
       <SafeAreaView style={styles.container}>
-        
         <Text style={styles.header}>Recommended</Text>
 
-        {/* ─── Top-5 Products Chart ───────────────────────────── */}
-        <Text style={{ fontSize: 16, fontFamily: 'InriaSerif-Bold', marginBottom: 5, marginHorizontal: '6%',}}>
-                5 most used products
-        </Text>
-        
-        {topLabels.length > 0 && (
-        Platform.OS === 'android' ? (
-            <View style={{backgroundColor: '#f5ede6',width: CARD_WIDTH, marginHorizontal: '0%', borderRadius: 12, marginBottom: '2%',}}>
-            <BarChart
-                data={{
-                labels: topLabels,
-                datasets: [
-                            {
-                            data: (() => {
-                                const total = topValues.reduce((sum, val) => sum + val, 0);
-                                return topValues.map((value) => {
-                                const percentage = ((value / total) * 100).toFixed(1);
-                                return parseFloat(percentage); // Return percentage as the data value
-                                });
-                            })(),
-                            colors: [
-                                () => '#d6bda7',
-                                () => '#d8d7d8',
-                                () => '#c5d1d1',
-                                () => '#a6ada6',
-                                () => '#c5d1b2',
-                            ],
-                            },
-                        ],
-                        }}
-                width={CARD_WIDTH}
-                height={180}
-                withInnerLines={false}
-                withHorizontalLabels={true}
-                withCustomBarColorFromData={true}
-                flatColor={true}
-                fromZero
-                showValuesOnTopOfBars={true}
-                chartConfig={{
-                barPercentage: 1,
-                backgroundGradientFrom: '#f5ede6',
-                backgroundGradientTo: '#f5ede6',
-                fillShadowGradientOpacity: 1,
-                decimalPlaces: 1,
-                color: () => '#000',
-                labelColor: () => '#333',
-                formatTopBarValue: value => `${value}%`,
-                propsForVerticalLabels: {
-                    fontFamily: 'InriaSerif-Bold',
-                    fontSize: 10,
-                },
-                propsForLabels: {
-                    fontFamily: 'InriaSerif-Bold',
-                    fontSize: 10,
-                },
-                }}
-                style={{
-                marginTop: 20,
-                borderRadius: 12,
-                marginHorizontal: '0%',
-                }}
-            />
-            </View>
-        ) : (
-
-        // IPHONE BAR STARTS HERE ----------------------------------------------------------------------------------------
-        <View style={{ backgroundColor: '#f5ede6', width:CARD_WIDTH,  marginHorizontal: '5%', borderRadius: 12, marginBottom: '5%',}}>
-                {/* Actual bar chart */}
+        {/* Top-5 Products Chart */}
+        {topProducts.labels.length > 0 && (
+          <>
+            <Text style={styles.chartTitle}>
+              5 most used products
+            </Text>
+            
+            {Platform.OS === 'android' ? (
+              <View style={styles.chartContainerAndroid}>
                 <BarChart
-                    data={{
-                    labels: topLabels.map(label =>
-                        label.length >= 8
-                        ?  label 
-                        : label
+                  data={{
+                    labels: topProducts.labels,
+                    datasets: [{
+                      data: (() => {
+                        const total = topProducts.values.reduce((sum, val) => sum + val, 0);
+                        return topProducts.values.map((value) => {
+                          const percentage = ((value / total) * 100).toFixed(1);
+                          return parseFloat(percentage);
+                        });
+                      })(),
+                      colors: [
+                        () => '#d6bda7',
+                        () => '#d8d7d8',
+                        () => '#c5d1d1',
+                        () => '#a6ada6',
+                        () => '#c5d1b2',
+                      ],
+                    }],
+                  }}
+                  width={CARD_WIDTH}
+                  height={180}
+                  withInnerLines={false}
+                  withHorizontalLabels={true}
+                  withCustomBarColorFromData={true}
+                  flatColor={true}
+                  fromZero
+                  showValuesOnTopOfBars={true}
+                  chartConfig={{
+                    barPercentage: 1,
+                    backgroundGradientFrom: '#f5ede6',
+                    backgroundGradientTo: '#f5ede6',
+                    fillShadowGradientOpacity: 1,
+                    decimalPlaces: 1,
+                    color: () => '#000',
+                    labelColor: () => '#333',
+                    formatTopBarValue: value => `${value}%`,
+                    propsForVerticalLabels: {
+                      fontFamily: 'InriaSerif-Bold',
+                      fontSize: 10,
+                    },
+                    propsForLabels: {
+                      fontFamily: 'InriaSerif-Bold',
+                      fontSize: 10,
+                    },
+                  }}
+                  style={styles.chartAndroid}
+                />
+              </View>
+            ) : (
+              <View style={styles.chartContainerIOS}>
+                <BarChart
+                  data={{
+                    labels: topProducts.labels.map(label =>
+                      label.length >= 8 ? label : label
                     ),
-                    datasets: [
-                        {
-                        data: (() => {
-                            const total = topValues.reduce((sum, val) => sum + val, 0);
-                            return topValues.map((value) => {
-                            const percentage = ((value / total) * 100).toFixed(1);
-                            return parseFloat(percentage); // Return percentage as the data value
-                            });
-                        })(),
-                        colors: [
-                            () => '#d6bda7',
-                            () => '#d8d7d8',
-                            () => '#c5d1d1',
-                            () => '#a6ada6',
-                            () => '#c5d1b2',
-                        ],
-                        },
-                    ],
-                    }}
-                    width={CARD_WIDTH + 55 }
-                    height={170}
-                    withInnerLines={false}
-                    withHorizontalLabels={false}
-                    withCustomBarColorFromData={true}
-                    flatColor={true}
-                    fromZero
-                    showValuesOnTopOfBars={true} 
-                    chartConfig={{
+                    datasets: [{
+                      data: (() => {
+                        const total = topProducts.values.reduce((sum, val) => sum + val, 0);
+                        return topProducts.values.map((value) => {
+                          const percentage = ((value / total) * 100).toFixed(1);
+                          return parseFloat(percentage);
+                        });
+                      })(),
+                      colors: [
+                        () => '#d6bda7',
+                        () => '#d8d7d8',
+                        () => '#c5d1d1',
+                        () => '#a6ada6',
+                        () => '#c5d1b2',
+                      ],
+                    }],
+                  }}
+                  width={CARD_WIDTH + 55}
+                  height={170}
+                  withInnerLines={false}
+                  withHorizontalLabels={false}
+                  withCustomBarColorFromData={true}
+                  flatColor={true}
+                  fromZero
+                  showValuesOnTopOfBars={true}
+                  chartConfig={{
                     barPercentage: 1.6,
                     backgroundGradientFrom: ' ',
                     backgroundGradientTo: ' ',
-                    decimalPlaces: 1, // Show 1 decimal place for percentages
+                    decimalPlaces: 1,
                     color: () => '#000',
                     labelColor: () => '#333',
                     style: { borderRadius: 12 },
-                    // Format the values displayed on top of bars to show % symbol
                     formatTopBarValue: (value) => `${value}%`,
                     propsForVerticalLabels: {
-                        fontFamily: 'InriaSerif-Bold',
-                        fontSize: 10,
+                      fontFamily: 'InriaSerif-Bold',
+                      fontSize: 10,
                     },
                     propsForLabels: {
-                        fontFamily: 'InriaSerif-Bold',
-                        fontSize: 10,
+                      fontFamily: 'InriaSerif-Bold',
+                      fontSize: 10,
                     },
-                    }}
-                    style={{ marginTop: 0, borderRadius: 12, marginHorizontal: '-20%',}}
+                  }}
+                  style={styles.chartIOS}
                 />
-        </View>
-  )
-)}
+              </View>
+            )}
+          </>
+        )}
         
         <SearchBar
-			variant="recommended"
-			onSearch={handleSearch}
-			onSelectSuggestion={handleSelectSuggestion}
-			placeholder="Products, cities, descriptions..."
-			filterOptions={{
-				text: 'All Products',
-				onPress: () => console.log('Filter button pressed'),
-			}}
-            autocompleteEndpoint={`${pythonBackendURL}/autocomplete`}
-			additionalStyles={{
-				container: styles.searchBarContainer,
-				filterButton: styles.filterButton,
-				filterButtonText: styles.filterButtonText,
-				searchInput: styles.searchInput,
-				searchText: styles.searchText,
-		}}
-		/>
-        
-    <ScrollView 
-      contentContainerStyle={styles.scrollContent}
-      style={{ 
-        flex: 1, 
-        marginBottom: Platform.OS === 'android' ? 80 : 0 
-      }}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          colors={['#7E8FA6']} // Android
-          tintColor='#7E8FA6' // iOS
-          title="Pull to refresh..."
-          titleColor='#7E8FA6'
+          variant="recommended"
+          onSearch={handleSearch}
+          onSelectSuggestion={handleSelectSuggestion}
+          placeholder="Products, cities, descriptions..."
+          filterOptions={{
+            text: 'All Products',
+            onPress: () => console.log('Filter button pressed'),
+          }}
+          autocompleteEndpoint={`${pythonBackendURL}/autocomplete`}
+          additionalStyles={{
+            container: styles.searchBarContainer,
+            filterButton: styles.filterButton,
+            filterButtonText: styles.filterButtonText,
+            searchInput: styles.searchInput,
+            searchText: styles.searchText,
+          }}
         />
-      }
-    >
-  {/* Your existing ads mapping code stays the same */}
-  {filteredAds.map((ad, idx) => {
-    if ((ad as any).monetized) {
-      const rec = ad as RecommendedAd & { monetized: true };
-      return (
-        <View
-          key={`monetized-${idx}`}
-          style={[styles.cardContainer, styles.monetizedCard]}
-        >
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <MaterialCommunityIcons name="bullhorn" size={20} color="#AF6F6F" />
-            <Text style={styles.monetizedHeader}>Sponsored</Text>
-        </View>
-        <Text style={styles.adTitle}>Try {rec.productName} by {rec.brand} </Text>
-        <Text style={styles.description}>This is a personolizsed recommedation based on your personal product preferences.</Text>
-
-        </View>
-      );
-    }
-    const real = ad as RealAd;
-    return (
-      <View key={real._id} style={styles.cardContainer}>
-        {/* Your existing card content */}
-        <View style={styles.adHeader}>
-          <View style={styles.titleWithIcon}>
-            <MaterialCommunityIcons
-              name={getIconName(real.productName)}
-              size={20}
-              color="#4f3e2f"
-              style={{ marginRight: 8 }}
-            />
-            <Text style={styles.productName}>
-              {real.productName}
-            </Text>
-          </View>
-          <View style={styles.headerRight}>
-            <Text style={styles.salePrice}>
-              ₪{real.salePrice}
-            </Text>
-            <MaterialCommunityIcons
-              name="cash"
-              size={20}
-              color="#7E8FA6"
-              style={{ marginLeft: 5 }}
-            />
-          </View>
-        </View>
         
-        <Text style={styles.city}>Location: {real.city}</Text>
-        <Text style={styles.description}>{real.description}</Text>
-      </View>
-    );
-  })}
-</ScrollView>
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          style={styles.scrollView}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={['#7E8FA6']}
+              tintColor='#7E8FA6'
+              title="Pull to refresh..."
+              titleColor='#7E8FA6'
+            />
+          }
+        >
+          {filteredAds.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>
+                {searchQuery ? 'No ads match your search' : 'No ads found'}
+              </Text>
+              <Text style={styles.emptySubtext}>
+                {searchQuery ? 'Try a different search term' : 'Pull down to refresh'}
+              </Text>
+            </View>
+          ) : (
+            filteredAds.map((ad, idx) => {
+              if ((ad as any).monetized) {
+                const rec = ad as RecommendedAd & { monetized: true };
+                return (
+                  <View
+                    key={`monetized-${idx}`}
+                    style={[styles.cardContainer, styles.monetizedCard]}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <MaterialCommunityIcons name="bullhorn" size={20} color="#AF6F6F" />
+                      <Text style={styles.monetizedHeader}>Sponsored</Text>
+                    </View>
+                    <Text style={styles.adTitle}>Try {rec.productName} by {rec.brand}</Text>
+                    <Text style={styles.description}>
+                      This is a personalized recommendation based on your personal product preferences.
+                    </Text>
+                  </View>
+                );
+              }
+              
+              const real = ad as RealAd;
+              return (
+                <View key={real._id} style={styles.cardContainer}>
+                  <View style={styles.adHeader}>
+                    <View style={styles.titleWithIcon}>
+                      <MaterialCommunityIcons
+                        name={adBoardCacheService.getIconName(real.productName)}
+                        size={20}
+                        color="#4f3e2f"
+                        style={{ marginRight: 8 }}
+                      />
+                      <Text style={styles.productName}>
+                        {real.productName}
+                      </Text>
+                    </View>
+                    <View style={styles.headerRight}>
+                      <Text style={styles.salePrice}>
+                        ₪{real.salePrice}
+                      </Text>
+                      <MaterialCommunityIcons
+                        name="cash"
+                        size={20}
+                        color="#7E8FA6"
+                        style={{ marginLeft: 5 }}
+                      />
+                    </View>
+                  </View>
+                  
+                  <Text style={styles.city}>Location: {real.city}</Text>
+                  <Text style={styles.description}>{real.description}</Text>
+                </View>
+              );
+            })
+          )}
+        </ScrollView>
       </SafeAreaView>
-      {!isWeb ? (
-  <View style={styles.bottomNavContainer}>
-    <BottomNavBar />
-  </View>
-) : null}
+      
+      {!isWeb && (
+        <View style={styles.bottomNavContainer}>
+          <BottomNavBar />
+        </View>
+      )}
     </>
   );
 }
@@ -666,6 +398,30 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#4f3e2f',
+    fontFamily: 'InriaSerif-Regular',
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: '#4f3e2f',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryText: {
+    color: 'white',
+    fontSize: 16,
+    fontFamily: 'InriaSerif-Bold',
   },
   header: {
     fontSize: 28,
@@ -675,51 +431,95 @@ const styles = StyleSheet.create({
     color: '#000',
     marginTop: Platform.OS === 'android' ? '10%' : 0,
   },
-  
+  chartTitle: {
+    fontSize: 16,
+    fontFamily: 'InriaSerif-Bold',
+    marginBottom: 5,
+    marginHorizontal: '6%',
+  },
+  chartContainerAndroid: {
+    backgroundColor: '#f5ede6',
+    width: CARD_WIDTH,
+    marginHorizontal: '0%',
+    borderRadius: 12,
+    marginBottom: '2%',
+  },
+  chartAndroid: {
+    marginTop: 20,
+    borderRadius: 12,
+    marginHorizontal: '0%',
+  },
+  chartContainerIOS: {
+    backgroundColor: '#f5ede6',
+    width: CARD_WIDTH,
+    marginHorizontal: '5%',
+    borderRadius: 12,
+    marginBottom: '5%',
+  },
+  chartIOS: {
+    marginTop: 0,
+    borderRadius: 12,
+    marginHorizontal: '-20%',
+  },
   searchBarContainer: {
     marginHorizontal: 10,
-    marginVertical: Platform.OS === 'android' ? 5 : 10, 
+    marginVertical: Platform.OS === 'android' ? 5 : 10,
     width: isWeb ? '100%' : '100%',
     alignSelf: 'center',
   },
-    filterButton: {
+  filterButton: {
     backgroundColor: '#D2BBA1',
     paddingVertical: 10,
     paddingHorizontal: 10,
     borderRadius: 4,
-    },
-    filterButtonText: {
+  },
+  filterButtonText: {
     fontSize: 14,
     color: '#000',
     marginLeft: 5,
-    },
-    searchInput: {
+  },
+  searchInput: {
     backgroundColor: '#D2BBA1',
-    },
-    searchText: {
+  },
+  searchText: {
     fontSize: 12,
     color: '#000',
     marginRight: 5,
-    },
-
+  },
+  scrollView: {
+    flex: 1,
+    marginBottom: Platform.OS === 'android' ? 80 : 0,
+  },
   scrollContent: {
     paddingBottom: 90,
     alignItems: 'center',
   },
-  errorText: {
-    color: 'red',
-    fontSize: 16,
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+    paddingTop: 60,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontFamily: 'InriaSerif-Bold',
+    color: '#4f3e2f',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    fontFamily: 'InriaSerif-Regular',
+    color: '#666',
     textAlign: 'center',
   },
-
   cardContainer: {
     width: CARD_WIDTH,
     backgroundColor: '#FDFDFD',
     borderRadius: 12,
     marginVertical: 8,
     padding: 14,
-    // borderWidth: 1,
-    // borderColor: '#7E8FA6',
     elevation: 2,
   },
   adHeader: {
@@ -736,7 +536,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-
   productName: {
     fontFamily: 'InriaSerif-Bold',
     fontSize: 18,
@@ -753,12 +552,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#7E8FA6',
   },
-  productModel: {
-    fontFamily: 'InriaSerif-Regular',
-    fontSize: 14,
-    color: '#666',
-    marginTop: 8,
-  },
   city: {
     fontFamily: 'InriaSerif-Regular',
     fontSize: 14,
@@ -771,10 +564,8 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 4,
   },
-
   monetizedCard: {
-    // borderColor: '#AF6F6F',
-   // backgroundColor: '#FDEDEC',
+    // Add any special styling for sponsored ads if needed
   },
   monetizedHeader: {
     fontFamily: 'InriaSerif-Bold',
@@ -782,16 +573,18 @@ const styles = StyleSheet.create({
     color: '#AF6F6F',
     marginBottom: 0,
   },
-  iconName: {
-    fontFamily: 'InriaSerif-Regular',
-    fontSize: 14,
-    color: '#666',
-  },
   bottomNavContainer: {
     position: 'absolute',
-    bottom: Platform.OS === 'android' ? 20 : 10, // Move up 20px on Android
+    bottom: 0,
     left: 0,
     right: 0,
+    backgroundColor: '#E9E0D4',
+    paddingBottom: Platform.OS === 'android' ? 25 : 10,
+    paddingTop: 0,
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: -2 },
   },
-  
 });
