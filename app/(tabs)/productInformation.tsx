@@ -1313,7 +1313,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: '#E9E0D4',
-    height: Platform.OS === 'android' ? 75 : 70,
+    height: Platform.OS === 'android' ? 40 : 70,
   },
 
   bottomNavWrapper: {
