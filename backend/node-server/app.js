@@ -562,6 +562,7 @@ app.post("/add-for-sale-board",async(req,res)=>{
         phoneNumber,
         description,
     })
+    
     const updatedBoard = await AdBoard.findOneAndUpdate(
       { name: "SaleBoard" }, // You can choose a filter that fits your needs
       { 

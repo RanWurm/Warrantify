@@ -1,28 +1,27 @@
 // app/(tabs)/index.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Redirect } from 'expo-router';
-import { auth } from '../../constants/customAuth';
-import { onAuthStateChanged, User } from '../../constants/customAuth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function Index() {
-  const [loading, setLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  console.log('🚨 INDEX IS RUNNING!');
+  
+  const [isLoggedIn, setIsLoggedIn] = React.useState<boolean | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      setLoading(false);
-    });
-    return () => unsubscribe();
+    checkAuth();
   }, []);
 
-  if (loading) {
-    return null; // or splash screen
-  }
+  const checkAuth = async () => {
+    const loginFlag = await AsyncStorage.getItem('isLoggedIn');
+    const token = await AsyncStorage.getItem('token');
+    
+    console.log('Auth check:', loginFlag, !!token);
+    
+    setIsLoggedIn(loginFlag === 'true' && !!token);
+  };
 
-  if (currentUser) {
-    return <Redirect href="/home" />;
-  } else {
-    return <Redirect href="/login" />;
-  }
+  if (isLoggedIn === null) return null; // Loading
+  
+  return <Redirect href={isLoggedIn ? "/home" : "/login"} />;
 }

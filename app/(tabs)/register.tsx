@@ -29,7 +29,7 @@ export default function RegisterScreen() {
     password: false,
     confirmPassword: false,
   });
-
+  const [isLoading, setIsLoading] = useState(false);
   if (!fontsLoaded) {
     return null; // Render nothing while fonts are loading
   }
@@ -43,21 +43,82 @@ export default function RegisterScreen() {
   };
   
   const handleSignUp = async () => {
-    console.log("in Signup")
-    const UserData={ 
-      firstname:form.firstName,
-      lastname:form.lastName,
-      email:form.email,
-      password:form.password,    
+    console.log("in Signup");
+
+    if (!validateForm()) {
+      return;
     }
-    console.log("here iam",UserData)
-    axios.post(`${serverBackendURL}/register`,UserData)
-    .then(res=>{
-      console.log(res.data)
-      router.replace('/login');
-    })
-    .catch(e=>console.log("hey",e))
-  }
+
+    setIsLoading(true);
+
+    const userData = {
+      firstname: form.firstName,
+      lastname: form.lastName,
+      email: form.email,
+      password: form.password,
+    };
+
+    try {
+      console.log("Registering user:", userData);
+      
+      // Register the user
+      const registerResponse = await axios.post(`${serverBackendURL}/register`, userData);
+      console.log("Registration response:", registerResponse.data);
+
+      if (registerResponse.data.status === "ok") {
+        console.log("Registration successful, attempting login...");
+        
+        // Automatically log in the user after successful registration
+        const loginResponse = await axios.post(`${serverBackendURL}/login`, {
+          email: form.email,
+          password: form.password
+        });
+
+        if (loginResponse.data.status === "ok" && loginResponse.data.data) {
+          const token = loginResponse.data.data;
+
+          // Get user data
+          const userDataResponse = await axios.post(`${serverBackendURL}/userdata`, { token });
+          
+          if (userDataResponse.data.Status === "Ok") {
+            // Store auth data
+            await AsyncStorage.multiSet([
+              ['token', token],
+              ['userData', JSON.stringify(userDataResponse.data.data)],
+              ['isLoggedIn', 'true']
+            ]);
+
+            console.log("Auto-login successful, navigating to home");
+            router.replace('/home');
+          } else {
+            console.log("Auto-login failed, redirecting to login");
+            alert('Registration successful! Please log in.');
+            router.replace('/login');
+          }
+        } else {
+          console.log("Auto-login failed, redirecting to login");
+          alert('Registration successful! Please log in.');
+          router.replace('/login');
+        }
+      } else {
+        alert(registerResponse.data.data || 'Registration failed. Please try again.');
+      }
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      
+      let errorMessage = 'Registration failed. Please try again.';
+      
+      if (error.response?.data?.data) {
+        errorMessage = error.response.data.data;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      alert(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
   const handleGoogleSignUp = () => {
     // Handle Google sign-up logic here

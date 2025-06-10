@@ -21,7 +21,7 @@ import { useFonts } from 'expo-font';
 import { Stack, useRouter } from 'expo-router';
 import { UserContext } from '../context/UserContext'; 
 import BottomNavBar from '../components/BottomNavBar';
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface SettingOption {
   id: string;
@@ -99,22 +99,145 @@ export default function Settings() {
     // Add more toggles as needed
   };
 
-  const handleLogout = () => {
+//   const handleLogout = async () => {
+//   const confirmLogout = () => {
+//     Alert.alert(
+//       'Logout',
+//       'Are you sure you want to logout?',
+//       [
+//         { text: 'Cancel', style: 'cancel' },
+//         {
+//           text: 'Logout',
+//           style: 'destructive',
+//           onPress: async () => {
+//             try {
+//               console.log('🚪 Logging out user...');
+              
+//               // ADDED: Clear all stored authentication data
+//               await AsyncStorage.multiRemove([
+//                 'token',
+//                 'userData', 
+//                 'isLoggedIn',
+//                 'cached_warranties',
+//                 'cached_user_profile',
+//                 'cached_transformed_warranties',
+//                 'cached_warranty_stats',
+//                 'warranties_last_update',
+//                 'cachedServiceCenters',
+//                 'serviceCentersLastUpdate',
+//                 'cached_real_ads',
+//                 'cached_recommendations',
+//                 'cached_top_products',
+//                 'cached_combined_ads',
+//                 'ad_board_last_update'
+//               ]);
+              
+//               router.replace('/login');
+//             } catch (error) {
+//               console.error('Error during logout:', error);
+//               Alert.alert('Error', 'An error occurred during logout. Please try again.');
+//             }
+//           },
+//         },
+//       ],
+//       { cancelable: true }
+//     );
+//   };
+
+//   // ADDED: Handle web platform differently
+//   if (Platform.OS === 'web') {
+//     const confirmed = window.confirm('Are you sure you want to logout?');
+//     if (confirmed) {
+//       try {
+//         await AsyncStorage.multiRemove([
+//           'token', 'userData', 'isLoggedIn',
+//           'cached_warranties', 'cached_user_profile',
+//           // ... other cache keys
+//         ]);
+//         router.replace('/login');
+//       } catch (error) {
+//         console.error('Error during logout:', error);
+//         alert('An error occurred during logout. Please try again.');
+//       }
+//     }
+//   } else {
+//     confirmLogout();
+//   }
+// };
+// Updated handleLogout function in settings.tsx with extensive debugging
+
+// Updated handleLogout function in settings.tsx - CLEAR ALL CACHE
+
+const handleLogout = async () => {
+  const performLogout = async () => {
+    try {
+      console.log('🚪 LOGOUT: Starting logout...');
+      
+      // CLEAR EVERYTHING - Use clear() instead of multiRemove
+      await AsyncStorage.clear();
+      console.log('🧹 LOGOUT: ALL AsyncStorage data cleared');
+      
+      // Additional verification - make sure specific keys are gone
+      const verification = await AsyncStorage.multiGet([
+        'token',
+        'userData',
+        'isLoggedIn',
+        'cached_warranties',
+        'cached_user_profile',
+        'cached_transformed_warranties',
+        'cached_warranty_stats',
+        'warranties_last_update',
+        'cachedServiceCenters',
+        'serviceCentersLastUpdate',
+        'cached_real_ads',
+        'cached_recommendations',
+        'cached_top_products',
+        'cached_combined_ads',
+        'ad_board_last_update'
+      ]);
+      
+      // Log what's left (should all be null)
+      verification.forEach(([key, value]) => {
+        if (value !== null) {
+          console.warn(`⚠️ ${key} still has value:`, value);
+        }
+      });
+      
+      // Force a longer delay to ensure everything is cleared
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Navigate to login
+      router.replace('/login');
+      
+      console.log('✅ LOGOUT: Complete');
+      
+    } catch (error) {
+      console.error('❌ LOGOUT Error:', error);
+      Alert.alert('Error', 'An error occurred during logout. Please try again.');
+    }
+  };
+
+  if (Platform.OS === 'web') {
+    const confirmed = window.confirm('Are you sure you want to logout?');
+    if (confirmed) {
+      await performLogout();
+    }
+  } else {
     Alert.alert(
       'Logout',
       'Are you sure you want to logout?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Logout', style: 'destructive', onPress: async () => {
-            await logout();
-            // Optionally, navigate to login if not handled within logout
-            router.replace('/login'); // Uncomment if navigation is not handled in logout
-          } 
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: performLogout
         },
       ],
       { cancelable: true }
     );
-  };
+  }
+};
 
   const handleOptionPress = (option: SettingOption) => {
     if (option.type === 'navigation') {

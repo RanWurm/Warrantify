@@ -1,7 +1,9 @@
-// hooks/useAppInitialization.ts
+// hooks/useAppInitialization.ts - DON'T WAIT for cache services
+
 import { useEffect, useState } from 'react';
 import serviceCentersCache from '../services/serviceCentersCache';
 import warrantiesCacheService from '../services/warrantiesCacheService';
+import adBoardCacheService from '../services/adBoardCacheService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const useAppInitialization = () => {
@@ -14,27 +16,43 @@ export const useAppInitialization = () => {
         console.log('🚀 Initializing app...');
         
         // Check if user is logged in
+        const isLoggedIn = await AsyncStorage.getItem('isLoggedIn');
         const token = await AsyncStorage.getItem('token');
         
-        if (token) {
-          // Start preloading both service centers and warranties in background
-          // Don't await - let them run in background
-          Promise.all([
-            serviceCentersCache.preloadServiceCenters().catch(error => {
-              console.warn('Service centers background preload failed:', error);
-            }),
+        console.log('🔍 App init - Login flag:', isLoggedIn, 'Token exists:', !!token);
+        
+        // IMMEDIATELY mark as initialized - don't wait for cache services
+        setIsInitialized(true);
+        console.log('✅ App initialized (UI ready)');
+        
+        // ONLY start background preloading if user is logged in
+        if (isLoggedIn === 'true' && token) {
+          console.log('🔄 Starting background cache preload...');
+          
+          // Start ALL cache services in background - but DON'T AWAIT them
+          // This way the UI shows immediately, but data will load in background
+          Promise.allSettled([
             warrantiesCacheService.preloadWarranties().catch(error => {
               console.warn('Warranties background preload failed:', error);
+            }),
+            adBoardCacheService.preloadAdBoard().catch(error => {
+              console.warn('AdBoard background preload failed:', error);
+            }),
+            serviceCentersCache.preloadServiceCenters().catch(error => {
+              console.warn('Service centers background preload failed:', error);
             })
-          ]);
+          ]).then(() => {
+            console.log('✅ Background preload completed');
+          });
+          
+        } else {
+          console.log('❌ User not logged in, skipping background preload');
         }
         
-        setIsInitialized(true);
-        console.log('✅ App initialized');
       } catch (error) {
         console.error('❌ App initialization failed:', error);
         setInitializationError(error instanceof Error ? error.message : 'Unknown error');
-        setIsInitialized(true); // Still mark as initialized to not block UI
+        setIsInitialized(true); // Still show UI even on error
       }
     };
 

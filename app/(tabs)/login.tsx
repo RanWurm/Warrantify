@@ -11,13 +11,14 @@ import {
   Platform,
   Dimensions,
   Alert,
+  BackHandler
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import Constants from 'expo-constants';
-
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function LoginScreen() {
   const serverBackendURL = Constants.expoConfig!.extra!.SERVER_BACKEND_URL;
@@ -26,48 +27,79 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   
- const handleLogin = async () =>{
-    console.log("in handle login")
-    const userData={
-        email:email,
-        password:password
-      }
-      if (!email || !password) {
-        Alert.alert('Error', 'Please enter both email and password.');
-        return;
+
+    useFocusEffect(
+      React.useCallback(() => {
+        const onBackPress = () => {
+          // Close the app when back button is pressed on login screen
+          BackHandler.exitApp();
+          return true; // Prevent default back action
+        };
+
+        // Add event listener
+        const backHandler = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+        // Cleanup function
+        return () => backHandler.remove();
+      }, [])
+    );
+    
+  const handleLogin = async () => {
+  console.log("in handle login");
+  
+  if (!email || !password) {
+    Alert.alert('Error', 'Please enter both email and password.');
+    return;
+  }
+  
+  setIsLoading(true); 
+  
+  const userData = {
+    email: email,
+    password: password
+  };
+  
+  try {
+    const response = await axios.post(`${serverBackendURL}/login`, userData);
+    console.log("Login response:", response.data);
+    
+    if (response.data.status === "ok" && response.data.data) {
+      const token = response.data.data;
+      
+      // Store the token
+      await AsyncStorage.setItem("token", token);
+      
+      // Get user data and store it
+      const userDataResponse = await axios.post(`${serverBackendURL}/userdata`, { token });
+      if (userDataResponse.data.Status === "Ok") {
+        await AsyncStorage.setItem("userData", JSON.stringify(userDataResponse.data.data));
+        await AsyncStorage.setItem("isLoggedIn", "true"); 
       }
       
-      try{
-        axios.post(`${serverBackendURL}/login`, userData)
-      .then(res=>{
-        console.log("hey data is",res.data)
-        AsyncStorage.setItem("token",res.data.data)
-        router.replace('/home')
-      }) 
-      .catch(e => {
-        console.log("Error:", e.message);
-        console.error(e);  // Full error log for more details
-      });
+      console.log("Login successful, navigating to home");
+      router.replace('/home');
+    } else {
+      Alert.alert('Login Failed', response.data.data || 'Invalid credentials');
     }
-      catch (error: any) {
-        //     // Handle different auth errors
-            if (error.code === 'auth/user-not-found') {
-              Alert.alert('Login Failed', 'No user found with this email. Please register first.');
-            } else if (error.code === 'auth/wrong-password') {
-              Alert.alert('Login Failed', 'Incorrect password. Please try again.');
-            } else if (error.code === 'auth/invalid-email') {
-              Alert.alert('Login Failed', 'Invalid email format. Please check and try again.');
-            } else {
-              Alert.alert('Login Failed', `Error: ${error.message}`);
-            }
-            console.error('Error signing in:', error);
-          }
+  } catch (error: any) {
+    console.error('Login error:', error);
     
+    let errorMessage = 'An error occurred during login. Please try again.';
+    
+    if (error.response?.data?.data) {
+      errorMessage = error.response.data.data;
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
+    Alert.alert('Login Failed', errorMessage);
+  } finally {
+    setIsLoading(false); // ADDED
   }
-
+};
   const navigateToRegister = () => {
     router.push('/register');
   };
