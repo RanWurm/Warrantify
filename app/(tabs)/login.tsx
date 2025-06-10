@@ -18,8 +18,7 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import Constants from 'expo-constants';
-import { useFocusEffect } from '@react-navigation/native';
-
+import { useFocusEffect,useNavigation } from '@react-navigation/native';
 export default function LoginScreen() {
   const serverBackendURL = Constants.expoConfig!.extra!.SERVER_BACKEND_URL;
   console.log(serverBackendURL);
@@ -31,22 +30,40 @@ export default function LoginScreen() {
   const router = useRouter();
   
 
-    useFocusEffect(
-      React.useCallback(() => {
-        const onBackPress = () => {
-          // Close the app when back button is pressed on login screen
-          BackHandler.exitApp();
-          return true; // Prevent default back action
-        };
+// ADDED: Handle back button press to exit app
+useFocusEffect(
+  React.useCallback(() => {
+    const onBackPress = () => {
+      // Close the app when back button is pressed on login screen
+      BackHandler.exitApp();
+      return true; // Prevent default back action
+    };
 
-        // Add event listener
-        const backHandler = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    // Add event listener for Android
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', onBackPress);
 
-        // Cleanup function
-        return () => backHandler.remove();
-      }, [])
-    );
+    // Cleanup function
+    return () => backHandler.remove();
+  }, [])
+);
+
+// ADDED: Handle iOS swipe back gesture
+useEffect(() => {
+  if (Platform.OS === 'ios') {
+    const navigation = useNavigation();
     
+    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+      // Prevent default behavior of leaving the screen
+      e.preventDefault();
+      
+      // Exit the app instead
+      BackHandler.exitApp();
+    });
+
+    return unsubscribe;
+  }
+}, []);
+
   const handleLogin = async () => {
   console.log("in handle login");
   
