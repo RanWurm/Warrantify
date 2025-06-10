@@ -97,17 +97,18 @@ app.use(express.json()); // Middleware to parse JSON requests
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 
+
 app.post('/register',async(req,res)=>{
   console.log("in reg")
   const {firstname,lastname,email,password} = req.body
 
-  const warranties = await Warranty.find({ user: user._id });
-  console.log("User warranties:", warranties.map(w => w._id.toString()));
-
+  // REMOVE THIS LINE - it's causing the error:
+  // const warranties = await Warranty.find({ user: user._id });
+  // console.log("User warranties:", warranties.map(w => w._id.toString()));
 
   const oldUser = await User.findOne({email:email})
   if (oldUser){
-    return res.send({data:"User alreadt exsists!"})
+    return res.send({data:"User already exists!"})
   }
  
   try{
@@ -127,7 +128,7 @@ app.post('/register',async(req,res)=>{
       res.send({status:"ok", data:"User Created"})
   } catch(error){
     console.log(error); 
-    res.send({status:"eFrror", data:"error"})
+    res.send({status:"error", data:"error"})
   }
   
 })
@@ -537,7 +538,9 @@ app.post('/add-warranty', async(req, res) => {
 });
 
 app.post("/add-for-sale-board",async(req,res)=>{
-  const {productId,salePrice,city,description} = req.body
+  const {productId,salePrice,city,phoneNumber,description} = req.body
+  console.log("add for sale board is  data is: ", req.body )
+  
   try {
     const token = req.headers.authorization?.split(' ')[1];
     const decoded = jwt.verify(token, JWT_SECRET);
@@ -556,6 +559,7 @@ app.post("/add-for-sale-board",async(req,res)=>{
         model:product.model,
         salePrice,
         city,
+        phoneNumber,
         description,
     })
     const updatedBoard = await AdBoard.findOneAndUpdate(

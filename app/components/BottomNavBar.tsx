@@ -134,7 +134,10 @@ bottomNav: {
   navText: {
     fontSize: 12,
     color: '#555',
-  },
+    fontFamily: 'InriaSerif-Regular',
+  },
+
+
 });
 
 export default BottomNavBar;

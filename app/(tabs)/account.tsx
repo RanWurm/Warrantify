@@ -423,11 +423,11 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   bottomNavContainer: {
-  position: 'absolute',
-  bottom: Platform.OS === 'android' ? 20 : 10, // Move up 20px on Android
-  left: 0,
-  right: 0,
-  backgroundColor: '#E9E0D4', // Hide content underneath
-  paddingTop: Platform.OS === 'android' ? 10 : 0, // Add padding above nav bar
-},
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#E9E0D4',
+    height: Platform.OS === 'android' ? 90 : 70,
+  },
 });

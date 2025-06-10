@@ -170,57 +170,63 @@ export default function OptimizedAdBoard() {
               5 most used products
             </Text>
             
-            {Platform.OS === 'android' ? (
-              <View style={styles.chartContainerAndroid}>
-                <BarChart
-                  data={{
-                    labels: topProducts.labels,
-                    datasets: [{
-                      data: (() => {
-                        const total = topProducts.values.reduce((sum, val) => sum + val, 0);
-                        return topProducts.values.map((value) => {
-                          const percentage = ((value / total) * 100).toFixed(1);
-                          return parseFloat(percentage);
-                        });
-                      })(),
-                      colors: [
-                        () => '#d6bda7',
-                        () => '#d8d7d8',
-                        () => '#c5d1d1',
-                        () => '#a6ada6',
-                        () => '#c5d1b2',
-                      ],
-                    }],
-                  }}
-                  width={CARD_WIDTH}
-                  height={180}
-                  withInnerLines={false}
-                  withHorizontalLabels={true}
-                  withCustomBarColorFromData={true}
-                  flatColor={true}
-                  fromZero
-                  showValuesOnTopOfBars={true}
-                  chartConfig={{
-                    barPercentage: 1,
-                    backgroundGradientFrom: '#f5ede6',
-                    backgroundGradientTo: '#f5ede6',
-                    fillShadowGradientOpacity: 1,
-                    decimalPlaces: 1,
-                    color: () => '#000',
-                    labelColor: () => '#333',
-                    formatTopBarValue: value => `${value}%`,
-                    propsForVerticalLabels: {
-                      fontFamily: 'InriaSerif-Bold',
-                      fontSize: 10,
-                    },
-                    propsForLabels: {
-                      fontFamily: 'InriaSerif-Bold',
-                      fontSize: 10,
-                    },
-                  }}
-                  style={styles.chartAndroid}
-                />
-              </View>
+            
+{Platform.OS === 'android' ? (
+  <View style={styles.chartContainerAndroid}>
+    <BarChart
+      data={{
+        labels: topProducts.labels,
+        datasets: [{
+          data: (() => {
+            const total = topProducts.values.reduce((sum, val) => sum + val, 0);
+            return topProducts.values.map((value) => {
+              const percentage = ((value / total) * 100).toFixed(1);
+              return parseFloat(percentage);
+            });
+          })(),
+          colors: [
+            () => '#d6bda7',
+            () => '#d8d7d8',
+            () => '#c5d1d1',
+            () => '#a6ada6',
+            () => '#c5d1b2',
+          ],
+        }],
+      }}
+      width={CARD_WIDTH + 40}
+      height={170}
+      withInnerLines={false}
+      withHorizontalLabels={true} // Changed from false to true to show numbers
+      withCustomBarColorFromData={true}
+      flatColor={true}
+      fromZero
+      showValuesOnTopOfBars={true}
+      chartConfig={{
+        barPercentage: 0.9,
+        backgroundGradientFrom: '#f5ede6',
+        backgroundGradientTo: '#f5ede6',
+        fillShadowGradientOpacity: 1,
+        decimalPlaces: 1,
+        color: () => '#000',
+        labelColor: () => '#333',
+        style: { borderRadius: 12 },
+        formatTopBarValue: (value) => `${value}%`,
+        propsForVerticalLabels: {
+          fontFamily: 'InriaSerif-Bold',
+          fontSize: 10,
+        },
+        propsForLabels: {
+          fontFamily: 'InriaSerif-Bold',
+          fontSize: 10,
+        },
+        propsForHorizontalLabels: { // Add this for left side numbers
+          fontFamily: 'InriaSerif-Bold',
+          fontSize: 10,
+        },
+      }}
+      style={styles.chartAndroid}
+    />
+  </View>
             ) : (
               <View style={styles.chartContainerIOS}>
                 <BarChart
@@ -370,6 +376,18 @@ export default function OptimizedAdBoard() {
                   </View>
                   
                   <Text style={styles.city}>Location: {real.city}</Text>
+                  {real.phoneNumber && (
+                    <View style={styles.contactRow}>
+                      <Text style={styles.phoneNumber}>Contact </Text>
+                      <MaterialCommunityIcons
+                        name="phone"
+                        size={16}
+                        color="#7E8FA6"
+                        style={{ marginRight: 5 }}
+                      />
+                      <Text style={styles.phoneNumber}>: {real.phoneNumber}</Text>
+                    </View>
+                  )}
                   <Text style={styles.description}>{real.description}</Text>
                 </View>
               );
@@ -440,14 +458,14 @@ const styles = StyleSheet.create({
   chartContainerAndroid: {
     backgroundColor: '#f5ede6',
     width: CARD_WIDTH,
-    marginHorizontal: '0%',
+    marginHorizontal: '5%', // Same as iOS
     borderRadius: 12,
-    marginBottom: '2%',
+    marginBottom: '5%', // Same as iOS
   },
   chartAndroid: {
-    marginTop: 20,
+    marginTop: 0, // Same as iOS
     borderRadius: 12,
-    marginHorizontal: '0%',
+    marginHorizontal: '-15%', // Similar negative margin approach as iOS but adjusted
   },
   chartContainerIOS: {
     backgroundColor: '#f5ede6',
@@ -579,7 +597,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: '#E9E0D4',
-    paddingBottom: Platform.OS === 'android' ? 25 : 10,
+    paddingBottom: Platform.OS === 'android' ? 30 : 10,
     paddingTop: 0,
     elevation: 10,
     shadowColor: '#000',
@@ -587,4 +605,15 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     shadowOffset: { width: 0, height: -2 },
   },
+  contactRow: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  marginTop: 4,
+},
+phoneNumber: {
+  fontFamily: 'InriaSerif-Regular',
+  fontSize: 14,
+  color: '#7E8FA6',
+  fontWeight: '500',
+},
 });

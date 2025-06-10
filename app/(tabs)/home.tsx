@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
 	},	
   bottomNavContainer: {
   position: 'absolute',
-  bottom: Platform.OS === 'android' ? 25 : 10, // Move up 20px on Android
+  bottom: Platform.OS === 'android' ? 30 : 10, // Move up 20px on Android
   left: 0,
   right: 0,
   backgroundColor: '#E9E0D4', // Hide content underneath

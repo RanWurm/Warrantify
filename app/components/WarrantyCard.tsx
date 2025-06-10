@@ -66,8 +66,9 @@ const WarrantyCard: React.FC<WarrantyCardProps> = ({
   const [description, setDescription] = useState('');
   const [isOnMarket, setIsOnMarket] = useState(false);
   const [loading, setLoading] = useState(false);
-
-  // Determine progress color based on the progress value.
+  const [phoneNumber, setPhoneNumber] = useState('');
+  
+  // Determine progress color based on the progress value. 
   let progressColor = '#7E8FA6';
   if (progress >= 75) {
     progressColor = '#AF6F6F';
@@ -104,6 +105,7 @@ const WarrantyCard: React.FC<WarrantyCardProps> = ({
           setSalePrice(data.adData.salePrice?.toString() || '');
           setCity(data.adData.city || '');
           setDescription(data.adData.description || '');
+          setPhoneNumber(data.adData.phoneNumber || '');
         }
       } else {
         console.log('Failed to check market status:', response.status); // Debug log
@@ -144,6 +146,7 @@ const WarrantyCard: React.FC<WarrantyCardProps> = ({
     setSalePrice('');
     setCity('');
     setDescription('');
+    setPhoneNumber('');
     setModalVisible(true);
   };
 
@@ -182,6 +185,7 @@ const WarrantyCard: React.FC<WarrantyCardProps> = ({
         setSalePrice('');
         setCity('');
         setDescription('');
+        setPhoneNumber('');
         
         if (Platform.OS === 'web') {
           console.log('Item removed from market successfully');
@@ -204,23 +208,35 @@ const WarrantyCard: React.FC<WarrantyCardProps> = ({
   };
 
   const handleSubmitMarketItem = async () => {
+    if (!salePrice.trim() || !city.trim() || !phoneNumber.trim()) {
+        const message = 'Please fill in all required fields (Sale Price, City, and Phone Number)';
+        if (Platform.OS === 'web') {
+          alert(message);
+        } else {
+          Alert.alert('Missing Information', message);
+        }
+        return;
+    }
+      
     setLoading(true);
+    
     try {
-      const token = await AsyncStorage.getItem("token")
-      const response = await fetch(`${serverBackendURL}/add-for-sale-board`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          token,
-          productId,
-          salePrice,
-          city,
-          description,
-        })
-      });
+    const token = await AsyncStorage.getItem("token")
+    const response = await fetch(`${serverBackendURL}/add-for-sale-board`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        token,
+        productId,
+        salePrice,
+        city,
+        description,
+        phoneNumber, // ADD THIS LINE
+      })
+    });
       
       if (response.ok) {
         setIsOnMarket(true);
@@ -401,7 +417,14 @@ const WarrantyCard: React.FC<WarrantyCardProps> = ({
                 onChangeText={setCity}
               />
               <TextInput
-                placeholder="Description"
+                placeholder="Phone Number"
+                style={styles.input}
+                keyboardType="phone-pad"
+                value={phoneNumber}
+                onChangeText={setPhoneNumber}
+              />
+              <TextInput
+                placeholder="Description (optional)"
                 style={[styles.input, styles.descriptionInput]}
                 value={description}
                 onChangeText={setDescription}

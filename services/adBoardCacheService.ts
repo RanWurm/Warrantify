@@ -21,6 +21,7 @@ export interface RealAd {
   city: string;
   description: string;
   salePrice: number;
+  phoneNumber:string;
 }
 
 export interface RecommendedAd {

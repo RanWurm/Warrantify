@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: '#E9E0D4',
-    paddingBottom: Platform.OS === 'android' ? 25 : 10,
+    paddingBottom: Platform.OS === 'android' ? 30 : 10,
     paddingTop: 0,
     elevation: 10, // Android shadow
     shadowColor: '#000', // iOS shadow

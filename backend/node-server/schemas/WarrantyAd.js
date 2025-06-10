@@ -7,6 +7,7 @@ const AdSchema = new mongoose.Schema({
   manufacturer:String,
   salePrice: Number,
   city: String,
+  phoneNumber: String,
   description: String,
 }, {
   collection: 'WarrantyAd',

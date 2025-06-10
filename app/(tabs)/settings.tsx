@@ -405,11 +405,17 @@ columnsContainer: {
 	marginTop: isWeb ? 0 : 60,  // little space on mobile between title and icon
   },
 bottomNavContainer: {
-  position: 'absolute',
-  bottom: Platform.OS === 'android' ? 25 : 10, // Move up 20px on Android
-  left: 0,
-  right: 0,
-  backgroundColor: '#E9E0D4', // Hide content underneath
-  paddingTop: 10, // Add padding above nav bar
-},
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#E9E0D4',
+    paddingBottom: Platform.OS === 'android' ? 30 : 10,
+    paddingTop: 0,
+    elevation: 10, // Android shadow
+    shadowColor: '#000', // iOS shadow
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: -2 },
+  },
 });
