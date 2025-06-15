@@ -20,6 +20,7 @@ import { FlatList, Modal } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as IntentLauncher from 'expo-intent-launcher';
 import warrantiesCacheService from '../../services/warrantiesCacheService';
+import notificationService from '../../services/notificationService';
 
 const serverBackendURL = Constants.expoConfig!.extra!.SERVER_BACKEND_URL;
 

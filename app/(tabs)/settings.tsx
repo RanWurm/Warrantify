@@ -77,6 +77,25 @@ export default function Settings() {
   const [isNotificationsEnabled, setIsNotificationsEnabled] = React.useState(false);
   const [isDarkModeEnabled, setIsDarkModeEnabled] = React.useState(false);
 
+  // Load saved notification state when component mounts
+  React.useEffect(() => {
+    const loadNotificationState = async () => {
+      try {
+        const savedState = await AsyncStorage.getItem('notificationsEnabled');
+        if (savedState !== null) {
+          const isEnabled = savedState === 'true';
+          setIsNotificationsEnabled(isEnabled);
+          if (isEnabled) {
+            await notificationService.initialize();
+          }
+        }
+      } catch (error) {
+        console.error('Error loading notification state:', error);
+      }
+    };
+    loadNotificationState();
+  }, []);
+
   if (!fontsLoaded) {
     return null; // Render nothing while fonts are loading
   }
@@ -94,12 +113,20 @@ export default function Settings() {
       const newState = !isNotificationsEnabled;
       setIsNotificationsEnabled(newState);
       
-      if (newState) {
-        // Initialize notifications when enabling
-        await notificationService.initialize();
-      } else {
-        // Cancel all notifications when disabling
-        await notificationService.cancelAllWarrantyNotifications();
+      // Save the new state to AsyncStorage
+      try {
+        await AsyncStorage.setItem('notificationsEnabled', newState.toString());
+        
+        if (newState) {
+          // Initialize notifications when enabling
+          await notificationService.initialize();
+        } else {
+          // Cancel all notifications when disabling
+          await notificationService.cancelAllWarrantyNotifications();
+        }
+      } catch (error) {
+        console.error('Error saving notification state:', error);
+        Alert.alert('Error', 'Failed to save notification settings');
       }
     } else if (optionName === 'Dark Mode') {
       setIsDarkModeEnabled((previousState) => !previousState);
