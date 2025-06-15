@@ -11,9 +11,6 @@
     "test": "jest --watchAll",
     "lint": "expo lint"
   },
-  "jest": {
-    "preset": "jest-expo"
-  },
   "dependencies": {
     "@expo/config-plugins": "^10.0.0",
     "@expo/prebuild-config": "^9.0.4",
@@ -32,15 +29,19 @@
     "expo-camera": "^16.1.6",
     "expo-constants": "~17.1.6",
     "expo-dev-client": "~5.1.8",
+    "expo-document-picker": "~13.1.5",
+    "expo-file-system": "~18.1.10",
     "expo-font": "~13.3.1",
     "expo-haptics": "~14.1.4",
     "expo-image-picker": "~16.1.4",
+    "expo-intent-launcher": "~12.1.4",
     "expo-linear-gradient": "~14.1.4",
     "expo-linking": "~7.1.5",
     "expo-location": "~18.1.5",
     "expo-notifications": "~0.31.2",
     "expo-router": "~5.0.7",
     "expo-secure-store": "~14.2.3",
+    "expo-sharing": "~13.1.5",
     "expo-splash-screen": "~0.30.8",
     "expo-status-bar": "~2.2.3",
     "expo-symbols": "~0.4.4",
@@ -69,14 +70,12 @@
     "react-native-svg": "^15.11.2",
     "react-native-vector-icons": "^10.2.0",
     "react-native-web": "~0.20.0",
-    "react-native-webview": "13.13.5",
-    "expo-document-picker": "~13.1.5",
-    "expo-file-system": "~18.1.10",
-    "expo-sharing": "~13.1.5",
-    "expo-intent-launcher": "~12.1.4"
+    "react-native-webview": "13.13.5"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
+    "@testing-library/jest-native": "^5.4.3",
+    "@testing-library/react-native": "^13.2.0",
     "@types/jest": "^29.5.12",
     "@types/leaflet": "^1.9.18",
     "@types/react": "~19.0.10",

@@ -10,7 +10,8 @@ import {
   Dimensions,
   Platform,
   RefreshControl,
-  TouchableOpacity, 
+  TouchableOpacity,
+  Modal,
 } from 'react-native';
 import BottomNavBar from '../components/BottomNavBar';
 import SearchBar from '../components/SearchBar'; 
@@ -37,11 +38,20 @@ export default function OptimizedAdBoard() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'sponsored'>('all');
 
   // Memoized filtered ads to avoid recalculation on every render
   const filteredAds = useMemo(() => {
-    return adBoardCacheService.filterAds(combinedAds, searchQuery);
-  }, [combinedAds, searchQuery]);
+    let filtered = adBoardCacheService.filterAds(combinedAds, searchQuery);
+    
+    // Apply filter based on selectedFilter
+    if (selectedFilter === 'sponsored') {
+      filtered = filtered.filter(ad => (ad as any).monetized);
+    }
+    
+    return filtered;
+  }, [combinedAds, searchQuery, selectedFilter]);
 
   // Load ad board data
   const loadAdBoardData = async (forceRefresh = false) => {
@@ -119,6 +129,12 @@ export default function OptimizedAdBoard() {
   const onRefresh = useCallback(async () => {
     await loadAdBoardData(true);
   }, []);
+
+  // Filter dropdown handler
+  const handleFilterSelect = (filter: 'all' | 'sponsored') => {
+    setSelectedFilter(filter);
+    setShowFilterDropdown(false);
+  };
 
   // Loading state
   if (loading && combinedAds.length === 0) {
@@ -290,8 +306,8 @@ export default function OptimizedAdBoard() {
           onSelectSuggestion={handleSelectSuggestion}
           placeholder="Products, cities, descriptions..."
           filterOptions={{
-            text: 'All Products',
-            onPress: () => console.log('Filter button pressed'),
+            text: selectedFilter === 'all' ? 'All Products' : 'Sponsored',
+            onPress: () => setShowFilterDropdown(true),
           }}
           autocompleteEndpoint={`${pythonBackendURL}/autocomplete`}
           additionalStyles={{
@@ -302,6 +318,47 @@ export default function OptimizedAdBoard() {
             searchText: styles.searchText,
           }}
         />
+        
+        {/* Filter Dropdown Modal */}
+        <Modal
+          visible={showFilterDropdown}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setShowFilterDropdown(false)}
+        >
+          <TouchableOpacity 
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setShowFilterDropdown(false)}
+          >
+            <View style={styles.dropdownContainer}>
+              <TouchableOpacity 
+                style={[
+                  styles.dropdownOption,
+                  selectedFilter === 'all' && styles.selectedOption
+                ]}
+                onPress={() => handleFilterSelect('all')}
+              >
+                <Text style={[
+                  styles.dropdownOptionText,
+                  selectedFilter === 'all' && styles.selectedOptionText
+                ]}>All Products</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[
+                  styles.dropdownOption,
+                  selectedFilter === 'sponsored' && styles.selectedOption
+                ]}
+                onPress={() => handleFilterSelect('sponsored')}
+              >
+                <Text style={[
+                  styles.dropdownOptionText,
+                  selectedFilter === 'sponsored' && styles.selectedOptionText
+                ]}>Sponsored</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </Modal>
         
         <ScrollView 
           contentContainerStyle={styles.scrollContent}
@@ -615,5 +672,42 @@ phoneNumber: {
   fontSize: 14,
   color: '#7E8FA6',
   fontWeight: '500',
+},
+modalOverlay: {
+  flex: 1,
+  backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  justifyContent: 'center',
+  alignItems: 'center',
+},
+dropdownContainer: {
+  backgroundColor: '#FDFDFD',
+  borderRadius: 8,
+  padding: 8,
+  width: 200,
+  shadowColor: '#000',
+  shadowOffset: {
+    width: 0,
+    height: 2,
+  },
+  shadowOpacity: 0.25,
+  shadowRadius: 3.84,
+  elevation: 5,
+},
+dropdownOption: {
+  paddingVertical: 12,
+  paddingHorizontal: 16,
+  borderRadius: 4,
+},
+selectedOption: {
+  backgroundColor: '#D2BBA1',
+},
+dropdownOptionText: {
+  fontSize: 16,
+  fontFamily: 'InriaSerif-Regular',
+  color: '#333',
+},
+selectedOptionText: {
+  color: '#000',
+  fontFamily: 'InriaSerif-Bold',
 },
 });
