@@ -22,6 +22,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { FlatList } from 'react-native';
+import notificationService from '../../services/notificationService';
 const serverBackendURL = Constants.expoConfig!.extra!.SERVER_BACKEND_URL;
 
 interface AddWarrantyFormProps {
@@ -472,6 +473,13 @@ const handleAddWarranty = async () => {
     if (response.ok) {
       const result = await response.json();
       const warrantyId = result.warranty._id;
+      
+      // Schedule notification for warranty expiration
+      await notificationService.scheduleWarrantyExpirationNotification(
+        warrantyId,
+        formData.productName,
+        new Date(formData.expirationDate)
+      );
       
       // Store the warranty ID for potential file uploads
       setCreatedWarrantyId(warrantyId);

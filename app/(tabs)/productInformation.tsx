@@ -491,20 +491,20 @@ const renderFileItem = ({ item }: { item: ProductFile }) => (
 
 
   const handleSaveEdits = async () => {
-      console.log("💾 Save button pressed");
+    console.log("💾 Save button pressed");
 
     try {
       const token = await AsyncStorage.getItem('token');
 
       if (!editedPrice || isNaN(Number(editedPrice))) {
-      alert("Please enter a valid price.");
-      return;
-    }
+        alert("Please enter a valid price.");
+        return;
+      }
 
       console.log('📦 Updating productId:', productId);
       console.log("🔗 Calling URL:", `${serverBackendURL}/update-warranty/${productId}`);
 
-      await axios.put(`${serverBackendURL}/update-warranty/${productId}`, {
+      const response = await axios.put(`${serverBackendURL}/update-warranty/${productId}`, {
         serviceCenter: editedServiceCenter,
         store: editedStore,
         price: editedPrice,
@@ -514,29 +514,32 @@ const renderFileItem = ({ item }: { item: ProductFile }) => (
         }
       });
 
-      alert('Warranty updated successfully!');
-      //setIsEditing(false);
-      setEditingServiceCenter(false);
-      setEditingStore(false);
-      setEditingPrice(false);
+      if (response.status === 200) {
+        alert('Warranty updated successfully!');
+        setEditingServiceCenter(false);
+        setEditingStore(false);
+        setEditingPrice(false);
 
-      router.replace({
-        pathname: '/productInformation',
-        params: {
+        // Update the local state with the new values
+        router.replace({
+          pathname: '/productInformation',
+          params: {
             productId,
             productName,
             model,
             purchaseDate,
             expirationDate,
-            price,
+            price: editedPrice,
             serviceCenter: editedServiceCenter,
             store: editedStore,
-        }
+          }
         });
-
+      } else {
+        throw new Error('Failed to update warranty');
+      }
     } catch (err) {
       console.error('Failed to update warranty:', err);
-      alert('Failed to save changes.');
+      alert('Failed to save changes. Please try again.');
     }
   };
 

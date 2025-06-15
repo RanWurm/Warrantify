@@ -19,6 +19,7 @@ import * as Progress from 'react-native-progress';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
+import notificationService from '../../services/notificationService';
 
 const serverBackendURL = Constants.expoConfig!.extra!.SERVER_BACKEND_URL;
 
@@ -262,10 +263,12 @@ const WarrantyCard: React.FC<WarrantyCardProps> = ({
     }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (Platform.OS === 'web') {
       const confirmed = window.confirm('Are you sure you want to delete this warranty? This action cannot be undone.');
       if (confirmed && onDelete) {
+        // Cancel the notification before deleting the warranty
+        await notificationService.cancelWarrantyNotification(productId);
         onDelete();
       }
     } else {
@@ -277,7 +280,11 @@ const WarrantyCard: React.FC<WarrantyCardProps> = ({
           { 
             text: 'Delete', 
             style: 'destructive', 
-            onPress: () => onDelete && onDelete()
+            onPress: async () => {
+              // Cancel the notification before deleting the warranty
+              await notificationService.cancelWarrantyNotification(productId);
+              onDelete && onDelete();
+            }
           }
         ]
       );

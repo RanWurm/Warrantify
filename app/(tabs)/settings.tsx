@@ -24,6 +24,7 @@ import BottomNavBar from '../components/BottomNavBar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CommonActions } from '@react-navigation/native';
 import { useNavigation } from 'expo-router';
+import notificationService from '../../services/notificationService';
 
 interface SettingOption {
   id: string;
@@ -57,11 +58,9 @@ const NavItem = ({ label, destination }: { label: string; destination: string })
 
 const settingsOptions: SettingOption[] = [
   { id: '1', name: 'Account', icon: 'person-outline', type: 'navigation', route: '/account' },
-//   { id: '2', name: 'Notifications', icon: 'notifications-outline', type: 'toggle' },
-//   { id: '3', name: 'Privacy', icon: 'lock-closed-outline', type: 'navigation', route: '/privacy' },
-//   { id: '4', name: 'Help & Support', icon: 'help-circle-outline', type: 'navigation', route: '/helpAndSupport' },
-//   { id: '5', name: 'About', icon: 'information-circle-outline', type: 'navigation', route: '/about' },
-  { id: '6', name: 'Logout', icon: 'log-out-outline', type: 'navigation' }, // Removed route since it's handled separately
+  { id: '2', name: 'Notifications', icon: 'notifications-outline', type: 'toggle' },
+  { id: '3', name: 'Test Notifications', icon: 'notifications-outline', type: 'navigation' },
+  { id: '6', name: 'Logout', icon: 'log-out-outline', type: 'navigation' },
 ];
 
 
@@ -90,15 +89,21 @@ export default function Settings() {
   const navFontSize = Math.min(width * 0.03, 16);
 
 
-  const toggleSwitch = (optionName: string) => {
+  const toggleSwitch = async (optionName: string) => {
     if (optionName === 'Notifications') {
-      setIsNotificationsEnabled((previousState) => !previousState);
-      // Implement notification toggle logic here
+      const newState = !isNotificationsEnabled;
+      setIsNotificationsEnabled(newState);
+      
+      if (newState) {
+        // Initialize notifications when enabling
+        await notificationService.initialize();
+      } else {
+        // Cancel all notifications when disabling
+        await notificationService.cancelAllWarrantyNotifications();
+      }
     } else if (optionName === 'Dark Mode') {
       setIsDarkModeEnabled((previousState) => !previousState);
-      // Implement Dark Mode theme toggle if applicable
     }
-    // Add more toggles as needed
   };
 
 // Updated handleLogout function in settings.tsx - CLEAR ALL CACHE
@@ -184,15 +189,23 @@ const handleLogout = async () => {
   }
 };
 
-  const handleOptionPress = (option: SettingOption) => {
-    if (option.type === 'navigation') {
-      if (option.name === 'Logout') {
-        handleLogout();
-      } else if (option.route) {
-        router.push(option.route as any);
+  const handleOptionPress = async (option: SettingOption) => {
+    if (option.name === 'Test Notifications') {
+      try {
+        await notificationService.scheduleTestNotification();
+        Alert.alert(
+          'Test Notification',
+          'A test notification will be sent in 10 seconds. Please make sure notifications are enabled.',
+          [{ text: 'OK' }]
+        );
+      } catch (error) {
+        Alert.alert('Error', 'Failed to schedule test notification');
       }
+    } else if (option.name === 'Logout') {
+      handleLogout();
+    } else if (option.route) {
+      router.push(option.route);
     }
-    // Handle other types if necessary
   };
 
   return (
