@@ -19,6 +19,7 @@ import * as Sharing from 'expo-sharing';
 import { FlatList, Modal } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as IntentLauncher from 'expo-intent-launcher';
+import warrantiesCacheService from '../../services/warrantiesCacheService';
 
 const serverBackendURL = Constants.expoConfig!.extra!.SERVER_BACKEND_URL;
 
@@ -515,25 +516,59 @@ const renderFileItem = ({ item }: { item: ProductFile }) => (
       });
 
       if (response.status === 200) {
-        alert('Warranty updated successfully!');
-        setEditingServiceCenter(false);
-        setEditingStore(false);
-        setEditingPrice(false);
-
-        // Update the local state with the new values
-        router.replace({
-          pathname: '/productInformation',
-          params: {
-            productId,
-            productName,
-            model,
-            purchaseDate,
-            expirationDate,
-            price: editedPrice,
-            serviceCenter: editedServiceCenter,
-            store: editedStore,
+        // Fetch the updated warranty data
+        const warrantyResponse = await axios.get(`${serverBackendURL}/warranty/${productId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`
           }
         });
+
+        if (warrantyResponse.status === 200) {
+          const updatedWarranty = warrantyResponse.data.warranty;
+          
+          alert('Warranty updated successfully!');
+          setEditingServiceCenter(false);
+          setEditingStore(false);
+          setEditingPrice(false);
+
+          // Update the local state with the new values from the server
+          router.replace({
+            pathname: '/productInformation',
+            params: {
+              productId,
+              productName: updatedWarranty.productName,
+              model: updatedWarranty.model,
+              purchaseDate: updatedWarranty.purchaseDate,
+              expirationDate: updatedWarranty.expirationDate,
+              price: updatedWarranty.price,
+              serviceCenter: updatedWarranty.serviceCenter,
+              store: updatedWarranty.store,
+            }
+          });
+
+          // Refresh the warranties cache
+          await warrantiesCacheService.refreshCache();
+
+          // Force a refresh by navigating back and forth
+          router.back();
+          setTimeout(() => {
+            router.push({
+              pathname: '/productInformation',
+              params: {
+                productId,
+                productName: updatedWarranty.productName,
+                model: updatedWarranty.model,
+                purchaseDate: updatedWarranty.purchaseDate,
+                expirationDate: updatedWarranty.expirationDate,
+                price: updatedWarranty.price,
+                serviceCenter: updatedWarranty.serviceCenter,
+                store: updatedWarranty.store,
+              }
+            });
+          }, 100);
+        } else {
+          throw new Error('Failed to fetch updated warranty data');
+        }
       } else {
         throw new Error('Failed to update warranty');
       }
@@ -1259,8 +1294,8 @@ const styles = StyleSheet.create({
 
   iconBadge: {
     position: 'absolute',
-    top: Platform.OS === 'android' ? "9%": "13%",
-    left: Platform.OS === 'android' ? "30%": "30%",
+    top: Platform.OS === 'android' ? "9%": "8%",
+    left: Platform.OS === 'android' ? "30%": "34%",
     backgroundColor: '#D1BB9E',
     borderRadius: 50,
     padding: Platform.OS === 'android' ? 10 : 12,

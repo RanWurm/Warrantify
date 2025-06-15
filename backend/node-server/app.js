@@ -772,6 +772,24 @@ app.delete('/delete-warranty/:warrantyId', async (req, res) => {
   }
 });
 
+// Get a single warranty by ID
+app.get('/warranty/:warrantyId', verifyToken, async (req, res) => {
+  const { warrantyId } = req.params;
+  
+  try {
+    const user = await User.findOne({ email: req.userEmail });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const warranty = await Warranty.findOne({ _id: warrantyId, user: user._id });
+    if (!warranty) return res.status(404).json({ error: 'Warranty not found' });
+
+    res.status(200).json({ warranty });
+  } catch (error) {
+    console.error('Get warranty error:', error);
+    res.status(500).json({ error: 'Failed to retrieve warranty' });
+  }
+});
+
 // Start the server
 const PORT = process.env.PORT || 3000;
 

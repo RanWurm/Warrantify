@@ -20,6 +20,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import notificationService from '../../services/notificationService';
+import axios from 'axios';
 
 const serverBackendURL = Constants.expoConfig!.extra!.SERVER_BACKEND_URL;
 
@@ -126,21 +127,51 @@ const WarrantyCard: React.FC<WarrantyCardProps> = ({
     }
   };
   
-  const handleNavigateToProductInfo = () => {
-  router.push({
-    pathname: '/productInformation',
-    params: {
-      productId,
-      productName: title,
-      model,
-      purchaseDate,
-      expirationDate,
-      price,
-      serviceCenter,
-      store,
-    },
-  });
-};
+  const handleNavigateToProductInfo = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const response = await axios.get(`${serverBackendURL}/warranty/${productId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (response.status === 200) {
+        const warranty = response.data.warranty;
+        router.push({
+          pathname: '/productInformation',
+          params: {
+            productId,
+            productName: warranty.productName,
+            model: warranty.model,
+            purchaseDate: warranty.purchaseDate,
+            expirationDate: warranty.expirationDate,
+            price: warranty.price,
+            serviceCenter: warranty.serviceCenter,
+            store: warranty.store,
+          },
+        });
+      } else {
+        throw new Error('Failed to fetch warranty data');
+      }
+    } catch (error) {
+      console.error('Error fetching warranty data:', error);
+      // Fallback to using the current data if fetch fails
+      router.push({
+        pathname: '/productInformation',
+        params: {
+          productId,
+          productName: title,
+          model,
+          purchaseDate,
+          expirationDate,
+          price,
+          serviceCenter,
+          store,
+        },
+      });
+    }
+  };
 
   const handleAddToMarket = () => {
     // Reset form and open modal
