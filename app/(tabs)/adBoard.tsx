@@ -17,13 +17,14 @@ import BottomNavBar from '../components/BottomNavBar';
 import SearchBar from '../components/SearchBar'; 
 import Constants from 'expo-constants';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { BarChart } from 'react-native-chart-kit';
+import BarChart from '../components/BarChart'; 
 import adBoardCacheService, { 
   CombinedAd, 
   RealAd, 
   RecommendedAd, 
   TopProductsData 
 } from '../../services/adBoardCacheService';
+
 
 const pythonBackendURL = Constants.expoConfig!.extra!.PYTHON_BACKEND_URL;
 const { width } = Dimensions.get('window');
@@ -267,7 +268,7 @@ export default function OptimizedAdBoard() {
                       ],
                     }],
                   }}
-                  width={CARD_WIDTH + 55}
+                  width={CARD_WIDTH + 50}
                   height={170}
                   withInnerLines={false}
                   withHorizontalLabels={false}
@@ -275,8 +276,9 @@ export default function OptimizedAdBoard() {
                   flatColor={true}
                   fromZero
                   showValuesOnTopOfBars={true}
+
                   chartConfig={{
-                    barPercentage: 1.6,
+                    barPercentage: 1.3,
                     backgroundGradientFrom: ' ',
                     backgroundGradientTo: ' ',
                     decimalPlaces: 1,
@@ -525,16 +527,22 @@ const styles = StyleSheet.create({
     marginHorizontal: '-15%', // Similar negative margin approach as iOS but adjusted
   },
   chartContainerIOS: {
-    backgroundColor: '#f5ede6',
+    //backgroundColor: '#f5ede6',
+    backgroundColor: 'white',
     width: CARD_WIDTH,
     marginHorizontal: '5%',
     borderRadius: 12,
     marginBottom: '5%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   chartIOS: {
     marginTop: 0,
     borderRadius: 12,
-    marginHorizontal: '-20%',
+    marginHorizontal: '-18%',
   },
   searchBarContainer: {
     marginHorizontal: 10,
