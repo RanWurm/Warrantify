@@ -227,18 +227,18 @@ export default function RegisterScreen() {
 				</LinearGradient>
         </TouchableOpacity>
 
-        {/* Or Divider */}
+        {/* Or Divider
         <View style={styles.dividerContainer}>
           <View style={styles.dividerLine} />
           <Text style={styles.dividerText}>OR</Text>
           <View style={styles.dividerLine} />
-        </View>
+        </View> */}
 
         {/* Sign Up with Google Button */}
-        <TouchableOpacity style={styles.googleButton} onPress={handleGoogleSignUp}>
+        {/* <TouchableOpacity style={styles.googleButton} onPress={handleGoogleSignUp}>
           <FontAwesome name="google" size={24} color="#DB4437" style={styles.googleIcon} />
           <Text style={styles.googleButtonText}>Sign Up with Google</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
         {/* Already have an account */}
         <View style={styles.loginContainer}>
@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 16,
-    //fontFamily: 'InriaSerif-regular',
+    fontFamily: 'InriaSerif-regular',
     color: '#000',
     marginTop: 0,
     marginBottom: 5,
@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    //fontFamily: 'InriaSerif-Regular',
+    fontFamily: 'InriaSerif-Regular',
     // borderWidth: 1,
     // borderColor: '#CCC',
   },
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
-    //fontFamily: 'InriaSerif-Bold',
+    fontFamily: 'InriaSerif-Bold',
   },
   dividerContainer: {
     flexDirection: 'row',
@@ -340,8 +340,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
     fontSize: 14,
     color: '#555',
-		marginTop: 2,
-    //fontFamily: 'InriaSerif-Regular',
+	marginTop: 2,
+    fontFamily: 'InriaSerif-Regular',
   },
   googleButton: {
     flexDirection: 'row',
@@ -371,10 +371,12 @@ const styles = StyleSheet.create({
     color: '#4f3e2f',
     fontSize: 14,
     fontWeight: '600',
+    fontFamily: 'InriaSerif-Regular',
+
   },
   loginButtonText: {
     fontSize: 14,
     color: '#7E8FA6',
-    //fontFamily: 'InriaSerif-Bold',
+    fontFamily: 'InriaSerif-Bold',
   },
 });
