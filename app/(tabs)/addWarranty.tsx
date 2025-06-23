@@ -11,6 +11,10 @@ import {
   Image,
   Alert,
   Platform,
+  KeyboardAvoidingView,
+  TouchableWithoutFeedback,
+  Keyboard,
+  KeyboardEvent,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -43,6 +47,8 @@ const AddWarrantyForm: React.FC<AddWarrantyFormProps> = ({ onClose, scannedData 
   const [expirationDate, setExpirationDate] = useState(new Date());
   const [showPurchaseDatePicker, setShowPurchaseDatePicker] = useState(false);
   const [showExpirationDatePicker, setShowExpirationDatePicker] = useState(false);
+  const scrollViewRef = React.useRef<ScrollView>(null);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
 
   useEffect(() => {
     if (scannedData) {
@@ -69,6 +75,30 @@ const AddWarrantyForm: React.FC<AddWarrantyFormProps> = ({ onClose, scannedData 
       }
     }
   }, [scannedData]);
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => {
+        setKeyboardVisible(true);
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        setKeyboardVisible(false);
+        // Reset scroll position when keyboard is hidden
+        setTimeout(() => {
+          scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+        }, 100);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener?.remove();
+      keyboardDidHideListener?.remove();
+    };
+  }, []);
 
   const formatDate = (date: Date) => date.toISOString().split('T')[0];
 
@@ -104,6 +134,21 @@ const AddWarrantyForm: React.FC<AddWarrantyFormProps> = ({ onClose, scannedData 
     }
   };
 
+  const handleInputFocus = () => {
+    // Automatically scroll to the bottom when an input is focused
+    setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({ animated: true });
+    }, 150);
+  };
+
+  const handleKeyboardDismiss = () => {
+    Keyboard.dismiss();
+    // Reset scroll position and ensure form is properly positioned
+    setTimeout(() => {
+      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+    }, 100);
+  };
+
   const handleAddWarranty = async () => {
     try {
       const token = await AsyncStorage.getItem("token");
@@ -129,116 +174,136 @@ const AddWarrantyForm: React.FC<AddWarrantyFormProps> = ({ onClose, scannedData 
 
   return (
     <View style={styles.formOverlay}>
-      <View style={styles.formContainer}>
-        <View style={styles.header}>
-          <Ionicons name="close" size={24} color="#555" onPress={onClose} style={{ position: 'absolute', left: 10 }} />
-          <Text style={styles.headerTitle}>Add a Warranty</Text>
-        </View>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardAvoidingView}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+        enabled={true}
+      >
+        <TouchableWithoutFeedback onPress={handleKeyboardDismiss}>
+          <View style={[
+            styles.formContainer,
+            keyboardVisible && styles.formContainerKeyboardOpen
+          ]}>
+            <View style={styles.header}>
+              <Ionicons name="close" size={24} color="#555" onPress={onClose} style={{ position: 'absolute', left: 10 }} />
+              <Text style={styles.headerTitle}>Add a Warranty</Text>
+            </View>
 
-        <View style={styles.imageContainer}>
-          <Image source={require('../../assets/images/warranty-placeholder.png')} style={styles.image} />
-        </View>
+            <View style={styles.imageContainer}>
+              <Image source={require('../../assets/images/warranty-placeholder.png')} style={styles.image} />
+            </View>
 
-        <ScrollView style={styles.inputContainer} contentContainerStyle={{ paddingBottom: 20 }}>
-          <View style={styles.row}>
-            <TextInput style={styles.input} placeholder="Product Name" placeholderTextColor="black"
-              value={formData.productName}
-              onChangeText={(text) => setFormData({ ...formData, productName: text })}
-            />
-            <TextInput style={styles.input} placeholder="Service Center" placeholderTextColor="black"
-              value={formData.serviceCenter}
-              onChangeText={(text) => setFormData({ ...formData, serviceCenter: text })}
-            />
-          </View>
+            <ScrollView 
+              style={styles.inputContainer} 
+              contentContainerStyle={{ paddingBottom: 40 }}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              ref={scrollViewRef}
+            >
+              <View style={styles.row}>
+                <TextInput style={styles.input} placeholder="Product Name" placeholderTextColor="black"
+                  value={formData.productName}
+                  onChangeText={(text) => setFormData({ ...formData, productName: text })}
+                />
+                <TextInput style={styles.input} placeholder="Service Center" placeholderTextColor="black"
+                  value={formData.serviceCenter}
+                  onChangeText={(text) => setFormData({ ...formData, serviceCenter: text })}
+                />
+              </View>
 
-          <View style={styles.row}>
-            <TextInput style={styles.input} placeholder="Manufacturer" placeholderTextColor="black"
-              value={formData.manufacturer}
-              onChangeText={(text) => setFormData({ ...formData, manufacturer: text })}
-            />
-            <TextInput style={styles.input} placeholder="Store" placeholderTextColor="black"
-              value={formData.store}
-              onChangeText={(text) => setFormData({ ...formData, store: text })}
-            />
-          </View>
+              <View style={styles.row}>
+                <TextInput style={styles.input} placeholder="Manufacturer" placeholderTextColor="black"
+                  value={formData.manufacturer}
+                  onChangeText={(text) => setFormData({ ...formData, manufacturer: text })}
+                />
+                <TextInput style={styles.input} placeholder="Store" placeholderTextColor="black"
+                  value={formData.store}
+                  onChangeText={(text) => setFormData({ ...formData, store: text })}
+                />
+              </View>
 
-          <View style={styles.row}>
-            <TextInput style={styles.input} placeholder="Model" placeholderTextColor="black"
-              value={formData.model}
-              onChangeText={(text) => setFormData({ ...formData, model: text })}
-            />
-            <TextInput style={styles.input} placeholder="Price" placeholderTextColor="black"
-              value={formData.price}
-              onChangeText={(text) => setFormData({ ...formData, price: text })}
-              keyboardType="numeric"
-            />
-          </View>
+              <View style={styles.row}>
+                <TextInput style={styles.input} placeholder="Model" placeholderTextColor="black"
+                  value={formData.model}
+                  onChangeText={(text) => setFormData({ ...formData, model: text })}
+                />
+                <TextInput style={styles.input} placeholder="Price" placeholderTextColor="black"
+                  value={formData.price}
+                  onChangeText={(text) => setFormData({ ...formData, price: text })}
+                  keyboardType="numeric"
+                />
+              </View>
 
-          <View style={styles.row}>
-            <TouchableOpacity style={styles.dateInput} onPress={showPurchaseDatePickerModal}>
-              <Text style={styles.dateInputText}>
-                {formData.purchaseDate || 'Purchase Date'}
-              </Text>
-              <Ionicons name="calendar-outline" size={16} color="#555" />
+              <View style={styles.row}>
+                <TouchableOpacity style={styles.dateInput} onPress={showPurchaseDatePickerModal}>
+                  <Text style={styles.dateInputText}>
+                    {formData.purchaseDate || 'Purchase Date'}
+                  </Text>
+                  <Ionicons name="calendar-outline" size={16} color="#555" />
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.dateInput} onPress={showExpirationDatePickerModal}>
+                  <Text style={styles.dateInputText}>
+                    {formData.expirationDate || 'Expiration Date'}
+                  </Text>
+                  <Ionicons name="calendar-outline" size={16} color="#555" />
+                </TouchableOpacity>
+              </View>
+
+              {showPurchaseDatePicker && (
+                <DateTimePicker
+                  value={purchaseDate}
+                  mode="date"
+                  display="calendar"
+                  onChange={onPurchaseDateChange}
+                />
+              )}
+
+              {showExpirationDatePicker && (
+                <DateTimePicker
+                  value={expirationDate}
+                  mode="date"
+                  display="calendar"
+                  onChange={onExpirationDateChange}
+                />
+              )}
+
+              <View style={styles.row}>
+                <TouchableOpacity style={styles.iconButton}>
+                  <Ionicons name="scan-outline" size={24} color="#555" />
+                  <Text style={styles.iconButtonText}>Scan Receipt</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.iconButton}>
+                  <Ionicons name="add-outline" size={24} color="#555" />
+                  <Text style={styles.iconButtonText}>Add Receipt</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.iconButton}>
+                  <Ionicons name="document-attach-outline" size={24} color="#555" />
+                  <Text style={styles.iconButtonText}>Add Files</Text>
+                </TouchableOpacity>
+              </View>
+
+              <TextInput
+                style={styles.notesInput}
+                placeholder="Add notes"
+                placeholderTextColor="black"
+                value={formData.notes}
+                onChangeText={(text) => setFormData({ ...formData, notes: text })}
+                multiline
+                textAlignVertical="top"
+                onFocus={handleInputFocus}
+              />
+            </ScrollView>
+
+            <TouchableOpacity style={styles.addButton} onPress={handleAddWarranty}>
+              <Text style={styles.addButtonText}>Add a Warranty</Text>
             </TouchableOpacity>
-
-            <TouchableOpacity style={styles.dateInput} onPress={showExpirationDatePickerModal}>
-              <Text style={styles.dateInputText}>
-                {formData.expirationDate || 'Expiration Date'}
-              </Text>
-              <Ionicons name="calendar-outline" size={16} color="#555" />
-            </TouchableOpacity>
           </View>
-
-          {showPurchaseDatePicker && (
-            <DateTimePicker
-              value={purchaseDate}
-              mode="date"
-              display="calendar"
-              onChange={onPurchaseDateChange}
-            />
-          )}
-
-          {showExpirationDatePicker && (
-            <DateTimePicker
-              value={expirationDate}
-              mode="date"
-              display="calendar"
-              onChange={onExpirationDateChange}
-            />
-          )}
-
-          <View style={styles.row}>
-            <TouchableOpacity style={styles.iconButton}>
-              <Ionicons name="scan-outline" size={24} color="#555" />
-              <Text style={styles.iconButtonText}>Scan Receipt</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.iconButton}>
-              <Ionicons name="add-outline" size={24} color="#555" />
-              <Text style={styles.iconButtonText}>Add Receipt</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.iconButton}>
-              <Ionicons name="document-attach-outline" size={24} color="#555" />
-              <Text style={styles.iconButtonText}>Add Files</Text>
-            </TouchableOpacity>
-          </View>
-
-          <TextInput
-            style={styles.notesInput}
-            placeholder="Add notes"
-            placeholderTextColor="black"
-            value={formData.notes}
-            onChangeText={(text) => setFormData({ ...formData, notes: text })}
-            multiline
-          />
-        </ScrollView>
-
-        <TouchableOpacity style={styles.addButton} onPress={handleAddWarranty}>
-          <Text style={styles.addButtonText}>Add a Warranty</Text>
-        </TouchableOpacity>
-      </View>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
     </View>
   );
 };
@@ -254,10 +319,10 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 20,
     maxHeight: '90%',
-    position: 'absolute',
     width: isWeb ? '30%' : '100%',
     right: isWeb ? '35%' : 0,
     bottom: isWeb ? 150 : 0,
+    alignSelf: 'flex-end',
   },
   header: {
     alignItems: 'center',
@@ -343,7 +408,9 @@ const styles = StyleSheet.create({
     color: '#333',
     textAlignVertical: 'top',
     marginHorizontal: 5,
-    minHeight: 80,
+    minHeight: 100,
+    marginTop: 10,
+    fontFamily: 'InriaSerif-Regular',
   },
   addButton: {
     backgroundColor: '#7E8FA6',
@@ -357,6 +424,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     fontFamily: 'InriaSerif-Bold',
+  },
+  keyboardAvoidingView: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  formContainerKeyboardOpen: {
+    maxHeight: '80%',
+    bottom: Platform.OS === 'ios' ? 0 : 0,
   },
 });
 
