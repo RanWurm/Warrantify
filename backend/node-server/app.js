@@ -20,10 +20,10 @@ const pythonBackendURL = process.env.PYTHON_BACKEND_URL;
 // const  = "http://172.20.10.5:5000";
 
 console.log("🐍pythonBackendURL:" + pythonBackendURL);
-const mongoUrl="mongodb+srv://ilanitber:12345679@cluster0.m4fkm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+// const mongoUrl="mongodb+srv://ilanitber:12345679@cluster0.m4fkm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
-// File upload configuration
-// REPLACE your multer configuration with this:
+const mongoUrl = process.env.MONGO_URL;
+
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const warrantyId = req.params.warrantyId;
@@ -81,10 +81,10 @@ mongoose
   console.log(e)
 })
 
-JWT_SECRET="LJHDsBFGHSDB;FGIBSDHFBH"
-require('./schemas/AdBoardSchema.js')
+const JWT_SECRET = process.env.JWT_SECRET;require('./schemas/AdBoardSchema.js')
+
 require('./schemas/WarrantyAd.js')
-require('./schemas/product.js') 
+require('./schemas/Product.js') 
 require('./schemas/User.js')
 
 const User = mongoose.model("userInformation")
@@ -793,6 +793,7 @@ app.get('/warranty/:warrantyId', verifyToken, async (req, res) => {
 // Start the server
 const PORT = process.env.PORT || 3000;
 
-app.listen(3000, '0.0.0.0', () => {
-  console.log(`Node.js server running on port ${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Node.js server running on port ${PORT}`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
 });

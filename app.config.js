@@ -7,9 +7,12 @@ export default {
     version: "1.0.0",
     extra: {
       PYTHON_BACKEND_URL: process.env.PYTHON_BACKEND_URL,
-	  SERVER_BACKEND_URL: process.env.SERVER_BACKEND_URL,
-      GOOGLE_MAPS_API_KEY: "AIzaSyCn-qqKYulPv-Ken38MtqimNa1AiJFluic"
-    },
+	    SERVER_BACKEND_URL: process.env.SERVER_BACKEND_URL,
+      GOOGLE_MAPS_API_KEY: "AIzaSyCn-qqKYulPv-Ken38MtqimNa1AiJFluic",
+      eas: {
+       projectId: "bca12ca4-2486-4f34-9b60-305e7646965a"
+    }
+  },
 
     // "orientation": "portrait",
     // "icon": "./assets/images/icon.png",

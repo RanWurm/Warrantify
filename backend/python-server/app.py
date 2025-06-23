@@ -157,7 +157,7 @@ def scan_receipt():
         |||||
 
         """  # Improved prompt
-
+        print("in talk with gemini")
         response = model.generate_content([prompt, image])
         extracted_text = response.text.strip() # Remove leading/trailing whitespace
 

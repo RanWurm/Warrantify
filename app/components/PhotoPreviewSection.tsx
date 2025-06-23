@@ -13,9 +13,10 @@ import {
   ActivityIndicator,
   Alert
 } from 'react-native';
+import Constants from 'expo-constants';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
+const pythonBackendURL = Constants.expoConfig!.extra!.PYTHON_BACKEND_URL;
 const PhotoPreviewSection = ({photo, handleRetakePhoto,onClose}) => {
   const [loading, setLoading] = useState(false);
   
@@ -23,7 +24,8 @@ const PhotoPreviewSection = ({photo, handleRetakePhoto,onClose}) => {
     try {
       setLoading(true);
 
-      const SERVER_URL = 'http://10.0.0.3:5000/scan_recepit';
+      const SERVER_URL = `${pythonBackendURL}/scan_recepit`;
+
 
       const payload = {
         image: photo.base64,
