@@ -32,7 +32,7 @@ app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
 api_key = os.getenv("GENAI_API_KEY")
-
+print("api key is" , api_key)
 genai.configure(api_key=api_key)
 model = genai.GenerativeModel("gemini-1.5-flash")
 
@@ -146,17 +146,17 @@ def scan_receipt():
         prompt = f"""
         Extract the following information from the attached receipt image and return it as a string where each field is separated by a pipe symbol (|).  If a piece of information cannot be found, leave that field blank.  The order of the fields *must* be:
 
-        productName|model|purchaseDate|manufacturer|expirationDate|price
+        productName|serviceCenter|manufacturer|store|model|price|purchaseDate|expirationDate|notes
 
         For example, if only the productName and price are found, the output should be:
 
-        ProductNameValue|||ManufacturerValue||PriceValue
+        ProductNameValue||||PriceValue|||
 
         Do not include any other text or explanations. Return *only* the pipe-delimited string. If no information at all can be extracted, return a string with empty values for all fields, like this:
 
-        |||||
+        ||||||||
 
-        """  # Improved prompt
+        """
         print("in talk with gemini")
         response = model.generate_content([prompt, image])
         extracted_text = response.text.strip() # Remove leading/trailing whitespace
@@ -167,11 +167,14 @@ def scan_receipt():
         # 2. Create a dictionary (which can easily be converted to JSON)
         extracted_dict = {
             "productName": extracted_list[0] if len(extracted_list) > 0 else "",
-            "model": extracted_list[1] if len(extracted_list) > 1 else "",
-            "purchaseDate": extracted_list[2] if len(extracted_list) > 2 else "",
-            "manufacturer": extracted_list[3] if len(extracted_list) > 3 else "",
-            "expirationDate": extracted_list[4] if len(extracted_list) > 4 else "",
-            "price": extracted_list[5] if len(extracted_list) > 5 else ""
+            "serviceCenter": extracted_list[1] if len(extracted_list) > 1 else "",
+            "manufacturer": extracted_list[2] if len(extracted_list) > 2 else "",
+            "store": extracted_list[3] if len(extracted_list) > 3 else "",
+            "model": extracted_list[4] if len(extracted_list) > 4 else "",
+            "price": extracted_list[5] if len(extracted_list) > 5 else "",
+            "purchaseDate": extracted_list[6] if len(extracted_list) > 6 else "",
+            "expirationDate": extracted_list[7] if len(extracted_list) > 7 else "",
+            "notes": extracted_list[8] if len(extracted_list) > 8 else ""
         }
 
         print("scan ok")
