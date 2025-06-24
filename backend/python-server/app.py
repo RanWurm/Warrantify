@@ -32,7 +32,7 @@ app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
 api_key = os.getenv("GENAI_API_KEY")
-print("api key is" , api_key)
+
 genai.configure(api_key=api_key)
 model = genai.GenerativeModel("gemini-1.5-flash")
 
